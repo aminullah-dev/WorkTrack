@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dash_greeting">Hello, %1$s</string>
+    <string name="dash_clocked_in">Clocked in</string>
+    <string name="dash_not_clocked_in">Not clocked in yet</string>
+    <string name="dash_first_in">First in %1$s</string>
+    <string name="dash_worked">Worked %1$sh %2$sm</string>
+    <string name="dash_shift">Shift: %1$s (%2$s–%3$s)</string>
+    <string name="dash_clock_in">Clock in</string>
+    <string name="dash_clock_out">Clock out</string>
+    <string name="dash_history">History</string>
+    <string name="dash_leave_balances">Leave balances</string>
+    <string name="dash_days_available">days available</string>
+    <string name="dash_announcements">Announcements</string>
+    <string name="dash_chip_in">IN</string>
+    <string name="dash_chip_out">OUT</string>
+    <string name="dash_priority_important">Important</string>
+    <string name="dash_priority_urgent">Urgent</string>
+</resources>

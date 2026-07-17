@@ -2,8 +2,8 @@ package app.worktrack.feature.leave.approvals
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.worktrack.core.common.result.AppError
 import app.worktrack.core.common.result.AppResult
-import app.worktrack.core.common.result.userMessage
 import app.worktrack.core.domain.usecase.leave.DecideLeaveRequestUseCase
 import app.worktrack.core.domain.usecase.leave.ObservePendingApprovalsUseCase
 import app.worktrack.core.model.ApprovalDecision
@@ -20,6 +20,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+sealed interface ApprovalsEffect {
+    data class Decided(val decision: ApprovalDecision) : ApprovalsEffect
+    data class Failed(val error: AppError) : ApprovalsEffect
+}
+
 @HiltViewModel
 class ApprovalsViewModel @Inject constructor(
     observePendingApprovals: ObservePendingApprovalsUseCase,
@@ -33,19 +38,16 @@ class ApprovalsViewModel @Inject constructor(
     private val _deciding = MutableStateFlow<Set<String>>(emptySet())
     val deciding: StateFlow<Set<String>> = _deciding.asStateFlow()
 
-    private val _messages = Channel<String>(Channel.BUFFERED)
-    val messages = _messages.receiveAsFlow()
+    private val _effects = Channel<ApprovalsEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
 
     fun onDecide(requestId: String, decision: ApprovalDecision, note: String?) {
         if (requestId in _deciding.value) return
         _deciding.update { it + requestId }
         viewModelScope.launch {
             when (val result = decideRequest(requestId, decision, note)) {
-                is AppResult.Success -> _messages.send(
-                    if (decision == ApprovalDecision.APPROVE) "Request approved" else "Request rejected",
-                )
-
-                is AppResult.Failure -> _messages.send(result.error.userMessage())
+                is AppResult.Success -> _effects.send(ApprovalsEffect.Decided(decision))
+                is AppResult.Failure -> _effects.send(ApprovalsEffect.Failed(result.error))
             }
             _deciding.update { it - requestId }
         }

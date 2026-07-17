@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="att_punch_title">Attendance punch</string>
+    <string name="att_location_permission_needed">Location permission is required for GPS punch</string>
+    <string name="att_getting_location">Getting your location…</string>
+    <string name="att_no_geofence">No work area configured — you can punch from anywhere</string>
+    <string name="att_inside_fence">Inside %1$s</string>
+    <string name="att_outside_fence">Outside the work area (%1$s m away)</string>
+    <string name="att_accuracy">Accuracy ±%1$s m</string>
+    <string name="att_scan_qr">Scan kiosk QR</string>
+    <string name="att_clock_in">Clock in</string>
+    <string name="att_clock_out">Clock out</string>
+    <string name="att_punch_in_recorded">Clocked in — will sync automatically</string>
+    <string name="att_punch_out_recorded">Clocked out — will sync automatically</string>
+    <string name="att_loc_unavailable_permission">GPS punch needs location permission. Use the kiosk QR instead.</string>
+    <string name="att_loc_unavailable_no_fix">Couldn\'t get a GPS fix. Move somewhere more open and retry.</string>
+
+    <string name="att_qr_title">Scan kiosk QR</string>
+    <string name="att_qr_camera_permission_title">Camera permission needed</string>
+    <string name="att_qr_camera_permission_msg">Allow camera access to scan the kiosk QR code.</string>
+    <string name="att_qr_hint">Point the camera at the kiosk screen</string>
+
+    <string name="att_history_title">Attendance history</string>
+    <string name="att_history_empty_title">No records</string>
+    <string name="att_history_empty_msg">Attendance for this month appears here after your first sync.</string>
+    <string name="att_prev_month">Previous month</string>
+    <string name="att_next_month">Next month</string>
+    <string name="att_worked_short">Worked %1$sh %2$sm</string>
+    <string name="att_overtime_short">Overtime %1$sm</string>
+    <string name="att_late_by">Late by %1$sm</string>
+
+    <string name="att_status_present">Present</string>
+    <string name="att_status_absent">Absent</string>
+    <string name="att_status_half_day">Half day</string>
+    <string name="att_status_leave">Leave</string>
+    <string name="att_status_holiday">Public holiday</string>
+    <string name="att_status_week_off">Week off</string>
+    <string name="att_status_pending">Pending</string>
+</resources>

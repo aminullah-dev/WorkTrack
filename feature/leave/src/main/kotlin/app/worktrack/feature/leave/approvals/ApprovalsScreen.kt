@@ -28,6 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,9 +38,12 @@ import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtSecondaryButton
 import app.worktrack.core.designsystem.component.WtTextField
 import app.worktrack.core.designsystem.component.WtTopBar
+import app.worktrack.core.designsystem.l10n.formatShamsiRange
+import app.worktrack.core.designsystem.l10n.localizedDigits
+import app.worktrack.core.designsystem.l10n.localizedMessage
 import app.worktrack.core.model.ApprovalDecision
 import app.worktrack.core.model.LeaveRequest
-import java.time.format.DateTimeFormatter
+import app.worktrack.feature.leave.R
 
 @Composable
 fun ApprovalsRoute(
@@ -49,20 +54,36 @@ fun ApprovalsRoute(
     val deciding by viewModel.deciding.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var rejectTarget by remember { mutableStateOf<LeaveRequest?>(null) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is ApprovalsEffect.Decided -> snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (effect.decision == ApprovalDecision.APPROVE) {
+                            R.string.leave_msg_approved
+                        } else {
+                            R.string.leave_msg_rejected
+                        },
+                    ),
+                )
+
+                is ApprovalsEffect.Failed ->
+                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
+            }
+        }
     }
 
     Scaffold(
-        topBar = { WtTopBar(title = "Approvals", onBack = onBack) },
+        topBar = { WtTopBar(title = stringResource(R.string.leave_approvals_title), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (pending.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Inbox,
-                title = "All caught up",
-                message = "No leave requests are waiting for your decision.",
+                title = stringResource(R.string.leave_approvals_empty_title),
+                message = stringResource(R.string.leave_approvals_empty_msg),
                 modifier = Modifier.padding(padding),
             )
         } else {
@@ -88,7 +109,7 @@ fun ApprovalsRoute(
 
     rejectTarget?.let { target ->
         RejectDialog(
-            employeeName = target.employeeName ?: "this employee",
+            employeeName = target.employeeName ?: target.employeeId,
             onConfirm = { note ->
                 viewModel.onDecide(target.id, ApprovalDecision.REJECT, note)
                 rejectTarget = null
@@ -105,7 +126,6 @@ private fun ApprovalCard(
     onApprove: () -> Unit,
     onReject: () -> Unit,
 ) {
-    val dateFormat = DateTimeFormatter.ofPattern("d MMM")
     Card(
         Modifier
             .fillMaxWidth()
@@ -117,8 +137,11 @@ private fun ApprovalCard(
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                text = "${request.startDate.format(dateFormat)} – " +
-                    "${request.endDate.format(dateFormat)} · %.1f days".format(request.days),
+                text = formatShamsiRange(request.startDate, request.endDate) +
+                    " · " +
+                    localizedDigits(
+                        stringResource(R.string.leave_days_count, "%.1f".format(request.days)),
+                    ),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
@@ -129,14 +152,14 @@ private fun ApprovalCard(
             Spacer(Modifier.height(8.dp))
             Row {
                 WtPrimaryButton(
-                    text = "Approve",
+                    text = stringResource(R.string.leave_approve),
                     onClick = onApprove,
                     modifier = Modifier.weight(1f),
                     loading = busy,
                 )
                 Spacer(Modifier.width(8.dp))
                 WtSecondaryButton(
-                    text = "Reject",
+                    text = stringResource(R.string.leave_reject),
                     onClick = onReject,
                     modifier = Modifier.weight(1f),
                     enabled = !busy,
@@ -155,15 +178,15 @@ private fun RejectDialog(
     var note by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Reject request") },
+        title = { Text(stringResource(R.string.leave_reject_dialog_title)) },
         text = {
             Column {
-                Text("Tell $employeeName why this request is being rejected.")
+                Text(stringResource(R.string.leave_reject_dialog_msg, employeeName))
                 Spacer(Modifier.height(8.dp))
                 WtTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = "Reason",
+                    label = stringResource(R.string.leave_reject_reason),
                     singleLine = false,
                 )
             }
@@ -172,10 +195,12 @@ private fun RejectDialog(
             TextButton(
                 onClick = { onConfirm(note) },
                 enabled = note.isNotBlank(),
-            ) { Text("Reject") }
+            ) { Text(stringResource(R.string.leave_reject)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(app.worktrack.core.designsystem.R.string.ds_cancel))
+            }
         },
     )
 }

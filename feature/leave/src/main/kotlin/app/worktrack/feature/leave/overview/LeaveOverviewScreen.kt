@@ -2,6 +2,7 @@ package app.worktrack.feature.leave.overview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,12 +41,15 @@ import app.worktrack.core.designsystem.component.ColorDotChip
 import app.worktrack.core.designsystem.component.EmptyState
 import app.worktrack.core.designsystem.component.SectionHeader
 import app.worktrack.core.designsystem.component.StatusChip
+import app.worktrack.core.designsystem.l10n.formatShamsiRange
+import app.worktrack.core.designsystem.l10n.localizedDigits
+import app.worktrack.core.designsystem.l10n.localizedMessage
 import app.worktrack.core.model.LeaveBalance
 import app.worktrack.core.model.LeaveRequest
 import app.worktrack.core.model.LeaveStatus
 import app.worktrack.core.model.LeaveType
 import app.worktrack.core.model.SyncStatus
-import java.time.format.DateTimeFormatter
+import app.worktrack.feature.leave.R
 
 @Composable
 fun LeaveOverviewRoute(
@@ -53,9 +59,18 @@ fun LeaveOverviewRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                LeaveOverviewEffect.Cancelled ->
+                    snackbarHostState.showSnackbar(context.getString(R.string.leave_msg_cancelled))
+
+                is LeaveOverviewEffect.Failed ->
+                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
+            }
+        }
     }
 
     Scaffold(
@@ -64,7 +79,7 @@ fun LeaveOverviewRoute(
             ExtendedFloatingActionButton(
                 onClick = onApplyClick,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Apply") },
+                text = { Text(stringResource(R.string.leave_apply)) },
             )
         },
     ) { padding ->
@@ -100,28 +115,30 @@ internal fun LeaveOverviewScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Team requests waiting for you",
+                            text = stringResource(R.string.leave_pending_team),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(onClick = onApprovalsClick) { Text("Review") }
+                        TextButton(onClick = onApprovalsClick) {
+                            Text(stringResource(R.string.leave_review))
+                        }
                     }
                 }
             }
         }
 
-        item { SectionHeader("Balances") }
+        item { SectionHeader(stringResource(R.string.leave_balances)) }
         item {
             BalanceRow(balances = state.overview.balances, typeOf = { state.overview.typeOf(it) })
         }
 
-        item { SectionHeader("My requests") }
+        item { SectionHeader(stringResource(R.string.leave_my_requests)) }
         if (state.overview.myRequests.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Filled.BeachAccess,
-                    title = "No leave requests yet",
-                    message = "Tap Apply to request time off.",
+                    title = stringResource(R.string.leave_empty_title),
+                    message = stringResource(R.string.leave_empty_msg),
                     modifier = Modifier.height(280.dp),
                 )
             }
@@ -145,7 +162,7 @@ private fun BalanceRow(
 ) {
     if (balances.isEmpty()) {
         Text(
-            text = "Balances appear after your first sync.",
+            text = stringResource(R.string.leave_balances_after_sync),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -153,7 +170,7 @@ private fun BalanceRow(
         return
     }
     LazyRow(
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(balances, key = { it.id }) { balance ->
@@ -161,17 +178,22 @@ private fun BalanceRow(
             Card {
                 Column(Modifier.padding(12.dp)) {
                     Text(
-                        text = "%.1f".format(balance.availableDays),
+                        text = localizedDigits("%.1f".format(balance.availableDays)),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = type?.name ?: "Leave",
+                        text = type?.name ?: stringResource(R.string.leave_generic_type),
                         style = MaterialTheme.typography.labelMedium,
                     )
                     if (balance.pendingDays > 0) {
                         Text(
-                            text = "%.1f pending".format(balance.pendingDays),
+                            text = localizedDigits(
+                                stringResource(
+                                    R.string.leave_days_pending,
+                                    "%.1f".format(balance.pendingDays),
+                                ),
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -188,7 +210,6 @@ private fun RequestCard(
     type: LeaveType?,
     onCancel: () -> Unit,
 ) {
-    val dateFormat = DateTimeFormatter.ofPattern("d MMM")
     Card(
         Modifier
             .fillMaxWidth()
@@ -205,8 +226,14 @@ private fun RequestCard(
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "${request.startDate.format(dateFormat)} – " +
-                            "${request.endDate.format(dateFormat)} · %.1f days".format(request.days),
+                        text = formatShamsiRange(request.startDate, request.endDate) +
+                            " · " +
+                            localizedDigits(
+                                stringResource(
+                                    R.string.leave_days_count,
+                                    "%.1f".format(request.days),
+                                ),
+                            ),
                         style = MaterialTheme.typography.titleSmall,
                     )
                     Text(
@@ -220,32 +247,37 @@ private fun RequestCard(
             }
             if (request.syncStatus == SyncStatus.PENDING) {
                 Text(
-                    text = "Waiting to sync…",
+                    text = stringResource(R.string.leave_waiting_sync),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (request.syncStatus == SyncStatus.FAILED) {
                 Text(
-                    text = "Sync failed — the server rejected this request",
+                    text = stringResource(R.string.leave_sync_failed),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
             if (request.status == LeaveStatus.PENDING && request.syncStatus == SyncStatus.SYNCED) {
-                TextButton(onClick = onCancel) { Text("Cancel request") }
+                TextButton(onClick = onCancel) {
+                    Text(stringResource(R.string.leave_cancel_request))
+                }
             }
         }
     }
 }
 
-internal fun LeaveStatus.label(): String = when (this) {
-    LeaveStatus.DRAFT -> "Draft"
-    LeaveStatus.PENDING -> "Pending"
-    LeaveStatus.APPROVED -> "Approved"
-    LeaveStatus.REJECTED -> "Rejected"
-    LeaveStatus.CANCELLED -> "Cancelled"
-}
+@Composable
+internal fun LeaveStatus.label(): String = stringResource(
+    when (this) {
+        LeaveStatus.DRAFT -> R.string.leave_status_draft
+        LeaveStatus.PENDING -> R.string.leave_status_pending
+        LeaveStatus.APPROVED -> R.string.leave_status_approved
+        LeaveStatus.REJECTED -> R.string.leave_status_rejected
+        LeaveStatus.CANCELLED -> R.string.leave_status_cancelled
+    },
+)
 
 internal fun LeaveStatus.tone(): ChipTone = when (this) {
     LeaveStatus.APPROVED -> ChipTone.POSITIVE

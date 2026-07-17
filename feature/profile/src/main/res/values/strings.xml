@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prof_payroll">معاشات</string>
+    <string name="prof_my_payslips">فیش‌های معاش من</string>
+    <string name="prof_language">زبان</string>
+    <string name="prof_sync">همگام‌سازی</string>
+    <string name="prof_sync_now">همگام‌سازی فوری</string>
+    <string name="prof_syncing">در حال همگام‌سازی…</string>
+    <string name="prof_pending_changes">%1$s تغییر در انتظار همگام‌سازی</string>
+    <string name="prof_up_to_date">همه چیز به‌روز است</string>
+    <string name="prof_last_synced">آخرین همگام‌سازی: %1$s</string>
+    <string name="prof_rejected_changes">%1$s تغییر توسط سرور رد شد</string>
+    <string name="prof_sync_unavailable">وضعیت همگام‌سازی در دسترس نیست</string>
+    <string name="prof_sign_out">خروج از حساب</string>
+
+    <string name="prof_chip_syncing">در حال همگام‌سازی</string>
+    <string name="prof_chip_attention">نیاز به توجه</string>
+    <string name="prof_chip_pending">در انتظار</string>
+    <string name="prof_chip_ok">به‌روز</string>
+
+    <string name="prof_role_super_admin">مدیر سیستم</string>
+    <string name="prof_role_company_admin">مدیر شرکت</string>
+    <string name="prof_role_hr_admin">مدیر منابع بشری</string>
+    <string name="prof_role_payroll_admin">مدیر معاشات</string>
+    <string name="prof_role_branch_manager">مدیر شعبه</string>
+    <string name="prof_role_team_lead">سرگروپ</string>
+    <string name="prof_role_employee">کارمند</string>
+    <string name="prof_role_auditor">بازرس</string>
+    <string name="prof_role_kiosk">کیوسک</string>
+
+    <!-- Language names are always shown in their own script. -->
+    <string name="prof_lang_dari">دری</string>
+    <string name="prof_lang_pashto">پښتو</string>
+    <string name="prof_lang_english">English</string>
+</resources>

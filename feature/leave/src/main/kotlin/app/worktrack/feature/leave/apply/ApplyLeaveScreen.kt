@@ -29,6 +29,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,10 +38,13 @@ import app.worktrack.core.designsystem.component.SectionHeader
 import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtTextField
 import app.worktrack.core.designsystem.component.WtTopBar
+import app.worktrack.core.designsystem.l10n.formatShamsiDate
+import app.worktrack.core.designsystem.l10n.localizedDigits
+import app.worktrack.core.designsystem.l10n.localizedMessage
+import app.worktrack.feature.leave.R
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun ApplyLeaveRoute(
@@ -49,18 +54,20 @@ fun ApplyLeaveRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val types by viewModel.types.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 ApplyLeaveEffect.Submitted -> onBack()
-                is ApplyLeaveEffect.Message -> snackbarHostState.showSnackbar(effect.text)
+                is ApplyLeaveEffect.Failed ->
+                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
             }
         }
     }
 
     Scaffold(
-        topBar = { WtTopBar(title = "Apply for leave", onBack = onBack) },
+        topBar = { WtTopBar(title = stringResource(R.string.leave_apply_title), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         ApplyLeaveScreen(
@@ -100,7 +107,7 @@ internal fun ApplyLeaveScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 32.dp),
     ) {
-        SectionHeader("Leave type")
+        SectionHeader(stringResource(R.string.leave_type_section))
         Row(
             Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -113,25 +120,36 @@ internal fun ApplyLeaveScreen(
                 )
             }
         }
-        state.fieldErrors["leaveTypeId"]?.let { FieldError(it) }
+        if ("leaveTypeId" in state.fieldErrors) FieldError(stringResource(R.string.leave_err_type))
 
-        SectionHeader("Dates")
+        SectionHeader(stringResource(R.string.leave_dates_section))
         Row(
             Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy")
             AssistChip(
                 onClick = { datePickerTarget = DateTarget.START },
-                label = { Text(state.startDate?.format(dateFormat) ?: "Start date") },
+                label = {
+                    Text(
+                        state.startDate
+                            ?.let { formatShamsiDate(it, withYear = true) }
+                            ?: stringResource(R.string.leave_start_date),
+                    )
+                },
             )
             AssistChip(
                 onClick = { datePickerTarget = DateTarget.END },
-                label = { Text(state.endDate?.format(dateFormat) ?: "End date") },
+                label = {
+                    Text(
+                        state.endDate
+                            ?.let { formatShamsiDate(it, withYear = true) }
+                            ?: stringResource(R.string.leave_end_date),
+                    )
+                },
             )
         }
-        state.fieldErrors["startDate"]?.let { FieldError(it) }
-        state.fieldErrors["endDate"]?.let { FieldError(it) }
+        if ("startDate" in state.fieldErrors) FieldError(stringResource(R.string.leave_err_start))
+        if ("endDate" in state.fieldErrors) FieldError(stringResource(R.string.leave_err_end))
 
         Row(
             Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -140,40 +158,45 @@ internal fun ApplyLeaveScreen(
             FilterChip(
                 selected = state.startHalfDay,
                 onClick = onStartHalfDayToggle,
-                label = { Text("Half first day") },
+                label = { Text(stringResource(R.string.leave_half_first)) },
             )
             FilterChip(
                 selected = state.endHalfDay,
                 onClick = onEndHalfDayToggle,
-                label = { Text("Half last day") },
+                label = { Text(stringResource(R.string.leave_half_last)) },
             )
         }
 
         if (state.estimatedDays > 0) {
             Text(
-                text = "≈ %.1f days".format(state.estimatedDays) +
-                    " (weekends/holidays excluded on approval)",
+                text = localizedDigits(
+                    stringResource(R.string.leave_estimate, "%.1f".format(state.estimatedDays)),
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
 
-        SectionHeader("Reason")
+        SectionHeader(stringResource(R.string.leave_reason_section))
         WtTextField(
             value = state.reason,
             onValueChange = onReasonChange,
-            label = "Why do you need this leave?",
+            label = stringResource(R.string.leave_reason_label),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            errorText = state.fieldErrors["reason"],
+            errorText = if ("reason" in state.fieldErrors) {
+                stringResource(R.string.leave_err_reason)
+            } else {
+                null
+            },
             singleLine = false,
         )
 
         Spacer(Modifier.height(24.dp))
         WtPrimaryButton(
-            text = "Submit request",
+            text = stringResource(R.string.leave_submit),
             onClick = onSubmit,
             modifier = Modifier
                 .fillMaxWidth()
@@ -206,10 +229,12 @@ internal fun ApplyLeaveScreen(
                         }
                         datePickerTarget = null
                     },
-                ) { Text("OK") }
+                ) { Text(stringResource(app.worktrack.core.designsystem.R.string.ds_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { datePickerTarget = null }) { Text("Cancel") }
+                TextButton(onClick = { datePickerTarget = null }) {
+                    Text(stringResource(app.worktrack.core.designsystem.R.string.ds_cancel))
+                }
             },
         ) {
             DatePicker(state = pickerState)

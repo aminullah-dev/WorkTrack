@@ -18,17 +18,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.worktrack.core.designsystem.component.FullScreenLoading
 import app.worktrack.core.designsystem.component.SectionHeader
 import app.worktrack.core.designsystem.component.WtTopBar
+import app.worktrack.core.designsystem.l10n.formatShamsiMonthYear
+import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.model.PayComponentType
 import app.worktrack.core.model.Payslip
-import java.time.Month
-import java.time.format.TextStyle
-import java.util.Locale
+import app.worktrack.feature.payslips.R
 
 @Composable
 fun PayslipDetailRoute(
@@ -40,9 +41,8 @@ fun PayslipDetailRoute(
     Scaffold(
         topBar = {
             WtTopBar(
-                title = payslip?.let {
-                    "${Month.of(it.periodMonth).getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${it.periodYear}"
-                } ?: "Payslip",
+                title = payslip?.let { formatShamsiMonthYear(it.periodYear, it.periodMonth) }
+                    ?: stringResource(R.string.pay_payslip),
                 onBack = onBack,
             )
         },
@@ -71,15 +71,23 @@ private fun PayslipDetail(payslip: Payslip, modifier: Modifier = Modifier) {
             ),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("Net pay", style = MaterialTheme.typography.labelMedium)
                 Text(
-                    text = "${payslip.currency} ${"%,.2f".format(payslip.net)}",
+                    text = stringResource(R.string.pay_net_pay),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Text(
+                    text = localizedDigits("${payslip.currency} ${"%,.2f".format(payslip.net)}"),
                     style = MaterialTheme.typography.headlineMedium,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Gross ${"%,.2f".format(payslip.gross)} − " +
-                        "Deductions ${"%,.2f".format(payslip.totalDeductions)}",
+                    text = localizedDigits(
+                        stringResource(
+                            R.string.pay_gross_minus,
+                            "%,.2f".format(payslip.gross),
+                            "%,.2f".format(payslip.totalDeductions),
+                        ),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -90,20 +98,20 @@ private fun PayslipDetail(payslip: Payslip, modifier: Modifier = Modifier) {
         val deductions = payslip.lines.filter { it.type == PayComponentType.DEDUCTION }
 
         if (earnings.isNotEmpty()) {
-            SectionHeader("Earnings")
+            SectionHeader(stringResource(R.string.pay_earnings))
             LinesCard(lines = earnings.map { it.componentName to it.amount }, currency = payslip.currency)
         }
         if (deductions.isNotEmpty()) {
-            SectionHeader("Deductions")
+            SectionHeader(stringResource(R.string.pay_deductions))
             LinesCard(lines = deductions.map { it.componentName to it.amount }, currency = payslip.currency)
         }
 
-        SectionHeader("Attendance summary")
+        SectionHeader(stringResource(R.string.pay_attendance_summary))
         LinesCard(
             lines = listOf(
-                "Worked days" to payslip.workedDays,
-                "Paid leave days" to payslip.paidLeaveDays,
-                "Loss of pay days" to payslip.lopDays,
+                stringResource(R.string.pay_worked_days_label) to payslip.workedDays,
+                stringResource(R.string.pay_paid_leave_label) to payslip.paidLeaveDays,
+                stringResource(R.string.pay_lop_label) to payslip.lopDays,
             ),
             currency = null,
         )
@@ -127,11 +135,13 @@ private fun LinesCard(lines: List<Pair<String, Double>>, currency: String?) {
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        text = if (currency != null) {
-                            "$currency ${"%,.2f".format(amount)}"
-                        } else {
-                            "%.1f".format(amount)
-                        },
+                        text = localizedDigits(
+                            if (currency != null) {
+                                "$currency ${"%,.2f".format(amount)}"
+                            } else {
+                                "%.1f".format(amount)
+                            },
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }

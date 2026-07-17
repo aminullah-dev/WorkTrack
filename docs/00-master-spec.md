@@ -10,7 +10,12 @@ Version: 1.0 · Status: Approved · Owners: Platform Architecture
 
 ## 1. Product definition
 
-WorkTrack is a multi-tenant Workforce Management Platform (HRMS) covering:
+WorkTrack is a multi-tenant Workforce Management Platform (HRMS) **built for
+Afghanistan**: Dari (دری) is the default product language with full Pashto (پښتو)
+and English translations, all dates and payroll periods follow the Solar Hijri
+(هجری شمسی) calendar with Afghan month names, the weekend is Friday, and defaults
+are AFN currency and the Asia/Kabul timezone. See `10-localization-afghanistan.md`
+for the full localization architecture. The platform covers:
 
 | Domain | Capabilities |
 |---|---|

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WorkTrack</string>
+    <string name="nav_home">کور</string>
+    <string name="nav_attendance">حاضري</string>
+    <string name="nav_leave">رخصتي</string>
+    <string name="nav_profile">پروفایل</string>
+</resources>

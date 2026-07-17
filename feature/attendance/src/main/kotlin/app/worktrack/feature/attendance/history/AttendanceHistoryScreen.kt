@@ -22,6 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,11 +31,12 @@ import app.worktrack.core.designsystem.component.ChipTone
 import app.worktrack.core.designsystem.component.EmptyState
 import app.worktrack.core.designsystem.component.StatusChip
 import app.worktrack.core.designsystem.component.WtTopBar
+import app.worktrack.core.designsystem.l10n.formatShamsiDate
+import app.worktrack.core.designsystem.l10n.formatShamsiMonthYear
+import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.model.AttendanceDay
 import app.worktrack.core.model.AttendanceDayStatus
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
+import app.worktrack.feature.attendance.R
 
 @Composable
 fun AttendanceHistoryRoute(
@@ -43,13 +46,11 @@ fun AttendanceHistoryRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { WtTopBar(title = "Attendance history", onBack = onBack) },
+        topBar = { WtTopBar(title = stringResource(R.string.att_history_title), onBack = onBack) },
     ) { padding ->
         Column(Modifier.padding(padding)) {
             MonthSelector(
-                label = "${
-                    state.month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
-                } ${state.month.year}",
+                label = formatShamsiMonthYear(state.shamsiYear, state.shamsiMonth),
                 canGoForward = state.canGoForward,
                 onPrevious = viewModel::onPreviousMonth,
                 onNext = viewModel::onNextMonth,
@@ -57,8 +58,8 @@ fun AttendanceHistoryRoute(
             if (state.days.isEmpty()) {
                 EmptyState(
                     icon = Icons.Filled.EventBusy,
-                    title = "No records",
-                    message = "Attendance for this month appears here after your first sync.",
+                    title = stringResource(R.string.att_history_empty_title),
+                    message = stringResource(R.string.att_history_empty_msg),
                 )
             } else {
                 LazyColumn(
@@ -86,16 +87,22 @@ private fun MonthSelector(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month")
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.att_prev_month),
+            )
         }
         Text(
             text = label,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
         )
         IconButton(onClick = onNext, enabled = canGoForward) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month")
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.att_next_month),
+            )
         }
     }
 }
@@ -113,20 +120,38 @@ private fun DayCard(day: AttendanceDay) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM")),
+                    text = formatShamsiDate(day.date, withWeekday = true),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 if (day.workedMinutes > 0) {
+                    val worked = localizedDigits(
+                        stringResource(
+                            R.string.att_worked_short,
+                            (day.workedMinutes / 60).toString(),
+                            (day.workedMinutes % 60).toString(),
+                        ),
+                    )
+                    val overtime = if (day.overtimeMinutes > 0) {
+                        " · " + localizedDigits(
+                            stringResource(
+                                R.string.att_overtime_short,
+                                day.overtimeMinutes.toString(),
+                            ),
+                        )
+                    } else {
+                        ""
+                    }
                     Text(
-                        text = "Worked ${day.workedMinutes / 60}h ${day.workedMinutes % 60}m" +
-                            if (day.overtimeMinutes > 0) " · OT ${day.overtimeMinutes}m" else "",
+                        text = worked + overtime,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (day.lateMinutes > 0) {
                     Text(
-                        text = "Late by ${day.lateMinutes}m",
+                        text = localizedDigits(
+                            stringResource(R.string.att_late_by, day.lateMinutes.toString()),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -137,15 +162,18 @@ private fun DayCard(day: AttendanceDay) {
     }
 }
 
-private fun AttendanceDayStatus.label(): String = when (this) {
-    AttendanceDayStatus.PRESENT -> "Present"
-    AttendanceDayStatus.ABSENT -> "Absent"
-    AttendanceDayStatus.HALF_DAY -> "Half day"
-    AttendanceDayStatus.LEAVE -> "Leave"
-    AttendanceDayStatus.HOLIDAY -> "Holiday"
-    AttendanceDayStatus.WEEK_OFF -> "Week off"
-    AttendanceDayStatus.PENDING -> "Pending"
-}
+@Composable
+private fun AttendanceDayStatus.label(): String = stringResource(
+    when (this) {
+        AttendanceDayStatus.PRESENT -> R.string.att_status_present
+        AttendanceDayStatus.ABSENT -> R.string.att_status_absent
+        AttendanceDayStatus.HALF_DAY -> R.string.att_status_half_day
+        AttendanceDayStatus.LEAVE -> R.string.att_status_leave
+        AttendanceDayStatus.HOLIDAY -> R.string.att_status_holiday
+        AttendanceDayStatus.WEEK_OFF -> R.string.att_status_week_off
+        AttendanceDayStatus.PENDING -> R.string.att_status_pending
+    },
+)
 
 private fun AttendanceDayStatus.tone(): ChipTone = when (this) {
     AttendanceDayStatus.PRESENT -> ChipTone.POSITIVE

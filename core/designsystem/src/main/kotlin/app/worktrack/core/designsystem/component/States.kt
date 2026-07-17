@@ -15,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.worktrack.core.designsystem.R
 
 @Composable
 fun FullScreenLoading(modifier: Modifier = Modifier) {
@@ -81,6 +83,6 @@ fun ErrorState(
             color = MaterialTheme.colorScheme.error,
         )
         Spacer(Modifier.height(16.dp))
-        WtSecondaryButton(text = "Retry", onClick = onRetry)
+        WtSecondaryButton(text = stringResource(R.string.ds_retry), onClick = onRetry)
     }
 }

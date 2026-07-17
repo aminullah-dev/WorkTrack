@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.worktrack.core.common.result.AppError
 import app.worktrack.core.common.result.AppResult
-import app.worktrack.core.common.result.userMessage
 import app.worktrack.core.domain.usecase.auth.SignInUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -19,8 +18,9 @@ data class LoginUiState(
     val password: String = "",
     val passwordVisible: Boolean = false,
     val isSubmitting: Boolean = false,
-    val fieldErrors: Map<String, String> = emptyMap(),
-    val errorMessage: String? = null,
+    /** Field keys with validation problems; the UI maps keys to localized text. */
+    val fieldErrors: Set<String> = emptySet(),
+    val error: AppError? = null,
 )
 
 /**
@@ -36,11 +36,11 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onEmailChange(value: String) {
-        _uiState.update { it.copy(email = value, fieldErrors = it.fieldErrors - "email", errorMessage = null) }
+        _uiState.update { it.copy(email = value, fieldErrors = it.fieldErrors - "email", error = null) }
     }
 
     fun onPasswordChange(value: String) {
-        _uiState.update { it.copy(password = value, fieldErrors = it.fieldErrors - "password", errorMessage = null) }
+        _uiState.update { it.copy(password = value, fieldErrors = it.fieldErrors - "password", error = null) }
     }
 
     fun onTogglePasswordVisibility() {
@@ -50,16 +50,18 @@ class LoginViewModel @Inject constructor(
     fun onSubmit() {
         val state = _uiState.value
         if (state.isSubmitting) return
-        _uiState.update { it.copy(isSubmitting = true, errorMessage = null, fieldErrors = emptyMap()) }
+        _uiState.update { it.copy(isSubmitting = true, error = null, fieldErrors = emptySet()) }
 
         viewModelScope.launch {
             when (val result = signIn(state.email, state.password)) {
                 is AppResult.Success -> _uiState.update { it.copy(isSubmitting = false) }
                 is AppResult.Failure -> _uiState.update {
+                    val validation = result.error as? AppError.Validation
                     it.copy(
                         isSubmitting = false,
-                        fieldErrors = (result.error as? AppError.Validation)?.fieldErrors.orEmpty(),
-                        errorMessage = result.error.userMessage(),
+                        fieldErrors = validation?.fieldErrors?.keys.orEmpty(),
+                        // Field-level problems are surfaced inline, not as a banner.
+                        error = if (validation == null) result.error else null,
                     )
                 }
             }

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -30,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtTextField
+import app.worktrack.core.designsystem.l10n.localizedMessage
 
 @Composable
 fun LoginRoute(viewModel: LoginViewModel = hiltViewModel()) {
@@ -66,7 +68,7 @@ internal fun LoginScreen(
             color = MaterialTheme.colorScheme.primary,
         )
         Text(
-            text = "Smart workforce management",
+            text = stringResource(R.string.auth_tagline),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -75,18 +77,26 @@ internal fun LoginScreen(
         WtTextField(
             value = state.email,
             onValueChange = onEmailChange,
-            label = "Work email",
+            label = stringResource(R.string.auth_email),
             modifier = Modifier.fillMaxWidth(),
-            errorText = state.fieldErrors["email"],
+            errorText = if ("email" in state.fieldErrors) {
+                stringResource(R.string.auth_email_invalid)
+            } else {
+                null
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         )
         Spacer(Modifier.height(16.dp))
         WtTextField(
             value = state.password,
             onValueChange = onPasswordChange,
-            label = "Password",
+            label = stringResource(R.string.auth_password),
             modifier = Modifier.fillMaxWidth(),
-            errorText = state.fieldErrors["password"],
+            errorText = if ("password" in state.fieldErrors) {
+                stringResource(R.string.auth_password_short)
+            } else {
+                null
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = if (state.passwordVisible) {
                 VisualTransformation.None
@@ -101,20 +111,22 @@ internal fun LoginScreen(
                         } else {
                             Icons.Filled.Visibility
                         },
-                        contentDescription = if (state.passwordVisible) {
-                            "Hide password"
-                        } else {
-                            "Show password"
-                        },
+                        contentDescription = stringResource(
+                            if (state.passwordVisible) {
+                                R.string.auth_hide_password
+                            } else {
+                                R.string.auth_show_password
+                            },
+                        ),
                     )
                 }
             },
         )
 
-        state.errorMessage?.let { message ->
+        state.error?.let { error ->
             Spacer(Modifier.height(12.dp))
             Text(
-                text = message,
+                text = error.localizedMessage(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -122,7 +134,7 @@ internal fun LoginScreen(
 
         Spacer(Modifier.height(24.dp))
         WtPrimaryButton(
-            text = "Sign in",
+            text = stringResource(R.string.auth_sign_in),
             onClick = onSubmit,
             modifier = Modifier.fillMaxWidth(),
             loading = state.isSubmitting,

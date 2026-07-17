@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,12 +30,12 @@ import app.worktrack.core.designsystem.component.SectionHeader
 import app.worktrack.core.designsystem.component.StatusChip
 import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtSecondaryButton
+import app.worktrack.core.designsystem.l10n.formatClockTime
+import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.domain.usecase.dashboard.DashboardSnapshot
 import app.worktrack.core.model.Announcement
 import app.worktrack.core.model.AnnouncementPriority
 import app.worktrack.core.model.LeaveBalance
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun DashboardRoute(
@@ -66,7 +67,10 @@ internal fun DashboardScreen(
         item {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
-                    text = "Hello, ${snapshot.session.displayName.substringBefore(' ')}",
+                    text = stringResource(
+                        R.string.dash_greeting,
+                        snapshot.session.displayName.substringBefore(' '),
+                    ),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
@@ -86,12 +90,12 @@ internal fun DashboardScreen(
         }
 
         if (snapshot.leaveBalances.isNotEmpty()) {
-            item { SectionHeader("Leave balances") }
+            item { SectionHeader(stringResource(R.string.dash_leave_balances)) }
             item { BalancesRow(snapshot.leaveBalances) }
         }
 
         if (snapshot.announcements.isNotEmpty()) {
-            item { SectionHeader("Announcements") }
+            item { SectionHeader(stringResource(R.string.dash_announcements)) }
             items(snapshot.announcements, key = { it.id }) { announcement ->
                 AnnouncementCard(announcement)
             }
@@ -120,26 +124,34 @@ private fun TodayCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = if (today.clockedIn) "Clocked in" else "Not clocked in",
+                        text = stringResource(
+                            if (today.clockedIn) R.string.dash_clocked_in else R.string.dash_not_clocked_in,
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
-                    val zone = ZoneId.systemDefault()
                     today.firstInAt?.let {
                         Text(
-                            text = "First in ${timeFormat.format(it.atZone(zone))}",
+                            text = stringResource(R.string.dash_first_in, formatClockTime(it)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Text(
-                        text = "Worked ${today.workedMinutesSoFar / 60}h ${today.workedMinutesSoFar % 60}m",
+                        text = localizedDigits(
+                            stringResource(
+                                R.string.dash_worked,
+                                (today.workedMinutesSoFar / 60).toString(),
+                                (today.workedMinutesSoFar % 60).toString(),
+                            ),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 StatusChip(
-                    text = if (today.clockedIn) "IN" else "OUT",
+                    text = stringResource(
+                        if (today.clockedIn) R.string.dash_chip_in else R.string.dash_chip_out,
+                    ),
                     tone = if (today.clockedIn) ChipTone.POSITIVE else ChipTone.NEUTRAL,
                 )
             }
@@ -147,7 +159,14 @@ private fun TodayCard(
             today.shift?.let { shift ->
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Shift: ${shift.name} (${shift.startTime}–${shift.endTime})",
+                    text = localizedDigits(
+                        stringResource(
+                            R.string.dash_shift,
+                            shift.name,
+                            shift.startTime.toString(),
+                            shift.endTime.toString(),
+                        ),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -156,13 +175,15 @@ private fun TodayCard(
             Spacer(Modifier.height(12.dp))
             Row {
                 WtPrimaryButton(
-                    text = if (today.clockedIn) "Clock out" else "Clock in",
+                    text = stringResource(
+                        if (today.clockedIn) R.string.dash_clock_out else R.string.dash_clock_in,
+                    ),
                     onClick = onPunchClick,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(Modifier.width(12.dp))
                 WtSecondaryButton(
-                    text = "History",
+                    text = stringResource(R.string.dash_history),
                     onClick = onAttendanceHistoryClick,
                 )
             }
@@ -180,12 +201,12 @@ private fun BalancesRow(balances: List<LeaveBalance>) {
             Card {
                 Column(Modifier.padding(12.dp)) {
                     Text(
-                        text = "%.1f".format(balance.availableDays),
+                        text = localizedDigits("%.1f".format(balance.availableDays)),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "days available",
+                        text = stringResource(R.string.dash_days_available),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -211,7 +232,13 @@ private fun AnnouncementCard(announcement: Announcement) {
                 )
                 if (announcement.priority != AnnouncementPriority.NORMAL) {
                     StatusChip(
-                        text = announcement.priority.name,
+                        text = stringResource(
+                            if (announcement.priority == AnnouncementPriority.URGENT) {
+                                R.string.dash_priority_urgent
+                            } else {
+                                R.string.dash_priority_important
+                            },
+                        ),
                         tone = if (announcement.priority == AnnouncementPriority.URGENT) {
                             ChipTone.NEGATIVE
                         } else {

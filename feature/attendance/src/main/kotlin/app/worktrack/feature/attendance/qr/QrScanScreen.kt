@@ -24,8 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import app.worktrack.feature.attendance.R
 import androidx.core.content.ContextCompat
 import app.worktrack.core.designsystem.component.EmptyState
 import app.worktrack.core.designsystem.component.WtTopBar
@@ -63,7 +65,7 @@ fun QrScanRoute(
     }
 
     Scaffold(
-        topBar = { WtTopBar(title = "Scan kiosk QR", onBack = onBack) },
+        topBar = { WtTopBar(title = stringResource(R.string.att_qr_title), onBack = onBack) },
     ) { padding ->
         if (hasCameraPermission) {
             CameraQrScanner(
@@ -75,8 +77,8 @@ fun QrScanRoute(
         } else {
             EmptyState(
                 icon = Icons.Filled.NoPhotography,
-                title = "Camera permission needed",
-                message = "Allow camera access to scan the kiosk QR code.",
+                title = stringResource(R.string.att_qr_camera_permission_title),
+                message = stringResource(R.string.att_qr_camera_permission_msg),
                 modifier = Modifier.padding(padding),
             )
         }
@@ -140,7 +142,7 @@ private fun CameraQrScanner(
         },
     )
     Text(
-        text = "Point the camera at the kiosk screen",
+        text = stringResource(R.string.att_qr_hint),
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.padding(16.dp),
     )

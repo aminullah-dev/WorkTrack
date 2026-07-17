@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.worktrack.core.common.result.AppError
 import app.worktrack.core.common.result.AppResult
-import app.worktrack.core.common.result.userMessage
 import app.worktrack.core.domain.repository.LeaveRepository
 import app.worktrack.core.domain.usecase.leave.ApplyLeaveUseCase
 import app.worktrack.core.model.LeaveApplication
@@ -30,7 +29,8 @@ data class ApplyLeaveUiState(
     val endHalfDay: Boolean = false,
     val reason: String = "",
     val isSubmitting: Boolean = false,
-    val fieldErrors: Map<String, String> = emptyMap(),
+    /** Field keys with problems; the UI maps keys to localized messages. */
+    val fieldErrors: Set<String> = emptySet(),
 ) {
     val estimatedDays: Double
         get() {
@@ -45,7 +45,7 @@ data class ApplyLeaveUiState(
 
 sealed interface ApplyLeaveEffect {
     data object Submitted : ApplyLeaveEffect
-    data class Message(val text: String) : ApplyLeaveEffect
+    data class Failed(val error: AppError) : ApplyLeaveEffect
 }
 
 @HiltViewModel
@@ -93,17 +93,18 @@ class ApplyLeaveViewModel @Inject constructor(
         val typeId = state.leaveTypeId
         val start = state.startDate
         val end = state.endDate
-        val missing = buildMap {
-            if (typeId == null) put("leaveTypeId", "Choose a leave type")
-            if (start == null) put("startDate", "Choose a start date")
-            if (end == null) put("endDate", "Choose an end date")
+        val missing = buildSet {
+            if (typeId == null) add("leaveTypeId")
+            if (start == null) add("startDate")
+            if (end == null) add("endDate")
+            if (state.reason.isBlank()) add("reason")
         }
         if (missing.isNotEmpty() || typeId == null || start == null || end == null) {
             _uiState.update { it.copy(fieldErrors = missing) }
             return
         }
 
-        _uiState.update { it.copy(isSubmitting = true, fieldErrors = emptyMap()) }
+        _uiState.update { it.copy(isSubmitting = true, fieldErrors = emptySet()) }
         viewModelScope.launch {
             val result = applyLeave(
                 LeaveApplication(
@@ -120,10 +121,11 @@ class ApplyLeaveViewModel @Inject constructor(
                 is AppResult.Failure -> {
                     _uiState.update {
                         it.copy(
-                            fieldErrors = (result.error as? AppError.Validation)?.fieldErrors.orEmpty(),
+                            fieldErrors = (result.error as? AppError.Validation)
+                                ?.fieldErrors?.keys.orEmpty(),
                         )
                     }
-                    _effects.send(ApplyLeaveEffect.Message(result.error.userMessage()))
+                    _effects.send(ApplyLeaveEffect.Failed(result.error))
                 }
             }
             _uiState.update { it.copy(isSubmitting = false) }

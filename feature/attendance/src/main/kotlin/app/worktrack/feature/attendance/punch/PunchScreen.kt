@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,7 +37,10 @@ import app.worktrack.core.designsystem.component.StatusChip
 import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtSecondaryButton
 import app.worktrack.core.designsystem.component.WtTopBar
+import app.worktrack.core.designsystem.l10n.localizedDigits
+import app.worktrack.core.designsystem.l10n.localizedMessage
 import app.worktrack.core.model.PunchType
+import app.worktrack.feature.attendance.R
 
 @Composable
 fun PunchRoute(
@@ -70,20 +74,24 @@ fun PunchRoute(
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is PunchEffect.Message -> snackbarHostState.showSnackbar(effect.text)
+                is PunchEffect.Failed ->
+                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
+
                 is PunchEffect.PunchRecorded -> snackbarHostState.showSnackbar(
-                    if (effect.type == PunchType.IN) {
-                        "Clocked in — will sync automatically"
-                    } else {
-                        "Clocked out — will sync automatically"
-                    },
+                    context.getString(
+                        if (effect.type == PunchType.IN) {
+                            R.string.att_punch_in_recorded
+                        } else {
+                            R.string.att_punch_out_recorded
+                        },
+                    ),
                 )
             }
         }
     }
 
     Scaffold(
-        topBar = { WtTopBar(title = "Attendance punch", onBack = onBack) },
+        topBar = { WtTopBar(title = stringResource(R.string.att_punch_title), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         PunchScreen(
@@ -120,7 +128,7 @@ internal fun PunchScreen(
         Spacer(Modifier.height(32.dp))
 
         WtPrimaryButton(
-            text = if (clockedIn) "Clock out" else "Clock in",
+            text = stringResource(if (clockedIn) R.string.att_clock_out else R.string.att_clock_in),
             onClick = onPunch,
             modifier = Modifier.fillMaxWidth(),
             enabled = state.location is LocationUiState.Ready,
@@ -130,7 +138,7 @@ internal fun PunchScreen(
         Spacer(Modifier.height(16.dp))
 
         WtSecondaryButton(
-            text = "Scan kiosk QR instead",
+            text = stringResource(R.string.att_scan_qr),
             onClick = onScanQr,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -149,30 +157,53 @@ private fun LocationStatusCard(
         ) {
             when (location) {
                 LocationUiState.PermissionRequired -> {
-                    Text("Location permission needed", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = stringResource(R.string.att_location_permission_needed),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
 
                 LocationUiState.Acquiring -> {
-                    Text("Getting your location…", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = stringResource(R.string.att_getting_location),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
 
                 is LocationUiState.Ready -> {
                     val evaluation = location.evaluation
                     when {
-                        !evaluation.fencesConfigured -> StatusChip("No geofence required", ChipTone.NEUTRAL)
+                        !evaluation.fencesConfigured -> StatusChip(
+                            stringResource(R.string.att_no_geofence),
+                            ChipTone.NEUTRAL,
+                        )
+
                         evaluation.insideFence -> StatusChip(
-                            "Inside ${evaluation.nearestFence?.name ?: "work area"}",
+                            stringResource(
+                                R.string.att_inside_fence,
+                                evaluation.nearestFence?.name.orEmpty(),
+                            ),
                             ChipTone.POSITIVE,
                         )
 
                         else -> StatusChip(
-                            "Outside work area (${evaluation.distanceMeters?.toInt() ?: "?"} m away)",
+                            localizedDigits(
+                                stringResource(
+                                    R.string.att_outside_fence,
+                                    (evaluation.distanceMeters?.toInt() ?: 0).toString(),
+                                ),
+                            ),
                             ChipTone.NEGATIVE,
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Accuracy ±${location.location.accuracyMeters.toInt()} m",
+                        text = localizedDigits(
+                            stringResource(
+                                R.string.att_accuracy,
+                                location.location.accuracyMeters.toInt().toString(),
+                            ),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -180,12 +211,23 @@ private fun LocationStatusCard(
 
                 is LocationUiState.Unavailable -> {
                     Text(
-                        text = location.reason,
+                        text = stringResource(
+                            when (location.reason) {
+                                LocationUnavailableReason.PERMISSION_DENIED ->
+                                    R.string.att_loc_unavailable_permission
+
+                                LocationUnavailableReason.NO_FIX ->
+                                    R.string.att_loc_unavailable_no_fix
+                            },
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
                     Spacer(Modifier.height(8.dp))
-                    WtSecondaryButton(text = "Retry", onClick = onRetry)
+                    WtSecondaryButton(
+                        text = stringResource(app.worktrack.core.designsystem.R.string.ds_retry),
+                        onClick = onRetry,
+                    )
                 }
             }
             Spacer(Modifier.height(8.dp))

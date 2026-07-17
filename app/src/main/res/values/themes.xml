@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose owns all theming; this is only the pre-Compose window frame. -->
-    <style name="Theme.WorkTrack" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- AppCompat parent enables per-app locale switching (Dari/Pashto/English)
+         via AppCompatDelegate; Compose owns all visual theming. -->
+    <style name="Theme.WorkTrack" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

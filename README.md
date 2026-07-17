@@ -1,9 +1,17 @@
 # WorkTrack — Smart Workforce & Attendance Management
 
-WorkTrack is a multi-tenant Workforce Management Platform (HRMS): attendance with GPS
-geofencing and kiosk QR check-in, shift scheduling, leave management with approval
-chains, payroll, announcements, analytics, and enterprise-grade security — designed
-for organizations from small teams to 100,000+ employees.
+**ورک‌ترک — مدیریت هوشمند نیروی کار برای افغانستان.** پلتفرم به زبان‌های **دری**
+(پیش‌فرض) و **پښتو** و انگلیسی است؛ تاریخ‌ها و دوره‌های معاش بر اساس تقویم
+**هجری شمسی** با نام ماه‌های افغانستان (حمل، ثور، جوزا…) نمایش داده می‌شود و رخصتی
+هفته‌وار روز جمعه است.
+
+WorkTrack is a multi-tenant Workforce Management Platform (HRMS) **built for
+Afghanistan**: attendance with GPS geofencing and kiosk QR check-in, shift
+scheduling, leave management with approval chains, payroll, announcements,
+analytics, and enterprise-grade security — designed for organizations from small
+teams to 100,000+ employees. Dari is the default language (full Pashto and English
+translations, RTL-first UI), and all dates/payroll periods use the Solar Hijri
+calendar — see `docs/10-localization-afghanistan.md`.
 
 ## Repository layout
 
@@ -26,6 +34,7 @@ for organizations from small teams to 100,000+ employees.
 8. [Security architecture](docs/07-security-architecture.md)
 9. [Offline-first sync strategy](docs/08-sync-strategy.md)
 10. [Development roadmap](docs/09-roadmap.md)
+11. [Afghanistan localization (دری/پښتو, Solar Hijri)](docs/10-localization-afghanistan.md)
 
 ## Android app
 

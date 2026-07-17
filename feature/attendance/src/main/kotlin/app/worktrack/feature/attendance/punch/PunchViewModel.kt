@@ -5,8 +5,8 @@ import androidx.annotation.RequiresPermission
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.worktrack.core.common.result.AppError
 import app.worktrack.core.common.result.AppResult
-import app.worktrack.core.common.result.userMessage
 import app.worktrack.core.domain.usecase.attendance.EvaluateGeofenceUseCase
 import app.worktrack.core.domain.usecase.attendance.GeofenceEvaluation
 import app.worktrack.core.domain.usecase.attendance.ObserveTodayAttendanceUseCase
@@ -29,6 +29,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class LocationUnavailableReason { PERMISSION_DENIED, NO_FIX }
+
 sealed interface LocationUiState {
     data object PermissionRequired : LocationUiState
     data object Acquiring : LocationUiState
@@ -37,7 +39,7 @@ sealed interface LocationUiState {
         val evaluation: GeofenceEvaluation,
     ) : LocationUiState
 
-    data class Unavailable(val reason: String) : LocationUiState
+    data class Unavailable(val reason: LocationUnavailableReason) : LocationUiState
 }
 
 data class PunchUiState(
@@ -46,7 +48,8 @@ data class PunchUiState(
 )
 
 sealed interface PunchEffect {
-    data class Message(val text: String) : PunchEffect
+    /** Localized by the UI via AppError.localizedMessage(). */
+    data class Failed(val error: AppError) : PunchEffect
     data class PunchRecorded(val type: PunchType) : PunchEffect
 }
 
@@ -95,9 +98,7 @@ class PunchViewModel @Inject constructor(
             if (location == null) {
                 _uiState.update {
                     it.copy(
-                        location = LocationUiState.Unavailable(
-                            "Couldn't get a GPS fix. Move somewhere with a clearer view of the sky and retry.",
-                        ),
+                        location = LocationUiState.Unavailable(LocationUnavailableReason.NO_FIX),
                     )
                 }
             } else {
@@ -111,9 +112,7 @@ class PunchViewModel @Inject constructor(
     fun onLocationPermissionDenied() {
         _uiState.update {
             it.copy(
-                location = LocationUiState.Unavailable(
-                    "Location permission is required for GPS punch. Use kiosk QR instead.",
-                ),
+                location = LocationUiState.Unavailable(LocationUnavailableReason.PERMISSION_DENIED),
             )
         }
     }
@@ -158,7 +157,7 @@ class PunchViewModel @Inject constructor(
                     _effects.send(PunchEffect.PunchRecorded(command.type))
 
                 is AppResult.Failure ->
-                    _effects.send(PunchEffect.Message(result.error.userMessage()))
+                    _effects.send(PunchEffect.Failed(result.error))
             }
             _uiState.update { it.copy(isPunching = false) }
         }

@@ -22,15 +22,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.worktrack.core.designsystem.component.EmptyState
+import app.worktrack.core.designsystem.l10n.formatShamsiMonthYear
+import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.model.Payslip
-import java.time.Month
-import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun PayslipsRoute(
@@ -47,24 +47,33 @@ fun PayslipsRoute(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = viewModel::onPreviousYear) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous year")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = stringResource(R.string.pay_prev_year),
+                )
             }
             Text(
-                text = state.year.toString(),
+                text = localizedDigits(state.year.toString()),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
             IconButton(onClick = viewModel::onNextYear, enabled = state.canGoForward) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next year")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = stringResource(R.string.pay_next_year),
+                )
             }
         }
 
         if (state.payslips.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.ReceiptLong,
-                title = "No payslips for ${state.year}",
-                message = "Payslips appear here once payroll is finalized.",
+                title = stringResource(
+                    R.string.pay_no_payslips_title,
+                    localizedDigits(state.year.toString()),
+                ),
+                message = stringResource(R.string.pay_no_payslips_msg),
             )
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -90,20 +99,28 @@ private fun PayslipCard(payslip: Payslip, onClick: () -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "${
-                        Month.of(payslip.periodMonth).getDisplayName(TextStyle.FULL, Locale.getDefault())
-                    } ${payslip.periodYear}",
+                    // Payroll periods are Solar Hijri months (e.g. "سرطان ۱۴۰۵").
+                    text = formatShamsiMonthYear(payslip.periodYear, payslip.periodMonth),
                     style = MaterialTheme.typography.titleSmall,
                 )
+                val worked = localizedDigits(
+                    stringResource(R.string.pay_worked_days, "%.1f".format(payslip.workedDays)),
+                )
+                val lop = if (payslip.lopDays > 0) {
+                    " · " + localizedDigits(
+                        stringResource(R.string.pay_lop_days, "%.1f".format(payslip.lopDays)),
+                    )
+                } else {
+                    ""
+                }
                 Text(
-                    text = "Worked %.1f days".format(payslip.workedDays) +
-                        if (payslip.lopDays > 0) " · LOP %.1f".format(payslip.lopDays) else "",
+                    text = worked + lop,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
-                text = "${payslip.currency} ${"%,.2f".format(payslip.net)}",
+                text = localizedDigits("${payslip.currency} ${"%,.2f".format(payslip.net)}"),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )

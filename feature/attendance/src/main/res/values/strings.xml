@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="att_punch_title">ثبت حاضری</string>
+    <string name="att_location_permission_needed">برای حاضری GPS اجازهٔ موقعیت لازم است</string>
+    <string name="att_getting_location">در حال دریافت موقعیت شما…</string>
+    <string name="att_no_geofence">محدودهٔ کاری تعریف نشده — از هر جا می‌توانید حاضری بزنید</string>
+    <string name="att_inside_fence">داخل %1$s</string>
+    <string name="att_outside_fence">خارج از ساحهٔ کاری (%1$s متر فاصله)</string>
+    <string name="att_accuracy">دقت ±%1$s متر</string>
+    <string name="att_scan_qr">اسکن QR کیوسک</string>
+    <string name="att_clock_in">ثبت ورود</string>
+    <string name="att_clock_out">ثبت خروج</string>
+    <string name="att_punch_in_recorded">ورود ثبت شد — به صورت خودکار همگام می‌شود</string>
+    <string name="att_punch_out_recorded">خروج ثبت شد — به صورت خودکار همگام می‌شود</string>
+    <string name="att_loc_unavailable_permission">بدون اجازهٔ موقعیت، حاضری GPS ممکن نیست. از QR کیوسک استفاده کنید.</string>
+    <string name="att_loc_unavailable_no_fix">موقعیت GPS دریافت نشد. به جای بازتر بروید و دوباره تلاش کنید.</string>
+
+    <string name="att_qr_title">اسکن QR کیوسک</string>
+    <string name="att_qr_camera_permission_title">اجازهٔ کمره لازم است</string>
+    <string name="att_qr_camera_permission_msg">برای اسکن کود QR کیوسک، اجازهٔ کمره را بدهید.</string>
+    <string name="att_qr_hint">کمره را به سوی صفحهٔ کیوسک بگیرید</string>
+
+    <string name="att_history_title">تاریخچهٔ حاضری</string>
+    <string name="att_history_empty_title">ریکاردی نیست</string>
+    <string name="att_history_empty_msg">حاضری این ماه بعد از اولین همگام‌سازی نمایش داده می‌شود.</string>
+    <string name="att_prev_month">ماه قبلی</string>
+    <string name="att_next_month">ماه بعدی</string>
+    <string name="att_worked_short">کارکرد %1$s ساعت %2$s دقیقه</string>
+    <string name="att_overtime_short">اضافه‌کاری %1$s دقیقه</string>
+    <string name="att_late_by">%1$s دقیقه ناوقت</string>
+
+    <string name="att_status_present">حاضر</string>
+    <string name="att_status_absent">غیرحاضر</string>
+    <string name="att_status_half_day">نیم روز</string>
+    <string name="att_status_leave">رخصتی</string>
+    <string name="att_status_holiday">رخصتی عمومی</string>
+    <string name="att_status_week_off">رخصتی هفته‌وار</string>
+    <string name="att_status_pending">در انتظار</string>
+</resources>

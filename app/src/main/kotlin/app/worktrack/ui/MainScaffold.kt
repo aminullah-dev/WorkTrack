@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import app.worktrack.R
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -38,16 +40,16 @@ import app.worktrack.feature.profile.navigation.profileScreen
 
 private data class TopLevelDestination(
     val route: String,
-    val label: String,
+    val labelRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 )
 
 private val topLevelDestinations = listOf(
-    TopLevelDestination(DASHBOARD_ROUTE, "Home", Icons.Filled.Home, Icons.Outlined.Home),
-    TopLevelDestination(PUNCH_ROUTE, "Attendance", Icons.Filled.Fingerprint, Icons.Outlined.Fingerprint),
-    TopLevelDestination(LEAVE_ROUTE, "Leave", Icons.Filled.BeachAccess, Icons.Outlined.BeachAccess),
-    TopLevelDestination(PROFILE_ROUTE, "Profile", Icons.Filled.Person, Icons.Outlined.Person),
+    TopLevelDestination(DASHBOARD_ROUTE, R.string.nav_home, Icons.Filled.Home, Icons.Outlined.Home),
+    TopLevelDestination(PUNCH_ROUTE, R.string.nav_attendance, Icons.Filled.Fingerprint, Icons.Outlined.Fingerprint),
+    TopLevelDestination(LEAVE_ROUTE, R.string.nav_leave, Icons.Filled.BeachAccess, Icons.Outlined.BeachAccess),
+    TopLevelDestination(PROFILE_ROUTE, R.string.nav_profile, Icons.Filled.Person, Icons.Outlined.Person),
 )
 
 @Composable
@@ -66,6 +68,7 @@ fun MainScaffold() {
                         val selected = currentDestination
                             ?.hierarchy
                             ?.any { it.route == destination.route } == true
+                        val label = stringResource(destination.labelRes)
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
@@ -84,10 +87,10 @@ fun MainScaffold() {
                                     } else {
                                         destination.unselectedIcon
                                     },
-                                    contentDescription = destination.label,
+                                    contentDescription = label,
                                 )
                             },
-                            label = { Text(destination.label) },
+                            label = { Text(label) },
                         )
                     }
                 }

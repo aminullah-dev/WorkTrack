@@ -3,6 +3,7 @@ package app.worktrack.feature.payslips
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.worktrack.core.common.time.SolarHijri
 import app.worktrack.core.common.time.TimeProvider
 import app.worktrack.core.domain.repository.PayslipRepository
 import app.worktrack.core.domain.usecase.payslip.ObservePayslipsUseCase
@@ -16,6 +17,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * Payroll periods are **Solar Hijri** months/years for Afghan tenants:
+ * periodYear/periodMonth on payslips carry Shamsi values (e.g. 1405/4 = Saratan).
+ */
 data class PayslipsUiState(
     val year: Int,
     val payslips: List<Payslip> = emptyList(),
@@ -30,8 +35,10 @@ class PayslipsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
+    private fun currentShamsiYear(): Int = SolarHijri.today(timeProvider).year
+
     private val year: StateFlow<Int> =
-        savedStateHandle.getStateFlow(KEY_YEAR, timeProvider.today().year)
+        savedStateHandle.getStateFlow(KEY_YEAR, currentShamsiYear())
 
     val uiState: StateFlow<PayslipsUiState> = year
         .flatMapLatest { selected -> observePayslips(selected) }
@@ -39,7 +46,7 @@ class PayslipsViewModel @Inject constructor(
             PayslipsUiState(
                 year = selected,
                 payslips = slips,
-                canGoForward = selected < timeProvider.today().year,
+                canGoForward = selected < currentShamsiYear(),
             )
         }
         .stateIn(
@@ -59,7 +66,7 @@ class PayslipsViewModel @Inject constructor(
 
     private fun shiftYear(delta: Int) {
         val target = year.value + delta
-        if (target > timeProvider.today().year) return
+        if (target > currentShamsiYear()) return
         savedStateHandle[KEY_YEAR] = target
         viewModelScope.launch { payslipRepository.refresh(target) }
     }
