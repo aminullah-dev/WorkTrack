@@ -1,0 +1,88 @@
+package app.worktrack.core.designsystem.theme
+
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+
+private val LightColors = lightColorScheme(
+    primary = Teal40,
+    onPrimary = Slate99,
+    primaryContainer = Teal90,
+    onPrimaryContainer = Teal10,
+    secondary = Slate30,
+    onSecondary = Slate99,
+    secondaryContainer = Slate90,
+    onSecondaryContainer = Slate10,
+    tertiary = Amber40,
+    onTertiary = Slate99,
+    tertiaryContainer = Amber90,
+    onTertiaryContainer = Amber10,
+    error = Red40,
+    onError = Slate99,
+    errorContainer = Red90,
+    onErrorContainer = Red10,
+    background = Slate99,
+    onBackground = Slate10,
+    surface = Slate99,
+    onSurface = Slate10,
+    surfaceVariant = Slate95,
+    onSurfaceVariant = Slate30,
+    outline = Slate30,
+)
+
+private val DarkColors = darkColorScheme(
+    primary = Teal80,
+    onPrimary = Teal20,
+    primaryContainer = Teal30,
+    onPrimaryContainer = Teal90,
+    secondary = Slate80,
+    onSecondary = Slate20,
+    secondaryContainer = Slate30,
+    onSecondaryContainer = Slate90,
+    tertiary = Amber80,
+    onTertiary = Amber20,
+    tertiaryContainer = Amber30,
+    onTertiaryContainer = Amber90,
+    error = Red80,
+    onError = Red20,
+    errorContainer = Red30,
+    onErrorContainer = Red90,
+    background = Slate10,
+    onBackground = Slate90,
+    surface = Slate10,
+    onSurface = Slate90,
+    surfaceVariant = Slate30,
+    onSurfaceVariant = Slate80,
+    outline = Slate80,
+)
+
+@Composable
+fun WorkTrackTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Brand colors by default: a workforce app should look identical across the
+    // fleet; dynamic color is an opt-in for personal devices.
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = WorkTrackTypography,
+        content = content,
+    )
+}
