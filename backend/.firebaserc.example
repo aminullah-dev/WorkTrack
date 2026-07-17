@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "worktrack-dev",
+    "prod": "worktrack-prod"
+  }
+}
