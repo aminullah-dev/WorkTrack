@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { LOCALES } from "../i18n/strings";
+import { ThemeToggle } from "./ThemeProvider";
 
 export function Layout() {
   const { me, signOut } = useAuth();
@@ -77,6 +78,7 @@ export function Layout() {
               <IconBuilding />
               {me?.companyName}
             </span>
+            <ThemeToggle />
           </div>
         </div>
         <div className="main-inner">

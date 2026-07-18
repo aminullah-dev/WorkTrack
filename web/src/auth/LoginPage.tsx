@@ -4,6 +4,7 @@ import { NoManagerAccessError, useAuth } from "./AuthProvider";
 import { ApiError, signupCompany } from "../api/client";
 import { useI18n } from "../i18n/LocaleProvider";
 import { LOCALES } from "../i18n/strings";
+import { ThemeToggle } from "../ui/ThemeProvider";
 
 type Mode = "login" | "signup";
 
@@ -52,6 +53,9 @@ export function LoginPage() {
 
   return (
     <div className="auth">
+      <div className="auth-toolbar">
+        <ThemeToggle />
+      </div>
       <aside className="auth-hero">
         <div className="auth-hero-inner">
           <div className="auth-brand">

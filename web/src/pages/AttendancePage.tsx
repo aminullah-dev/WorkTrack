@@ -141,7 +141,7 @@ function RegularizationApprovals() {
     <section className="card" style={{ marginBottom: 20, padding: 0 }}>
       <h2 style={{ margin: 0, padding: "16px 20px", fontSize: 16 }}>
         {t("reg_pending")}{" "}
-        <span className="chip chip-warning" style={{ marginInlineStart: 8 }}>
+        <span className="chip chip-warning chip-count" style={{ marginInlineStart: 8 }}>
           {num(rows.length)}
         </span>
       </h2>

@@ -18,6 +18,8 @@ const fa: Dict = {
   brand_tagline: "سامانه منابع بشری",
 
   nav_menu: "منو",
+  theme_to_dark: "حالت تاریک",
+  theme_to_light: "حالت روشن",
   nav_dashboard: "داشبورد",
   nav_employees: "کارمندان",
   nav_attendance: "حاضری",
@@ -177,6 +179,8 @@ const ps: Dict = {
   brand_tagline: "د بشري منابعو سیسټم",
 
   nav_menu: "مینو",
+  theme_to_dark: "تیاره حالت",
+  theme_to_light: "روښانه حالت",
   nav_dashboard: "ډشبورډ",
   nav_employees: "کارکوونکي",
   nav_attendance: "حاضري",
@@ -336,6 +340,8 @@ const en: Dict = {
   brand_tagline: "HR platform",
 
   nav_menu: "Menu",
+  theme_to_dark: "Dark mode",
+  theme_to_light: "Light mode",
   nav_dashboard: "Dashboard",
   nav_employees: "Employees",
   nav_attendance: "Attendance",
