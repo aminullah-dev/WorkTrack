@@ -1,11 +1,21 @@
 // Solar Hijri (هجری شمسی) <-> Gregorian conversion — the TypeScript port of the
 // Android app's core:common/time/SolarHijri.kt (jalaali break-year algorithm).
 // The business calendar of WorkTrack is Solar Hijri; storage/API stay ISO.
+//
+// IMPORTANT: this algorithm requires integer division that truncates toward
+// ZERO (like Kotlin's Int `/`), NOT Math.floor — for negative operands (e.g.
+// Gregorian months before August, gm-8 < 0) the two disagree and every derived
+// date is wrong. Use div() below, never Math.floor, for the integer divisions.
 
 export interface ShamsiDate {
   year: number;
   month: number; // 1..12, 1 = Hamal/حمل
   day: number;
+}
+
+/** Integer division truncating toward zero (matches Kotlin Int `/`). */
+function div(a: number, b: number): number {
+  return Math.trunc(a / b);
 }
 
 const BREAKS = [
@@ -29,18 +39,18 @@ function jalCal(jy: number): JalCal {
     const jm = BREAKS[i];
     jump = jm - jp;
     if (jy < jm) break;
-    leapJ += Math.floor(jump / 33) * 8 + Math.floor((jump % 33) / 4);
+    leapJ += div(jump, 33) * 8 + div(jump % 33, 4);
     jp = jm;
   }
   let n = jy - jp;
 
-  leapJ += Math.floor(n / 33) * 8 + Math.floor(((n % 33) + 3) / 4);
+  leapJ += div(n, 33) * 8 + div((n % 33) + 3, 4);
   if (jump % 33 === 4 && jump - n === 4) leapJ += 1;
 
-  const leapG = Math.floor(gy / 4) - Math.floor((Math.floor(gy / 100) + 1) * 3 / 4) - 150;
+  const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150;
   const march = 20 + leapJ - leapG;
 
-  if (jump - n < 6) n = n - jump + Math.floor((jump + 4) / 33) * 33;
+  if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33;
   let leap = (((n + 1) % 33) - 1) % 4;
   if (leap === -1) leap = 4;
 
@@ -49,27 +59,27 @@ function jalCal(jy: number): JalCal {
 
 function g2d(gy: number, gm: number, gd: number): number {
   let d =
-    Math.floor((gy + Math.floor((gm - 8) / 6) + 100100) * 1461 / 4) +
-    Math.floor((153 * ((gm + 9) % 12) + 2) / 5) +
+    div((gy + div(gm - 8, 6) + 100100) * 1461, 4) +
+    div(153 * ((gm + 9) % 12) + 2, 5) +
     gd -
     34840408;
-  d = d - Math.floor((Math.floor((gy + 100100 + Math.floor((gm - 8) / 6)) / 100) * 3) / 4) + 752;
+  d = d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752;
   return d;
 }
 
 function d2g(jdn: number): { gy: number; gm: number; gd: number } {
   let j = 4 * jdn + 139361631;
-  j += Math.floor((Math.floor((4 * jdn + 183187720) / 146097) * 3) / 4) * 4 - 3908;
-  const i = Math.floor((j % 1461) / 4) * 5 + 308;
-  const gd = Math.floor((i % 153) / 5) + 1;
-  const gm = (Math.floor(i / 153) % 12) + 1;
-  const gy = Math.floor(j / 1461) - 100100 + Math.floor((8 - gm) / 6);
+  j += div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
+  const i = div(j % 1461, 4) * 5 + 308;
+  const gd = div(i % 153, 5) + 1;
+  const gm = (div(i, 153) % 12) + 1;
+  const gy = div(j, 1461) - 100100 + div(8 - gm, 6);
   return { gy, gm, gd };
 }
 
 function j2d(jy: number, jm: number, jd: number): number {
   const r = jalCal(jy);
-  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - Math.floor(jm / 7) * (jm - 7) + jd - 1;
+  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
 }
 
 function d2j(jdn: number): ShamsiDate {
@@ -81,7 +91,7 @@ function d2j(jdn: number): ShamsiDate {
 
   if (k >= 0) {
     if (k <= 185) {
-      return { year: jy, month: 1 + Math.floor(k / 31), day: (k % 31) + 1 };
+      return { year: jy, month: 1 + div(k, 31), day: (k % 31) + 1 };
     }
     k -= 186;
   } else {
@@ -89,7 +99,7 @@ function d2j(jdn: number): ShamsiDate {
     k += 179;
     if (r.leap === 1) k += 1;
   }
-  return { year: jy, month: 7 + Math.floor(k / 30), day: (k % 30) + 1 };
+  return { year: jy, month: 7 + div(k, 30), day: (k % 30) + 1 };
 }
 
 /** Parses an ISO date (YYYY-MM-DD) into its Solar Hijri equivalent. */
