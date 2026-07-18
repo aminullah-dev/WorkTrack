@@ -115,21 +115,93 @@ const IcTrend = () => (
   <Ic><path d="M4 16l5-5 3 3 7-7" /><path d="M14 7h5v5" /></Ic>
 );
 
+/**
+ * Smooth area/line trend — a tasteful borrow from the reference designs, kept
+ * high-contrast. Fixed viewBox scales responsively; non-scaling strokes stay
+ * crisp. Rendered left→right (time increasing), the convention even in RTL.
+ */
 function Trend({ points }: { points: { present: number; cap: string; isToday: boolean }[] }) {
-  const max = Math.max(1, ...points.map((p) => p.present));
   const { num } = useI18n();
+  const W = 720;
+  const H = 200;
+  const padX = 18;
+  const padTop = 30;
+  const padBottom = 14;
+  const max = Math.max(1, ...points.map((p) => p.present));
+  const n = points.length;
+
+  const xy = points.map((p, i) => {
+    const x = n === 1 ? W / 2 : padX + (i / (n - 1)) * (W - 2 * padX);
+    const y = padTop + (1 - p.present / max) * (H - padTop - padBottom);
+    return [x, y] as const;
+  });
+  const line = smoothPath(xy);
+  const area = `${line} L ${xy[n - 1][0]},${H - padBottom} L ${xy[0][0]},${H - padBottom} Z`;
+  const today = points.findIndex((p) => p.isToday);
+  const todayPt = today >= 0 ? xy[today] : null;
+
   return (
-    <div className="trend">
-      {points.map((p, i) => (
-        <div className="trend-bar" key={i} title={String(p.present)}>
-          <span className="cap">{num(p.present)}</span>
-          <div
-            className={`bar${p.isToday ? " today" : ""}`}
-            style={{ height: `${(p.present / max) * 100}%` }}
+    <>
+      <svg className="linechart" viewBox={`0 0 ${W} ${H}`} role="img">
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line
+            key={f}
+            x1={padX}
+            x2={W - padX}
+            y1={padTop + f * (H - padTop - padBottom)}
+            y2={padTop + f * (H - padTop - padBottom)}
+            className="grid"
+            vectorEffect="non-scaling-stroke"
           />
-          <span className="cap">{p.cap}</span>
-        </div>
-      ))}
-    </div>
+        ))}
+        <path d={area} fill="url(#trendFill)" />
+        <path d={line} className="stroke" fill="none" vectorEffect="non-scaling-stroke" />
+        {xy.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={points[i].isToday ? 5 : 3.5} className="dot" />
+        ))}
+        {todayPt && (
+          <g>
+            <line x1={todayPt[0]} x2={todayPt[0]} y1={todayPt[1]} y2={H - padBottom} className="marker" />
+            <g transform={`translate(${todayPt[0]}, 16)`}>
+              <rect x={-20} y={-13} width={40} height={22} rx={11} className="bubble" />
+              <text x={0} y={2} className="bubble-txt">
+                {num(points[today].present)}
+              </text>
+            </g>
+          </g>
+        )}
+      </svg>
+      <div className="linechart-caps">
+        {points.map((p, i) => (
+          <span key={i} className={p.isToday ? "cap today" : "cap"}>
+            {p.cap}
+          </span>
+        ))}
+      </div>
+    </>
   );
+}
+
+/** Catmull-Rom → cubic Bézier for a smooth curve through the points. */
+function smoothPath(pts: readonly (readonly [number, number])[]): string {
+  if (pts.length < 2) return pts.length ? `M ${pts[0][0]},${pts[0][1]}` : "";
+  let d = `M ${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  return d;
 }
