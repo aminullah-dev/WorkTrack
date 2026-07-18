@@ -30,5 +30,6 @@ class Converters {
     fun localTimeToInt(value: LocalTime?): Int? = value?.toSecondOfDay()
 
     @TypeConverter
-    fun intToLocalTime(value: Int?): LocalTime? = value?.let(LocalTime::ofSecondOfDay)
+    // ofSecondOfDay takes a Long; Kotlin won't widen Int automatically.
+    fun intToLocalTime(value: Int?): LocalTime? = value?.let { LocalTime.ofSecondOfDay(it.toLong()) }
 }
