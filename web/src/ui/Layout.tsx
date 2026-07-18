@@ -33,6 +33,12 @@ export function Layout() {
       label: t("nav_payroll"),
       show: can("payroll:read") && features.payroll,
     },
+    {
+      to: "/kiosk",
+      icon: <IconQr />,
+      label: t("nav_kiosk"),
+      show: can("kiosk:issue") && features.qrKiosk,
+    },
     { to: "/settings", icon: <IconGear />, label: t("nav_settings"), show: can("settings:write") },
   ];
 
@@ -144,6 +150,9 @@ const IconCalendar = () => (
 );
 const IconGear = () => (
   <Svg><circle cx="12" cy="12" r="3.2" /><path d="M12 3.5v2M12 18.5v2M4.6 7.5l1.7 1M17.7 15.5l1.7 1M4.6 16.5l1.7-1M17.7 8.5l1.7-1" /></Svg>
+);
+const IconQr = () => (
+  <Svg><rect x="3.5" y="3.5" width="6" height="6" rx="1" /><rect x="14.5" y="3.5" width="6" height="6" rx="1" /><rect x="3.5" y="14.5" width="6" height="6" rx="1" /><path d="M14.5 14.5h3v3M20.5 14.5v6M14.5 20.5h3" /></Svg>
 );
 const IconLogout = () => (
   <Svg><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8" /><path d="M17 15l4-3-4-3" /><path d="M21 12H10" /></Svg>

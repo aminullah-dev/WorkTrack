@@ -10,6 +10,7 @@ import { ShiftsPage } from "./pages/ShiftsPage";
 import { LeavePage } from "./pages/LeavePage";
 import { PayrollPage } from "./pages/PayrollPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { KioskPage } from "./pages/KioskPage";
 
 export function App() {
   const { status } = useAuth();
@@ -23,6 +24,8 @@ export function App() {
 
   return (
     <Routes>
+      {/* Kiosk mode runs full-screen, outside the portal chrome. */}
+      <Route path="/kiosk" element={<KioskPage />} />
       <Route element={<Layout />}>
         <Route index element={<DashboardPage />} />
         <Route path="employees" element={<EmployeesPage />} />

@@ -161,6 +161,22 @@ export function useAssignRoster() {
   });
 }
 
+// ----------------------------------------------------------------------- kiosk
+
+/** Current rotating kiosk token; refetched well before the 30s slot expires. */
+export function useKioskToken(kioskId?: string) {
+  return useQuery({
+    queryKey: ["kiosk-token", kioskId ?? "default"],
+    queryFn: () =>
+      api
+        .get<{ token: string; kioskId: string; rotateSeconds: number }>("/kiosk/token", { kioskId })
+        .then((e) => e.data),
+    refetchInterval: 20_000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+  });
+}
+
 // -------------------------------------------------------------------- settings
 
 export function useSettings() {

@@ -147,7 +147,13 @@ const fa: Dict = {
   reg_reject_prompt: "دلیل رد را بنویسید:",
 
   nav_shifts: "شیفت‌ها",
+  nav_kiosk: "کیوسک",
   nav_settings: "تنظیمات",
+
+  kiosk_title: "برای ثبت حاضری اسکن کنید",
+  kiosk_hint: "اپ WorkTrack را باز کنید و «اسکن QR کیوسک» را بزنید.",
+  kiosk_rotates: "کود هر ۳۰ ثانیه تازه می‌شود",
+  kiosk_exit: "خروج از حالت کیوسک",
 
   shift_title: "شیفت‌ها و روستر",
   shift_defs: "تعریف شیفت‌ها",
@@ -374,7 +380,13 @@ const ps: Dict = {
   reg_reject_prompt: "د رد دلیل ولیکئ:",
 
   nav_shifts: "شیفټونه",
+  nav_kiosk: "کیوسک",
   nav_settings: "تنظیمات",
+
+  kiosk_title: "د حاضرۍ لپاره سکن کړئ",
+  kiosk_hint: "د WorkTrack اپ پرانیزئ او «د کیوسک QR سکن» کېکاږئ.",
+  kiosk_rotates: "کوډ هرې ۳۰ ثانیې تازه کېږي",
+  kiosk_exit: "د کیوسک حالت پرېښودل",
 
   shift_title: "شیفټونه او روستر",
   shift_defs: "د شیفټونو تعریف",
@@ -601,7 +613,13 @@ const en: Dict = {
   reg_reject_prompt: "Enter the rejection reason:",
 
   nav_shifts: "Shifts",
+  nav_kiosk: "Kiosk",
   nav_settings: "Settings",
+
+  kiosk_title: "Scan to check in",
+  kiosk_hint: "Open the WorkTrack app and tap “Scan kiosk QR”.",
+  kiosk_rotates: "The code refreshes every 30 seconds",
+  kiosk_exit: "Exit kiosk mode",
 
   shift_title: "Shifts & roster",
   shift_defs: "Shift definitions",

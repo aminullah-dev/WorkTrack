@@ -13,6 +13,7 @@ import { payrollRouter } from "./routes/payroll";
 import { publicRouter } from "./routes/public";
 import { settingsRouter } from "./routes/settings";
 import { shiftsRouter } from "./routes/shifts";
+import { kioskRouter } from "./routes/kiosk";
 import { syncRouter } from "./routes/sync";
 
 /**
@@ -47,6 +48,7 @@ export function createApp(): express.Express {
   v1.use("/analytics", analyticsRouter);
   v1.use("/shifts", shiftsRouter);
   v1.use("/settings", settingsRouter);
+  v1.use("/kiosk", kioskRouter);
   v1.use("/sync", syncRouter);
   app.use("/v1", v1);
 

@@ -127,6 +127,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   "payroll:run": ["PAYROLL_ADMIN"],
   "rosters:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
   "rosters:write": ["HR_ADMIN", "BRANCH_MANAGER"],
+  "kiosk:issue": ["HR_ADMIN", "BRANCH_MANAGER"],
   // settings:write is intentionally empty — only COMPANY_ADMIN/SUPER_ADMIN (the
   // dedicated admin) may edit configuration, via the "*" bypass above.
   "settings:write": [],

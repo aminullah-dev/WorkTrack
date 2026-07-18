@@ -1177,6 +1177,85 @@ table.data tbody tr:hover {
   margin-block-start: 18px;
 }
 
+/* ---------- Kiosk mode ---------- */
+.kiosk {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  text-align: center;
+  background:
+    radial-gradient(900px 500px at 50% -10%, var(--brand-50), transparent 60%),
+    var(--bg);
+}
+.kiosk-exit {
+  position: absolute;
+  inset-block-start: 20px;
+  inset-inline-end: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.kiosk-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 26px;
+  font-weight: 800;
+}
+.kiosk-clock {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+.kiosk-qr {
+  display: grid;
+  place-items: center;
+  width: min(58vh, 380px);
+  height: min(58vh, 380px);
+  padding: 20px;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.kiosk-qr .qr-svg,
+.kiosk-qr .qr-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.kiosk-error {
+  color: var(--red);
+  font-weight: 600;
+}
+.kiosk-title {
+  margin: 8px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+}
+.kiosk-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+.kiosk-rotate {
+  margin: 4px 0 0;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
   .shell {
