@@ -21,6 +21,7 @@ calendar — see `docs/10-localization-afghanistan.md`.
 | `app/`, `core/`, `feature/` | Android app — Kotlin, Jetpack Compose (M3), MVVM + Clean Architecture, Hilt, Room, WorkManager, offline-first sync |
 | `build-logic/` | Gradle convention plugins shared by all modules |
 | `backend/` | Firebase backend — REST API v1 on Cloud Functions (TypeScript/Express), Firestore rules and indexes |
+| `web/` | Manager portal (web admin) — React + TypeScript + Vite, Dari/Pashto/English, Solar Hijri (see `web/README.md`) |
 
 ## Design documentation
 

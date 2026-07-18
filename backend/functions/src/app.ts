@@ -7,6 +7,8 @@ import { attendanceRouter } from "./routes/attendance";
 import { leaveRouter } from "./routes/leave";
 import { payslipsRouter } from "./routes/payslips";
 import { announcementsRouter } from "./routes/announcements";
+import { employeesRouter } from "./routes/employees";
+import { analyticsRouter } from "./routes/analytics";
 import { syncRouter } from "./routes/sync";
 
 /**
@@ -28,10 +30,12 @@ export function createApp(): express.Express {
   const v1 = express.Router();
   v1.use(requireAuth);
   v1.use("/me", meRouter);
+  v1.use("/employees", employeesRouter);
   v1.use("/attendance", attendanceRouter);
   v1.use("/leave", leaveRouter);
   v1.use("/payslips", payslipsRouter);
   v1.use("/announcements", announcementsRouter);
+  v1.use("/analytics", analyticsRouter);
   v1.use("/sync", syncRouter);
   app.use("/v1", v1);
 

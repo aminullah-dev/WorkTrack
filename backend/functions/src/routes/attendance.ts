@@ -37,6 +37,62 @@ attendanceRouter.post(
   }),
 );
 
+/**
+ * Manager live board: every employee's attendance status for one day, joined
+ * with employee name/branch. Branch managers are scoped to their branch(es).
+ */
+attendanceRouter.get(
+  "/overview",
+  requirePermission("attendance:read"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? ""))
+      ? String(req.query.date)
+      : new Date().toISOString().slice(0, 10);
+
+    const companyWide =
+      auth.roles.includes("COMPANY_ADMIN") ||
+      auth.roles.includes("HR_ADMIN") ||
+      auth.roles.includes("AUDITOR") ||
+      auth.roles.includes("SUPER_ADMIN");
+    const branchFilter =
+      (req.query.branchId ? String(req.query.branchId) : null) ??
+      (!companyWide ? auth.branchIds[0] ?? null : null);
+
+    let employeesQuery = tenant(auth.companyId, "employees").where("status", "==", "ACTIVE");
+    if (branchFilter) {
+      employeesQuery = employeesQuery.where("branchId", "==", branchFilter);
+    }
+    const [employeesSnap, daysSnap] = await Promise.all([
+      employeesQuery.limit(500).get(),
+      tenant(auth.companyId, "attendanceDays").where("date", "==", date).get(),
+    ]);
+
+    const dayByEmployee = new Map<string, Record<string, unknown>>();
+    for (const doc of daysSnap.docs) {
+      const day = doc.data() as { employeeId: string };
+      dayByEmployee.set(day.employeeId, day as Record<string, unknown>);
+    }
+
+    const rows = employeesSnap.docs.map((doc) => {
+      const emp = doc.data() as { firstName: string; lastName: string; branchId?: string | null };
+      const day = dayByEmployee.get(doc.id);
+      return {
+        employeeId: doc.id,
+        employeeName: `${emp.firstName} ${emp.lastName}`.trim(),
+        branchId: emp.branchId ?? null,
+        status: (day?.status as string | undefined) ?? "ABSENT",
+        firstInAt: toIso((day?.firstInAt as Timestamp | undefined) ?? null),
+        lastOutAt: toIso((day?.lastOutAt as Timestamp | undefined) ?? null),
+        workedMinutes: (day?.workedMinutes as number | undefined) ?? 0,
+        lateMinutes: (day?.lateMinutes as number | undefined) ?? 0,
+      };
+    });
+
+    res.json({ data: { date, rows } });
+  }),
+);
+
 /** Attendance day projections for a date window (self, or any employee with attendance:read). */
 attendanceRouter.get(
   "/days",

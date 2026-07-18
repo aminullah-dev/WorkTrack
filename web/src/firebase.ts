@@ -1,0 +1,13 @@
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+
+// Public web config — safe to ship in the client bundle. Access control is
+// enforced by the API (bearer token + RBAC), not by hiding these values.
+const firebaseApp = initializeApp({
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+});
+
+export const auth = getAuth(firebaseApp);
