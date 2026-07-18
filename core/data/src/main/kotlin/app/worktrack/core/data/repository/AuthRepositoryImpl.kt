@@ -1,14 +1,12 @@
 package app.worktrack.core.data.repository
 
-import app.worktrack.core.common.coroutines.DispatcherProvider
 import app.worktrack.core.common.result.AppError
 import app.worktrack.core.common.result.AppResult
 import app.worktrack.core.common.result.map
 import app.worktrack.core.common.result.onFailure
 import app.worktrack.core.common.result.onSuccess
 import app.worktrack.core.data.mapper.toSession
-import app.worktrack.core.database.WorkTrackDatabase
-import app.worktrack.core.database.clearAllTenantData
+import app.worktrack.core.database.DatabaseCleaner
 import app.worktrack.core.datastore.SessionStore
 import app.worktrack.core.domain.repository.AuthRepository
 import app.worktrack.core.model.UserSession
@@ -23,15 +21,15 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val api: WorkTrackApi,
     private val sessionStore: SessionStore,
-    private val database: WorkTrackDatabase,
-    private val dispatchers: DispatcherProvider,
+    // DatabaseCleaner (not WorkTrackDatabase) so this module needs no Room on
+    // its classpath; see DatabaseCleaner's doc for the rationale.
+    private val databaseCleaner: DatabaseCleaner,
 ) : AuthRepository {
 
     override val session: Flow<UserSession?> = sessionStore.session
@@ -79,10 +77,8 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signOut() {
         firebaseAuth.signOut()
         sessionStore.clear()
-        withContext(dispatchers.io) {
-            // Tenant data never survives a sign-out on shared devices.
-            database.clearAllTenantData()
-        }
+        // Tenant data never survives a sign-out on shared devices.
+        databaseCleaner.clearAllTenantData()
     }
 
     private fun invalidCredentials() = AppError.Business(
