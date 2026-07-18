@@ -16,6 +16,7 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -24,13 +25,18 @@ import kotlinx.coroutines.tasks.await
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
-    private val firebaseAuth: FirebaseAuth,
+    // Lazy so FirebaseAuth.getInstance() is NOT called while the Hilt graph is
+    // built at app launch. Without it, a missing/invalid google-services.json
+    // would crash the app on startup instead of failing only at sign-in.
+    private val firebaseAuthProvider: Lazy<FirebaseAuth>,
     private val api: WorkTrackApi,
     private val sessionStore: SessionStore,
     // DatabaseCleaner (not WorkTrackDatabase) so this module needs no Room on
     // its classpath; see DatabaseCleaner's doc for the rationale.
     private val databaseCleaner: DatabaseCleaner,
 ) : AuthRepository {
+
+    private val firebaseAuth: FirebaseAuth get() = firebaseAuthProvider.get()
 
     override val session: Flow<UserSession?> = sessionStore.session
 

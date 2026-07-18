@@ -66,10 +66,28 @@ Prerequisites: JDK 17+, Android SDK 35. The Gradle wrapper is pinned (8.9).
 ./gradlew test                       # JVM unit tests (domain/common)
 ```
 
-Firebase setup (one-time): create a Firebase project, enable Email/Password
-authentication, then place `google-services.json` in `app/` (the Google Services
-plugin is applied automatically when the file exists). Debug builds point the API
-at the local Functions emulator (`app/build.gradle.kts` → `API_BASE_URL`).
+### Firebase setup (required to run the app)
+
+The app authenticates with Firebase, so it needs a `google-services.json`. Without
+it the app still launches to the login screen, but sign-in fails. To wire it up:
+
+1. Create a Firebase project at <https://console.firebase.google.com>.
+2. Add Android app(s) to it. **The debug build's application id is
+   `app.worktrack.debug`** (the `.debug` suffix is added by the debug build type),
+   so register that package name to run debug builds. Add `app.worktrack` too for
+   release builds — both clients end up in the same `google-services.json`.
+3. Download `google-services.json` and put it in the **`app/`** directory
+   (`WorkTrack/app/google-services.json`). The Google Services Gradle plugin is
+   applied automatically when the file is present (see the bottom of
+   `app/build.gradle.kts`), which generates the default `FirebaseOptions` that
+   `FirebaseApp` initializes from at startup.
+4. In the Firebase console, enable **Authentication → Sign-in method →
+   Email/Password**.
+5. Rebuild and run.
+
+The file is git-ignored (it's per-environment config). Debug builds point the API
+at the local Functions emulator (`app/build.gradle.kts` → `API_BASE_URL`); run the
+backend emulator (see below) and provision a tenant to sign in end-to-end.
 
 ## Backend
 
