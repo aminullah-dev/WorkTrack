@@ -4,9 +4,18 @@ plugins {
 
 group = "app.worktrack.buildlogic"
 
+// Compatibility flags instead of a strict toolchain: any JDK 17+ (including the
+// IDE's bundled JBR) can build this, producing Java 17 bytecode. Uses .set()
+// (not the `=` assignment) because this file compiles under the embedded
+// kotlin-dsl compiler, where property-assignment operators aren't available.
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
