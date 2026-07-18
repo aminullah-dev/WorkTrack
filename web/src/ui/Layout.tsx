@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useAuth, useHasPermission } from "../auth/AuthProvider";
+import { useAuth, useFeatures, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { LOCALES } from "../i18n/strings";
 import { ThemeToggle } from "./ThemeProvider";
@@ -9,13 +9,31 @@ export function Layout() {
   const { me, signOut } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const can = useHasPermission();
+  const features = useFeatures();
 
   const navItems = [
     { to: "/", icon: <IconGrid />, label: t("nav_dashboard"), show: true, end: true },
     { to: "/employees", icon: <IconPeople />, label: t("nav_employees"), show: can("employees:read") },
     { to: "/attendance", icon: <IconClock />, label: t("nav_attendance"), show: can("attendance:read") },
-    { to: "/leave", icon: <IconPlane />, label: t("nav_leave"), show: can("leave:approve") },
-    { to: "/payroll", icon: <IconWallet />, label: t("nav_payroll"), show: can("payroll:read") },
+    {
+      to: "/shifts",
+      icon: <IconCalendar />,
+      label: t("nav_shifts"),
+      show: can("rosters:read") && features.shifts,
+    },
+    {
+      to: "/leave",
+      icon: <IconPlane />,
+      label: t("nav_leave"),
+      show: can("leave:approve") && features.leave,
+    },
+    {
+      to: "/payroll",
+      icon: <IconWallet />,
+      label: t("nav_payroll"),
+      show: can("payroll:read") && features.payroll,
+    },
+    { to: "/settings", icon: <IconGear />, label: t("nav_settings"), show: can("settings:write") },
   ];
 
   return (
@@ -120,6 +138,12 @@ const IconPlane = () => (
 );
 const IconWallet = () => (
   <Svg><rect x="3" y="6" width="18" height="13" rx="2.5" /><path d="M3 9h18" /><circle cx="16.5" cy="13.5" r="1.2" fill="currentColor" stroke="none" /></Svg>
+);
+const IconCalendar = () => (
+  <Svg><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" /><path d="M3.5 9h17M8 3v3M16 3v3M8.5 13h3M8.5 16.5h6" /></Svg>
+);
+const IconGear = () => (
+  <Svg><circle cx="12" cy="12" r="3.2" /><path d="M12 3.5v2M12 18.5v2M4.6 7.5l1.7 1M17.7 15.5l1.7 1M4.6 16.5l1.7-1M17.7 8.5l1.7-1" /></Svg>
 );
 const IconLogout = () => (
   <Svg><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8" /><path d="M17 15l4-3-4-3" /><path d="M21 12H10" /></Svg>

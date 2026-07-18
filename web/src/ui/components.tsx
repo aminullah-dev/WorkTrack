@@ -62,3 +62,27 @@ export function StatusChip({ status }: { status: string }) {
 export function Toast({ message }: { message: string }) {
   return <div className="toast">{message}</div>;
 }
+
+/** Accessible on/off toggle. */
+export function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label?: string;
+}) {
+  return (
+    <span className="switch">
+      <input
+        type="checkbox"
+        role="switch"
+        aria-label={label}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="track" />
+    </span>
+  );
+}

@@ -81,8 +81,35 @@ const company = {
   currency: "AFN",
   status: "ACTIVE",
   plan: "PRO",
+  // Editable modules + work policies (the dedicated-admin Settings surface).
+  settings: {
+    features: {
+      shifts: true,
+      leave: true,
+      payroll: true,
+      regularization: true,
+      announcements: true,
+      geofencing: true,
+      qrKiosk: true,
+      faceRecognition: false,
+    },
+    policies: {
+      standardDailyMinutes: 480,
+      weekendDays: [5], // Friday
+      lateGraceMinutes: 10,
+      overtimeEnabled: true,
+    },
+    profile: { currency: "AFN", timezone: "Asia/Kabul" },
+  },
   updatedAt: now,
 };
+
+// A day shift, an overnight shift, and a full 24-hour shift (site security).
+const shifts = [
+  { id: "sh_day", name: "شیفت روز", code: "DAY", startTime: "08:00", endTime: "16:00", breakMinutes: 60, graceInMinutes: 10, graceOutMinutes: 10, isNightShift: false },
+  { id: "sh_night", name: "شیفت شب", code: "NIGHT", startTime: "20:00", endTime: "04:00", breakMinutes: 45, graceInMinutes: 15, graceOutMinutes: 15, isNightShift: true },
+  { id: "sh_24", name: "شیفت ۲۴ ساعته", code: "24H", startTime: "08:00", endTime: "08:00", breakMinutes: 120, graceInMinutes: 15, graceOutMinutes: 15, isNightShift: true },
+];
 
 const branches = [
   {
@@ -192,6 +219,26 @@ async function seedOrg() {
   }
   for (const g of geofences) {
     await col("geofences").doc(g.id).set({ companyId: CID, ...g, updatedAt: now });
+  }
+  for (const s of shifts) {
+    await col("shifts").doc(s.id).set({ companyId: CID, ...s, active: true, updatedAt: now });
+  }
+  // A small roster for today: two on the day shift, one on nights.
+  const roster = [
+    { emp: "emp_ahmad", shift: "sh_day" },
+    { emp: "emp_omar", shift: "sh_day" },
+    { emp: "emp_yusuf", shift: "sh_night" },
+  ];
+  for (const r of roster) {
+    await col("shiftAssignments").doc(`${r.emp}_${TODAY}`).set({
+      companyId: CID,
+      employeeId: r.emp,
+      shiftId: r.shift,
+      date: TODAY,
+      branchId: "br_main",
+      source: "ROSTER",
+      updatedAt: now,
+    });
   }
   for (const d of departments) {
     await col("departments").doc(d.id).set({ companyId: CID, ...d });

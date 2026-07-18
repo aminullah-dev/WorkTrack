@@ -19,6 +19,8 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "leave:write",
     "leave:approve",
     "payroll:read",
+    "rosters:read",
+    "rosters:write",
     "announcements:read",
     "announcements:write",
     "audit:read",
@@ -46,6 +48,7 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "attendance:read",
     "leave:read",
     "leave:approve",
+    "rosters:read",
     "announcements:read",
   ]),
   EMPLOYEE: new Set([

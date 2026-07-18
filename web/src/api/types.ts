@@ -14,16 +14,84 @@ export interface Problem {
   fieldErrors?: Record<string, string>;
 }
 
+export interface CompanyFeatures {
+  shifts: boolean;
+  leave: boolean;
+  payroll: boolean;
+  regularization: boolean;
+  announcements: boolean;
+  geofencing: boolean;
+  qrKiosk: boolean;
+  faceRecognition: boolean;
+}
+
+export interface CompanyPolicies {
+  standardDailyMinutes: number;
+  /** ISO weekday numbers (Mon=1 … Sun=7). Afghanistan defaults to Friday (5). */
+  weekendDays: number[];
+  lateGraceMinutes: number;
+  overtimeEnabled: boolean;
+}
+
+export interface CompanyProfile {
+  currency: string;
+  timezone: string;
+}
+
+export interface CompanySettings {
+  features: CompanyFeatures;
+  policies: CompanyPolicies;
+  profile: CompanyProfile;
+}
+
 export interface Me {
   uid: string;
   companyId: string;
   companyName: string;
+  currency: string;
   employeeId: string;
   displayName: string;
   email: string;
   avatarUrl: string | null;
   roles: string[];
   branchIds: string[];
+  features: CompanyFeatures;
+}
+
+export interface Shift {
+  id: string;
+  companyId: string;
+  name: string;
+  code: string;
+  startTime: string; // "HH:mm"
+  endTime: string;
+  breakMinutes: number;
+  graceInMinutes: number;
+  graceOutMinutes: number;
+  isNightShift: boolean;
+  active: boolean;
+  updatedAt: string;
+}
+
+export interface ShiftWrite {
+  name: string;
+  code: string;
+  startTime: string;
+  endTime: string;
+  breakMinutes: number;
+  graceInMinutes: number;
+  graceOutMinutes: number;
+  active: boolean;
+}
+
+export interface RosterRow {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  shiftId: string;
+  shiftName: string;
+  branchId: string | null;
+  date: string;
 }
 
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERN";

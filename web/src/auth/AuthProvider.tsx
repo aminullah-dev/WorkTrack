@@ -13,7 +13,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../firebase";
 import { api, ApiError } from "../api/client";
-import type { Me } from "../api/types";
+import type { CompanyFeatures, Me } from "../api/types";
 
 type Status = "loading" | "signedOut" | "signedIn";
 
@@ -115,7 +115,8 @@ export function useHasPermission(): (permission: string) => boolean {
 }
 
 // Which roles grant each permission the portal gates on (subset of the server
-// catalog in backend/functions/src/middleware/rbac.ts).
+// catalog in backend/functions/src/middleware/rbac.ts). COMPANY_ADMIN and
+// SUPER_ADMIN bypass this map entirely (they hold "*").
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   "employees:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
   "employees:write": ["HR_ADMIN"],
@@ -124,4 +125,27 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   "leave:approve": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
   "payroll:read": ["HR_ADMIN", "PAYROLL_ADMIN", "AUDITOR"],
   "payroll:run": ["PAYROLL_ADMIN"],
+  "rosters:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  "rosters:write": ["HR_ADMIN", "BRANCH_MANAGER"],
+  // settings:write is intentionally empty — only COMPANY_ADMIN/SUPER_ADMIN (the
+  // dedicated admin) may edit configuration, via the "*" bypass above.
+  "settings:write": [],
 };
+
+const DEFAULT_FEATURES: CompanyFeatures = {
+  shifts: true,
+  leave: true,
+  payroll: true,
+  regularization: true,
+  announcements: true,
+  geofencing: true,
+  qrKiosk: true,
+  faceRecognition: true,
+};
+
+/** Company feature flags (module toggles). Unknown → enabled, so nothing hides
+ *  for a session created before the flags existed. */
+export function useFeatures(): CompanyFeatures {
+  const { me } = useAuth();
+  return { ...DEFAULT_FEATURES, ...(me?.features ?? {}) };
+}

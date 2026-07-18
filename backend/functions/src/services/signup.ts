@@ -44,7 +44,7 @@ export async function provisionCompany(input: CompanySignup): Promise<SignupResu
   const branchId = ulid();
   const now = nowTimestamp();
 
-  // 1. Company
+  // 1. Company (with default settings: all core modules on)
   await db.collection("companies").doc(companyId).set({
     name: input.companyName,
     legalName: input.companyName,
@@ -52,7 +52,41 @@ export async function provisionCompany(input: CompanySignup): Promise<SignupResu
     currency: input.currency,
     status: "ACTIVE",
     plan: "FREE",
+    settings: {
+      features: {
+        shifts: true,
+        leave: true,
+        payroll: true,
+        regularization: true,
+        announcements: true,
+        geofencing: true,
+        qrKiosk: true,
+        faceRecognition: false,
+      },
+      policies: {
+        standardDailyMinutes: 480,
+        weekendDays: [5],
+        lateGraceMinutes: 10,
+        overtimeEnabled: true,
+      },
+      profile: { currency: input.currency, timezone: input.timezone },
+    },
     createdAt: now,
+    updatedAt: now,
+  });
+
+  // A starter day shift so the roster works out of the box.
+  await tenant(companyId, "shifts").doc("default-day").set({
+    companyId,
+    name: "شیفت روز",
+    code: "DAY",
+    startTime: "08:00",
+    endTime: "16:00",
+    breakMinutes: 60,
+    graceInMinutes: 10,
+    graceOutMinutes: 10,
+    isNightShift: false,
+    active: true,
     updatedAt: now,
   });
 
