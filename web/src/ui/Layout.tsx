@@ -13,6 +13,7 @@ export function Layout() {
     { to: "/employees", icon: "◍", label: t("nav_employees"), show: can("employees:read") },
     { to: "/attendance", icon: "◷", label: t("nav_attendance"), show: can("attendance:read") },
     { to: "/leave", icon: "✈", label: t("nav_leave"), show: can("leave:approve") },
+    { to: "/payroll", icon: "₼", label: t("nav_payroll"), show: can("payroll:read") },
   ];
 
   return (

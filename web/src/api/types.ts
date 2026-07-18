@@ -100,6 +100,42 @@ export interface AttendanceOverviewRow {
   lateMinutes: number;
 }
 
+export interface PayrollRun {
+  id: string;
+  periodYear: number;
+  periodMonth: number;
+  status: string;
+  currency: string;
+  payslipCount: number;
+  totalGross: number;
+  totalNet: number;
+  lockedAt: string | null;
+  createdAt: string | null;
+}
+
+export interface PayrollRunResult {
+  runId: string;
+  periodYear: number;
+  periodMonth: number;
+  currency: string;
+  payslipCount: number;
+  totalNet: number;
+  totalGross: number;
+}
+
+export interface RunPayslipRow {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  currency: string;
+  gross: number;
+  totalDeductions: number;
+  net: number;
+  workedDays: number;
+  lopDays: number;
+  status: string;
+}
+
 export interface LeaveRequest {
   id: string;
   companyId: string;

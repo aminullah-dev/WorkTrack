@@ -6,6 +6,9 @@ import type {
   EmployeeWrite,
   Kpis,
   LeaveRequest,
+  PayrollRun,
+  PayrollRunResult,
+  RunPayslipRow,
   TrendPoint,
 } from "./types";
 
@@ -54,6 +57,33 @@ export function useCreateEmployee() {
   return useMutation({
     mutationFn: (body: EmployeeWrite) => api.post<Employee>("/employees", body).then((e) => e.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function usePayrollRuns() {
+  return useQuery({
+    queryKey: ["payroll", "runs"],
+    queryFn: () => api.get<PayrollRun[]>("/payroll/runs").then((e) => e.data),
+  });
+}
+
+export function useRunPayslips(runId: string | null) {
+  return useQuery({
+    enabled: runId !== null,
+    queryKey: ["payroll", "run", runId],
+    queryFn: () =>
+      api
+        .get<{ runId: string; payslips: RunPayslipRow[] }>(`/payroll/runs/${runId}/payslips`)
+        .then((e) => e.data.payslips),
+  });
+}
+
+export function useRunPayroll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { periodYear: number; periodMonth: number }) =>
+      api.post<PayrollRunResult>("/payroll/runs", args).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["payroll"] }),
   });
 }
 

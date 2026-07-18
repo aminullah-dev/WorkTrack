@@ -49,6 +49,26 @@ function at(iso, hh, mm) {
   return Timestamp.fromDate(new Date(`${iso}T${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00Z`));
 }
 
+/** Compact Gregorian -> Solar Hijri (year, month) for the current payroll period. */
+function gregToShamsi(date) {
+  const div = (a, b) => Math.trunc(a / b);
+  const B = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+  function jalCal(jy) {
+    const gy = jy + 621; let leapJ = -14, jp = B[0], jump = 0;
+    for (let i = 1; i < B.length; i++) { const jm = B[i]; jump = jm - jp; if (jy < jm) break; leapJ += div(jump, 33) * 8 + div(jump % 33, 4); jp = jm; }
+    let n = jy - jp; leapJ += div(n, 33) * 8 + div((n % 33) + 3, 4); if (jump % 33 === 4 && jump - n === 4) leapJ += 1;
+    const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150; const march = 20 + leapJ - leapG;
+    if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33; let leap = (((n + 1) % 33) - 1) % 4; if (leap === -1) leap = 4;
+    return { leap, gy, march };
+  }
+  function g2d(gy, gm, gd) { let d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * ((gm + 9) % 12) + 2, 5) + gd - 34840408; d = d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752; return d; }
+  function d2g(jdn) { let j = 4 * jdn + 139361631; j += div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908; const i = div(j % 1461, 4) * 5 + 308; const gm = (div(i, 153) % 12) + 1; const gy = div(j, 1461) - 100100 + div(8 - gm, 6); return { gy, gm }; }
+  const jdn = g2d(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+  const gy = d2g(jdn).gy; let jy = gy - 621; const r = jalCal(jy); const jdn1f = g2d(gy, 3, r.march); let k = jdn - jdn1f;
+  if (k >= 0) { if (k <= 185) return { year: jy, month: 1 + div(k, 31) }; k -= 186; } else { jy -= 1; k += 179; if (r.leap === 1) k += 1; }
+  return { year: jy, month: 7 + div(k, 30) };
+}
+
 const TODAY = isoDaysAgo(0);
 const YEAR = Number(TODAY.slice(0, 4));
 
@@ -126,11 +146,24 @@ const leaveTypes = [
   { id: "lt_sick", name: "رخصتی مریضی", code: "SICK", colorHex: "#B3261E", isPaid: true, requiresAttachment: false },
 ];
 
+// BASIC comes from each employee's EmployeeSalary; these are the shared
+// earning/deduction components layered on top.
 const salaryComponents = [
-  { id: "sc_basic", name: "معاش اساسی", code: "BASIC", type: "EARNING", calc: "FIXED", value: 25000, taxable: true, active: true },
   { id: "sc_transport", name: "کمک‌هزینه ترانسپورت", code: "TRANSPORT", type: "EARNING", calc: "FIXED", value: 3000, taxable: false, active: true },
+  { id: "sc_food", name: "کمک‌هزینه غذا", code: "FOOD", type: "EARNING", calc: "FIXED", value: 2000, taxable: false, active: true },
   { id: "sc_tax", name: "مالیه معاش", code: "TAX", type: "DEDUCTION", calc: "PERCENT_OF_BASIC", value: 5, taxable: false, active: true },
 ];
+
+// Per-employee monthly basic salary (AFN). The manager (emp_admin) earns more.
+const employeeSalaries = {
+  emp_admin: 45000,
+  emp_hr: 35000,
+  emp_ahmad: 28000,
+  emp_fatima: 26000,
+  emp_omar: 25000,
+  emp_yusuf: 24000,
+  emp_maryam: 23000,
+};
 
 const announcements = [
   {
@@ -315,6 +348,80 @@ async function seedLeave() {
   }
 }
 
+async function seedPayroll() {
+  // Per-employee basic salary.
+  for (const [empId, basic] of Object.entries(employeeSalaries)) {
+    await col("employeeSalaries").doc(empId).set({
+      employeeId: empId,
+      structureId: null,
+      basicAmount: basic,
+      currency: "AFN",
+      effectiveFrom: "2024-03-21",
+      revisionReason: "Initial",
+      updatedAt: now,
+    });
+  }
+
+  // Pre-generate a finalized payroll run for the current Solar Hijri month so
+  // payslips are visible immediately in the portal and the employee app. The
+  // shape matches services/payroll.ts so a re-run from the portal overwrites it.
+  const sh = gregToShamsi(new Date());
+  const runId = `${sh.year}_${String(sh.month).padStart(2, "0")}`;
+  let totalGross = 0;
+  let totalNet = 0;
+  let count = 0;
+  for (const e of employees) {
+    const basic = employeeSalaries[e.id];
+    if (!basic) continue;
+    const tax = Math.round(basic * 0.05);
+    const lines = [
+      { componentCode: "BASIC", componentName: "معاش اساسی", type: "EARNING", amount: basic },
+      { componentCode: "TRANSPORT", componentName: "کمک‌هزینه ترانسپورت", type: "EARNING", amount: 3000 },
+      { componentCode: "FOOD", componentName: "کمک‌هزینه غذا", type: "EARNING", amount: 2000 },
+      { componentCode: "TAX", componentName: "مالیه معاش", type: "DEDUCTION", amount: tax },
+    ];
+    const gross = basic + 3000 + 2000;
+    const net = gross - tax;
+    await col("payslips").doc(`${e.id}_${runId}`).set({
+      companyId: CID,
+      runId,
+      employeeId: e.id,
+      periodYear: sh.year,
+      periodMonth: sh.month,
+      currency: "AFN",
+      gross,
+      totalDeductions: tax,
+      net,
+      workedDays: 22,
+      paidLeaveDays: 0,
+      lopDays: 0,
+      overtimeMinutes: 0,
+      status: "FINALIZED",
+      pdfUrl: null,
+      lines,
+      updatedAt: now,
+    });
+    totalGross += gross;
+    totalNet += net;
+    count += 1;
+  }
+  await col("payrollRuns").doc(runId).set({
+    companyId: CID,
+    periodYear: sh.year,
+    periodMonth: sh.month,
+    status: "APPROVED",
+    startedBy: "emp_admin",
+    approvedBy: "emp_admin",
+    currency: "AFN",
+    payslipCount: count,
+    totalGross,
+    totalNet,
+    lockedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
 async function seedExtras() {
   for (const c of salaryComponents) {
     await col("salaryComponents").doc(c.id).set({ companyId: CID, ...c, updatedAt: now });
@@ -349,6 +456,7 @@ async function main() {
   await seedAttendance();
   await seedLeave();
   await seedExtras();
+  await seedPayroll();
   console.log("\n✅ Done. Sample logins (password: Passw0rd!):");
   console.log("   admin@worktrack.af  — COMPANY_ADMIN (web portal)");
   console.log("   hr@worktrack.af     — HR_ADMIN");

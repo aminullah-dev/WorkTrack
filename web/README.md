@@ -18,6 +18,9 @@ calendar throughout.
   first-in time, worked hours, and lateness; date picker in Solar Hijri.
 - **Leave approvals** — pending-request queue with approve/reject (rejection
   requires a note, enforced server-side too).
+- **Payroll** — run payroll for a Solar Hijri month (basic + earning components −
+  deductions − loss-of-pay from attendance), then view the generated payslips per
+  employee. Amounts in AFN; period is Shamsi. Gated on `payroll:read` / `payroll:run`.
 
 RBAC gates the sidebar and actions client-side for UX; the server is authoritative.
 
