@@ -20,6 +20,11 @@
     <string name="att_qr_camera_permission_msg">برای اسکن کود QR کیوسک، اجازهٔ کمره را بدهید.</string>
     <string name="att_qr_hint">کمره را به سوی صفحهٔ کیوسک بگیرید</string>
 
+    <string name="att_selfie_title">تأیید با عکس</string>
+    <string name="att_selfie_hint">چهرهٔ خود را داخل کادر قرار دهید</string>
+    <string name="att_selfie_ready">چهره تشخیص شد — می‌توانید عکس بگیرید</string>
+    <string name="att_selfie_capture">گرفتن عکس و ثبت حاضری</string>
+
     <string name="att_history_title">تاریخچهٔ حاضری</string>
     <string name="att_history_empty_title">ریکاردی نیست</string>
     <string name="att_history_empty_msg">حاضری این ماه بعد از اولین همگام‌سازی نمایش داده می‌شود.</string>

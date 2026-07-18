@@ -11,6 +11,7 @@ import app.worktrack.core.domain.usecase.attendance.EvaluateGeofenceUseCase
 import app.worktrack.core.domain.usecase.attendance.GeofenceEvaluation
 import app.worktrack.core.domain.usecase.attendance.ObserveTodayAttendanceUseCase
 import app.worktrack.core.domain.usecase.attendance.PunchClockUseCase
+import app.worktrack.core.domain.usecase.auth.ObserveSessionUseCase
 import app.worktrack.core.model.PunchCommand
 import app.worktrack.core.model.PunchMethod
 import app.worktrack.core.model.PunchType
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -56,6 +58,7 @@ sealed interface PunchEffect {
 @HiltViewModel
 class PunchViewModel @Inject constructor(
     observeToday: ObserveTodayAttendanceUseCase,
+    observeSession: ObserveSessionUseCase,
     private val punchClock: PunchClockUseCase,
     private val evaluateGeofence: EvaluateGeofenceUseCase,
     private val locationClient: LocationClient,
@@ -64,6 +67,11 @@ class PunchViewModel @Inject constructor(
 
     val today: StateFlow<TodayAttendance?> = observeToday()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Whether the company requires a check-in selfie (feature flag). */
+    val faceRequired: StateFlow<Boolean> = observeSession()
+        .map { it?.features?.faceRecognition == true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _uiState = MutableStateFlow(PunchUiState())
     val uiState: StateFlow<PunchUiState> = _uiState.asStateFlow()
@@ -78,6 +86,15 @@ class PunchViewModel @Inject constructor(
                 if (!token.isNullOrBlank()) {
                     savedStateHandle[KEY_KIOSK_TOKEN] = null
                     punchWithQr(token)
+                }
+            }
+        }
+        // A selfie arrives the same way when the capture screen pops back.
+        viewModelScope.launch {
+            savedStateHandle.getStateFlow<String?>(KEY_SELFIE, null).collect { selfie ->
+                if (!selfie.isNullOrBlank()) {
+                    savedStateHandle[KEY_SELFIE] = null
+                    punchWithSelfie(selfie)
                 }
             }
         }
@@ -132,6 +149,24 @@ class PunchViewModel @Inject constructor(
         )
     }
 
+    /** GPS punch carrying the captured check-in selfie (photo-verified path). */
+    private fun punchWithSelfie(selfie: String) {
+        val ready = _uiState.value.location as? LocationUiState.Ready ?: return
+        val nextType = nextPunchType() ?: return
+        submit(
+            PunchCommand(
+                type = nextType,
+                method = PunchMethod.GPS,
+                latitude = ready.location.latitude,
+                longitude = ready.location.longitude,
+                accuracyMeters = ready.location.accuracyMeters,
+                isMockLocation = ready.location.isMock,
+                selfie = selfie,
+                faceVerified = true,
+            ),
+        )
+    }
+
     private fun punchWithQr(kioskToken: String) {
         val nextType = nextPunchType() ?: return
         val ready = _uiState.value.location as? LocationUiState.Ready
@@ -168,5 +203,6 @@ class PunchViewModel @Inject constructor(
 
     companion object {
         const val KEY_KIOSK_TOKEN = "kioskToken"
+        const val KEY_SELFIE = "selfie"
     }
 }

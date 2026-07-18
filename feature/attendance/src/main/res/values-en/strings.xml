@@ -20,6 +20,11 @@
     <string name="att_qr_camera_permission_msg">Allow camera access to scan the kiosk QR code.</string>
     <string name="att_qr_hint">Point the camera at the kiosk screen</string>
 
+    <string name="att_selfie_title">Photo verification</string>
+    <string name="att_selfie_hint">Position your face inside the frame</string>
+    <string name="att_selfie_ready">Face detected — you can take the photo</string>
+    <string name="att_selfie_capture">Capture and check in</string>
+
     <string name="att_history_title">Attendance history</string>
     <string name="att_history_empty_title">No records</string>
     <string name="att_history_empty_msg">Attendance for this month appears here after your first sync.</string>

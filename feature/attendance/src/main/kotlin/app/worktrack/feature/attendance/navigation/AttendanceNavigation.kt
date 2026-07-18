@@ -7,9 +7,11 @@ import app.worktrack.feature.attendance.history.AttendanceHistoryRoute
 import app.worktrack.feature.attendance.punch.PunchRoute
 import app.worktrack.feature.attendance.punch.PunchViewModel
 import app.worktrack.feature.attendance.qr.QrScanRoute
+import app.worktrack.feature.attendance.selfie.SelfieCaptureRoute
 
 const val PUNCH_ROUTE = "attendance/punch"
 const val QR_SCAN_ROUTE = "attendance/qr-scan"
+const val SELFIE_CAPTURE_ROUTE = "attendance/selfie"
 const val ATTENDANCE_HISTORY_ROUTE = "attendance/history"
 
 fun NavGraphBuilder.attendanceScreens(navController: NavController) {
@@ -17,6 +19,7 @@ fun NavGraphBuilder.attendanceScreens(navController: NavController) {
         PunchRoute(
             onBack = { navController.popBackStack() },
             onScanQr = { navController.navigate(QR_SCAN_ROUTE) },
+            onCaptureSelfie = { navController.navigate(SELFIE_CAPTURE_ROUTE) },
         )
     }
 
@@ -28,6 +31,18 @@ fun NavGraphBuilder.attendanceScreens(navController: NavController) {
                 navController.previousBackStackEntry
                     ?.savedStateHandle
                     ?.set(PunchViewModel.KEY_KIOSK_TOKEN, token)
+                navController.popBackStack()
+            },
+        )
+    }
+
+    composable(route = SELFIE_CAPTURE_ROUTE) {
+        SelfieCaptureRoute(
+            onBack = { navController.popBackStack() },
+            onCaptured = { selfie ->
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set(PunchViewModel.KEY_SELFIE, selfie)
                 navController.popBackStack()
             },
         )

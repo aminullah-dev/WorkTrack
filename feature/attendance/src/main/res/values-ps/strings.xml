@@ -20,6 +20,11 @@
     <string name="att_qr_camera_permission_msg">د کیوسک QR کوډ سکن لپاره کامرې ته اجازه ورکړئ.</string>
     <string name="att_qr_hint">کامره د کیوسک پردې ته ونیسئ</string>
 
+    <string name="att_selfie_title">د عکس تایید</string>
+    <string name="att_selfie_hint">خپل مخ د چوکاټ دننه ونیسئ</string>
+    <string name="att_selfie_ready">مخ وپېژندل شو — عکس اخیستلی شئ</string>
+    <string name="att_selfie_capture">عکس واخلئ او حاضري ثبت کړئ</string>
+
     <string name="att_history_title">د حاضرۍ تاریخچه</string>
     <string name="att_history_empty_title">ریکارډ نشته</string>
     <string name="att_history_empty_msg">د دې میاشتې حاضري د لومړي همغږي کولو وروسته ښکاري.</string>

@@ -46,10 +46,12 @@ import app.worktrack.feature.attendance.R
 fun PunchRoute(
     onBack: () -> Unit,
     onScanQr: () -> Unit,
+    onCaptureSelfie: () -> Unit,
     viewModel: PunchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
+    val faceRequired by viewModel.faceRequired.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -97,7 +99,9 @@ fun PunchRoute(
         PunchScreen(
             state = state,
             clockedIn = today?.clockedIn == true,
-            onPunch = viewModel::onPunch,
+            // Photo-verified companies detour through the selfie camera; the
+            // ViewModel completes the GPS punch once the capture pops back.
+            onPunch = { if (faceRequired) onCaptureSelfie() else viewModel.onPunch() },
             onRetryLocation = {
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             },
