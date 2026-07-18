@@ -36,4 +36,17 @@
     <string name="att_status_holiday">Public holiday</string>
     <string name="att_status_week_off">Week off</string>
     <string name="att_status_pending">Pending</string>
+
+    <string name="reg_request">Request correction</string>
+    <string name="reg_dialog_title">Attendance correction</string>
+    <string name="reg_in_time">Corrected clock-in</string>
+    <string name="reg_out_time">Corrected clock-out</string>
+    <string name="reg_set_time">Set time</string>
+    <string name="reg_reason">Reason</string>
+    <string name="reg_reason_hint">e.g. Forgot to clock out</string>
+    <string name="reg_submit">Send request</string>
+    <string name="reg_cancel">Cancel</string>
+    <string name="reg_submitted">Correction filed — applies once your manager approves</string>
+    <string name="reg_err_times">Pick at least a clock-in or clock-out time</string>
+    <string name="reg_err_reason">Enter a reason</string>
 </resources>

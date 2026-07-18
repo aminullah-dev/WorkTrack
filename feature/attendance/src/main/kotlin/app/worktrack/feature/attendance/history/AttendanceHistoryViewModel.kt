@@ -3,18 +3,30 @@ package app.worktrack.feature.attendance.history
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.worktrack.core.common.result.AppError
+import app.worktrack.core.common.result.AppResult
 import app.worktrack.core.common.time.SolarHijri
 import app.worktrack.core.common.time.SolarHijriDate
 import app.worktrack.core.common.time.TimeProvider
 import app.worktrack.core.domain.repository.AttendanceRepository
+import app.worktrack.core.domain.usecase.attendance.RequestRegularizationUseCase
 import app.worktrack.core.model.AttendanceDay
+import app.worktrack.core.model.RegularizationCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Attendance history paged by **Solar Hijri** months — the business calendar
@@ -28,9 +40,16 @@ data class AttendanceHistoryUiState(
     val canGoForward: Boolean,
 )
 
+/** One-shot outcomes of filing an attendance correction, surfaced as a snackbar. */
+sealed interface RegularizationEffect {
+    data object Submitted : RegularizationEffect
+    data class Failed(val error: AppError) : RegularizationEffect
+}
+
 @HiltViewModel
 class AttendanceHistoryViewModel @Inject constructor(
     attendanceRepository: AttendanceRepository,
+    private val requestRegularization: RequestRegularizationUseCase,
     private val timeProvider: TimeProvider,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -69,6 +88,42 @@ class AttendanceHistoryViewModel @Inject constructor(
                 AttendanceHistoryUiState(year, month, emptyList(), canGoForward = false)
             },
         )
+
+    private val _effects = Channel<RegularizationEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
+
+    private val _submitting = MutableStateFlow(false)
+    val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
+
+    /**
+     * Files a correction for [date]. Times are the employee's local wall-clock
+     * for that day, anchored to the company time zone before being sent as UTC
+     * instants — so 8:30 always means 8:30 in Kabul regardless of device zone.
+     */
+    fun submitRegularization(
+        date: LocalDate,
+        inTime: LocalTime?,
+        outTime: LocalTime?,
+        reason: String,
+    ) {
+        if (_submitting.value) return
+        _submitting.update { true }
+        viewModelScope.launch {
+            val zone = timeProvider.zone()
+            val command = RegularizationCommand(
+                date = date,
+                requestedInAt = inTime?.let { date.atTime(it).atZone(zone).toInstant() },
+                requestedOutAt = outTime?.let { date.atTime(it).atZone(zone).toInstant() },
+                reason = reason,
+            )
+            val effect = when (val result = requestRegularization(command)) {
+                is AppResult.Success -> RegularizationEffect.Submitted
+                is AppResult.Failure -> RegularizationEffect.Failed(result.error)
+            }
+            _effects.send(effect)
+            _submitting.update { false }
+        }
+    }
 
     fun onPreviousMonth() = shiftMonth(-1)
 

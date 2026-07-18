@@ -12,6 +12,7 @@ object ResourceTypes {
     const val SHIFT_ASSIGNMENTS = "shiftAssignments"
     const val PUNCHES = "punches"
     const val ATTENDANCE_DAYS = "attendanceDays"
+    const val REGULARIZATIONS = "regularizations"
     const val LEAVE_TYPES = "leaveTypes"
     const val LEAVE_BALANCES = "leaveBalances"
     const val LEAVE_REQUESTS = "leaveRequests"

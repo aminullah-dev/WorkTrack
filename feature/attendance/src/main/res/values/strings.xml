@@ -36,4 +36,17 @@
     <string name="att_status_holiday">رخصتی عمومی</string>
     <string name="att_status_week_off">رخصتی هفته‌وار</string>
     <string name="att_status_pending">در انتظار</string>
+
+    <string name="reg_request">درخواست اصلاح</string>
+    <string name="reg_dialog_title">اصلاح حاضری</string>
+    <string name="reg_in_time">ورود اصلاح‌شده</string>
+    <string name="reg_out_time">خروج اصلاح‌شده</string>
+    <string name="reg_set_time">تنظیم وقت</string>
+    <string name="reg_reason">دلیل</string>
+    <string name="reg_reason_hint">مثلاً: فراموش کردم خروج بزنم</string>
+    <string name="reg_submit">ارسال درخواست</string>
+    <string name="reg_cancel">لغو</string>
+    <string name="reg_submitted">درخواست اصلاح ثبت شد — بعد از تایید مدیر اعمال می‌شود</string>
+    <string name="reg_err_times">حداقل وقت ورود یا خروج را انتخاب کنید</string>
+    <string name="reg_err_reason">دلیل را بنویسید</string>
 </resources>

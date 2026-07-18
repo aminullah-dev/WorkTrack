@@ -6,6 +6,7 @@ import app.worktrack.core.model.AttendanceDay
 import app.worktrack.core.model.AttendancePunch
 import app.worktrack.core.model.Geofence
 import app.worktrack.core.model.PunchCommand
+import app.worktrack.core.model.RegularizationCommand
 import app.worktrack.core.model.TodayAttendance
 import java.time.Instant
 import java.time.LocalDate
@@ -29,6 +30,9 @@ class EvaluateGeofenceUseCaseTest {
         override fun observeActiveGeofences(): Flow<List<Geofence>> = flowOf(fences)
         override suspend fun punch(command: PunchCommand): AppResult<AttendancePunch> =
             error("not used in this test")
+        override suspend fun requestRegularization(
+            command: RegularizationCommand,
+        ): AppResult<Unit> = error("not used in this test")
         override suspend fun refresh(from: LocalDate, to: LocalDate): AppResult<Unit> =
             AppResult.success(Unit)
     }

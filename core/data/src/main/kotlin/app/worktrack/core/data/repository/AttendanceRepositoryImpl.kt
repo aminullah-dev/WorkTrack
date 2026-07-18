@@ -21,11 +21,13 @@ import app.worktrack.core.model.AttendancePunch
 import app.worktrack.core.model.Geofence
 import app.worktrack.core.model.PunchCommand
 import app.worktrack.core.model.PunchType
+import app.worktrack.core.model.RegularizationCommand
 import app.worktrack.core.model.SyncStatus
 import app.worktrack.core.model.TodayAttendance
 import app.worktrack.core.network.WorkTrackApi
 import app.worktrack.core.network.apiCall
 import app.worktrack.core.network.dto.PunchCreateDto
+import app.worktrack.core.network.dto.RegularizationCreateDto
 import java.time.Duration
 import java.time.LocalDate
 import javax.inject.Inject
@@ -147,6 +149,31 @@ class AttendanceRepositoryImpl @Inject constructor(
             payloadJson = json.encodeToString(PunchCreateDto.serializer(), payload),
         )
         return AppResult.success(entity.toModel())
+    }
+
+    override suspend fun requestRegularization(
+        command: RegularizationCommand,
+    ): AppResult<Unit> {
+        // Require an authenticated session; the server stamps company/employee
+        // from the auth token when the outbox op is pushed.
+        sessionStore.session.first()
+            ?: return AppResult.failure(AppError.Unauthenticated)
+
+        val id = Ulid.generate(timeProvider.now().toEpochMilli())
+        val payload = RegularizationCreateDto(
+            id = id,
+            date = command.date,
+            requestedInAt = command.requestedInAt,
+            requestedOutAt = command.requestedOutAt,
+            reason = command.reason.trim(),
+        )
+        outboxWriter.enqueue(
+            opType = OutboxOpTypes.CREATE,
+            resourceType = ResourceTypes.REGULARIZATIONS,
+            resourceId = id,
+            payloadJson = json.encodeToString(RegularizationCreateDto.serializer(), payload),
+        )
+        return AppResult.success(Unit)
     }
 
     override suspend fun refresh(from: LocalDate, to: LocalDate): AppResult<Unit> =

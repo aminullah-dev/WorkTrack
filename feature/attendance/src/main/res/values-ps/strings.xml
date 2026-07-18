@@ -36,4 +36,17 @@
     <string name="att_status_holiday">عمومي رخصتي</string>
     <string name="att_status_week_off">اونیزه رخصتي</string>
     <string name="att_status_pending">په تمه</string>
+
+    <string name="reg_request">د سمون غوښتنه</string>
+    <string name="reg_dialog_title">د حاضرۍ سمون</string>
+    <string name="reg_in_time">سم شوی ورتګ</string>
+    <string name="reg_out_time">سم شوی وتل</string>
+    <string name="reg_set_time">وخت وټاکئ</string>
+    <string name="reg_reason">دلیل</string>
+    <string name="reg_reason_hint">لکه: هېر مې کړل چې وتل ثبت کړم</string>
+    <string name="reg_submit">غوښتنه ولېږئ</string>
+    <string name="reg_cancel">لغوه</string>
+    <string name="reg_submitted">د سمون غوښتنه ثبت شوه — د مدیر له تایید وروسته پلي کېږي</string>
+    <string name="reg_err_times">لږ تر لږه د ورتګ یا وتلو وخت وټاکئ</string>
+    <string name="reg_err_reason">دلیل ولیکئ</string>
 </resources>

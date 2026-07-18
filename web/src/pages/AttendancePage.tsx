@@ -1,12 +1,21 @@
 import { useMemo, useState } from "react";
-import { useAttendanceOverview } from "../api/hooks";
+import {
+  useAttendanceOverview,
+  useDecideRegularization,
+  usePendingRegularizations,
+} from "../api/hooks";
+import type { Regularization } from "../api/types";
+import { useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
-import { EmptyState, ErrorState, LoadingState, StatusChip } from "../ui/components";
+import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
 export function AttendancePage() {
   const { t, num, shamsi } = useI18n();
+  const can = useHasPermission();
   const [date, setDate] = useState(isoToday());
   const overview = useAttendanceOverview(date);
+
+  const canApprove = can("attendance:approve");
 
   const summary = useMemo(() => {
     const rows = overview.data ?? [];
@@ -31,6 +40,8 @@ export function AttendancePage() {
           />
         </div>
       </div>
+
+      {canApprove && <RegularizationApprovals />}
 
       {overview.isLoading ? (
         <LoadingState />
@@ -89,6 +100,96 @@ export function AttendancePage() {
         </>
       )}
     </>
+  );
+}
+
+/** Manager review of employee-filed attendance corrections (attendance:approve). */
+function RegularizationApprovals() {
+  const { t, num, shamsi } = useI18n();
+  const pending = usePendingRegularizations(true);
+  const decide = useDecideRegularization();
+  const [toast, setToast] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  function flash(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2500);
+  }
+
+  async function onDecide(req: Regularization, decision: "APPROVE" | "REJECT") {
+    let note: string | null = null;
+    if (decision === "REJECT") {
+      note = window.prompt(t("reg_reject_prompt")) ?? "";
+      if (!note.trim()) return; // rejection requires a note
+    }
+    setBusyId(req.id);
+    try {
+      await decide.mutateAsync({ id: req.id, decision, note });
+      flash(decision === "APPROVE" ? t("reg_approved") : t("reg_rejected"));
+    } catch {
+      flash(t("common_error"));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const rows = pending.data ?? [];
+  // Hide the whole block when there is nothing to review, so it never adds noise.
+  if (pending.isLoading || pending.isError || rows.length === 0) return null;
+
+  return (
+    <section className="card" style={{ marginBottom: 20, padding: 0 }}>
+      <h2 style={{ margin: 0, padding: "16px 20px", fontSize: 16 }}>
+        {t("reg_pending")}{" "}
+        <span className="chip chip-warning" style={{ marginInlineStart: 8 }}>
+          {num(rows.length)}
+        </span>
+      </h2>
+      <div className="table-wrap">
+        <table className="data">
+          <thead>
+            <tr>
+              <th>{t("leave_employee")}</th>
+              <th>{t("reg_date")}</th>
+              <th>{t("reg_requested_in")}</th>
+              <th>{t("reg_requested_out")}</th>
+              <th>{t("reg_reason")}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((req) => (
+              <tr key={req.id}>
+                <td>{req.employeeName ?? req.employeeId}</td>
+                <td>{shamsi(req.date, { withYear: true })}</td>
+                <td dir="ltr">{req.requestedInAt ? formatTime(req.requestedInAt, num) : "—"}</td>
+                <td dir="ltr">{req.requestedOutAt ? formatTime(req.requestedOutAt, num) : "—"}</td>
+                <td style={{ whiteSpace: "normal", maxWidth: 260 }}>{req.reason}</td>
+                <td>
+                  <div className="row-actions">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={busyId === req.id}
+                      onClick={() => void onDecide(req, "APPROVE")}
+                    >
+                      {t("reg_approve")}
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      disabled={busyId === req.id}
+                      onClick={() => void onDecide(req, "REJECT")}
+                    >
+                      {t("reg_reject")}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {toast && <Toast message={toast} />}
+    </section>
   );
 }
 

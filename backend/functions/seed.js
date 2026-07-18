@@ -346,6 +346,30 @@ async function seedLeave() {
       updatedAt: now,
     });
   }
+
+  // Pending attendance-correction requests routed to the admin.
+  const regs = [
+    { id: "reg_1", emp: "emp_ahmad", name: "احمد کریمی", day: isoDaysAgo(3), inH: 8, outH: 16, reason: "فراموش کردم خروج بزنم" },
+    { id: "reg_2", emp: "emp_yusuf", name: "یوسف حبیبی", day: isoDaysAgo(2), inH: 8, outH: 15, reason: "سیستم حاضری خراب بود" },
+  ];
+  for (const r of regs) {
+    await col("regularizations").doc(r.id).set({
+      companyId: CID,
+      employeeId: r.emp,
+      employeeName: r.name,
+      date: r.day,
+      requestedInAt: at(r.day, r.inH, 0),
+      requestedOutAt: at(r.day, r.outH, 0),
+      reason: r.reason,
+      status: "PENDING",
+      currentApproverId: "emp_admin",
+      decidedAt: null,
+      decidedBy: null,
+      decisionNote: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 }
 
 async function seedPayroll() {

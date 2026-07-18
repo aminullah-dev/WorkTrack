@@ -9,6 +9,7 @@ import type {
   LeaveRequest,
   PayrollRun,
   PayrollRunResult,
+  Regularization,
   RunPayslipRow,
   TrendPoint,
 } from "./types";
@@ -108,5 +109,33 @@ export function useDecideLeave() {
         })
         .then((e) => e.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["leave", "approvals"] }),
+  });
+}
+
+export function usePendingRegularizations(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["regularizations", "approvals"],
+    queryFn: () =>
+      api
+        .get<Regularization[]>("/attendance/regularizations", { scope: "approvals" })
+        .then((e) => e.data),
+  });
+}
+
+export function useDecideRegularization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; decision: "APPROVE" | "REJECT"; note?: string | null }) =>
+      api
+        .post<Regularization>(`/attendance/regularizations/${args.id}/decide`, {
+          decision: args.decision,
+          note: args.note ?? null,
+        })
+        .then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["regularizations", "approvals"] });
+      void qc.invalidateQueries({ queryKey: ["attendance-overview"] });
+    },
   });
 }

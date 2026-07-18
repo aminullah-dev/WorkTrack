@@ -7,6 +7,13 @@ import { hasPermission, requirePermission } from "../middleware/rbac";
 import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
 import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
+import {
+  createRegularization,
+  decideRegularization,
+  regularizationCreateSchema,
+  regularizationDecisionSchema,
+  regularizationToDto,
+} from "../services/regularization";
 import { kioskSecret } from "../config";
 
 export const attendanceRouter = Router();
@@ -34,6 +41,66 @@ attendanceRouter.post(
       await recordIdempotency(auth.companyId, idempotencyKey, dto);
     }
     res.status(201).json({ data: dto });
+  }),
+);
+
+// -------------------------------------------------------- regularizations
+
+/** Employee files a correction request for a day (online path; app uses sync). */
+attendanceRouter.post(
+  "/regularizations",
+  requirePermission("self:attendance"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const payload = parseBody(req, regularizationCreateSchema);
+    const dto = await createRegularization(auth.companyId, auth.employeeId, payload);
+    res.status(201).json({ data: dto });
+  }),
+);
+
+/** scope=mine (default) or scope=approvals (waiting on the caller). */
+attendanceRouter.get(
+  "/regularizations",
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const scope = String(req.query.scope ?? "mine");
+    if (scope === "approvals" && !hasPermission(auth.roles, "attendance:approve")) {
+      throw ApiError.permissionDenied("Requires attendance:approve");
+    }
+    const query =
+      scope === "approvals"
+        ? tenant(auth.companyId, "regularizations")
+            .where("currentApproverId", "==", auth.employeeId)
+            .limit(200)
+        : tenant(auth.companyId, "regularizations")
+            .where("employeeId", "==", auth.employeeId)
+            .limit(200);
+    const snapshot = await query.get();
+    res.json({
+      data: snapshot.docs.map((doc) =>
+        regularizationToDto(doc.id, doc.data() as Parameters<typeof regularizationToDto>[1]),
+      ),
+    });
+  }),
+);
+
+attendanceRouter.post(
+  "/regularizations/:id/decide",
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    if (!hasPermission(auth.roles, "attendance:approve")) {
+      throw ApiError.permissionDenied("Requires attendance:approve");
+    }
+    const payload = parseBody(req, regularizationDecisionSchema);
+    const dto = await decideRegularization(
+      auth.companyId,
+      req.params.id,
+      auth.employeeId,
+      auth.roles,
+      payload.decision,
+      payload.note ?? null,
+    );
+    res.json({ data: dto });
   }),
 );
 

@@ -60,6 +60,18 @@ data class PunchCommand(
     val note: String? = null,
 )
 
+/**
+ * Employee-filed request to correct a day's clock-in/out. At least one of the
+ * two instants must be present. Filed offline-first; a manager approves it in
+ * the web portal and the corrected day flows back through the normal sync pull.
+ */
+data class RegularizationCommand(
+    val date: LocalDate,
+    val requestedInAt: Instant?,
+    val requestedOutAt: Instant?,
+    val reason: String,
+)
+
 /** Live view of "where the user stands right now" for dashboard + punch screen. */
 data class TodayAttendance(
     val date: LocalDate,

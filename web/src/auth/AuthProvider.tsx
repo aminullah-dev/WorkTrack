@@ -120,6 +120,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   "employees:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
   "employees:write": ["HR_ADMIN"],
   "attendance:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
+  "attendance:approve": ["HR_ADMIN", "BRANCH_MANAGER"],
   "leave:approve": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
   "payroll:read": ["HR_ADMIN", "PAYROLL_ADMIN", "AUDITOR"],
   "payroll:run": ["PAYROLL_ADMIN"],

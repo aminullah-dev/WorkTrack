@@ -171,3 +171,21 @@ export interface LeaveRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Employee-filed request to correct a day's check-in/check-out times. */
+export interface Regularization {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  employeeName: string | null;
+  date: string;
+  requestedInAt: string | null;
+  requestedOutAt: string | null;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  currentApproverId: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

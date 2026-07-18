@@ -10,6 +10,7 @@ import { authOf } from "../middleware/auth";
 import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
 import { createLeaveRequest, leaveCreateSchema } from "../services/leave";
+import { createRegularization, regularizationCreateSchema } from "../services/regularization";
 import { kioskSecret } from "../config";
 
 export const syncRouter = Router();
@@ -80,6 +81,8 @@ async function applyOp(
       return applyPunch(cid, employeeId, punchCreateSchema.parse(payload), kioskSecret.value());
     case "leaveRequests":
       return createLeaveRequest(cid, employeeId, leaveCreateSchema.parse(payload));
+    case "regularizations":
+      return createRegularization(cid, employeeId, regularizationCreateSchema.parse(payload));
     default:
       throw ApiError.business(
         ErrorCodes.UNSUPPORTED_RESOURCE,
@@ -102,6 +105,7 @@ const PULL_REGISTRY: Record<string, { collection: TenantCollection; scope: PullS
   leaveTypes: { collection: "leaveTypes", scope: "company" },
   leaveBalances: { collection: "leaveBalances", scope: "employee" },
   leaveRequests: { collection: "leaveRequests", scope: "employeeOrApprover" },
+  regularizations: { collection: "regularizations", scope: "employeeOrApprover" },
   punches: { collection: "punches", scope: "employee" },
   attendanceDays: { collection: "attendanceDays", scope: "employee" },
   payslips: { collection: "payslips", scope: "employee" },
