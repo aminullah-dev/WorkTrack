@@ -13,6 +13,7 @@ import app.worktrack.core.database.entity.PayslipEntity
 import app.worktrack.core.database.entity.PayslipLineEntity
 import app.worktrack.core.database.entity.ShiftAssignmentEntity
 import app.worktrack.core.database.entity.ShiftEntity
+import app.worktrack.core.model.CompanyFeatures
 import app.worktrack.core.model.LeaveStatus
 import app.worktrack.core.model.PunchMethod
 import app.worktrack.core.model.PunchType
@@ -49,6 +50,16 @@ fun MeDto.toSession() = UserSession(
     roles = roles.mapNotNull(RoleCode::fromCode).toSet(),
     branchIds = branchIds,
     companyName = companyName,
+    features = CompanyFeatures(
+        shifts = features.shifts,
+        leave = features.leave,
+        payroll = features.payroll,
+        regularization = features.regularization,
+        announcements = features.announcements,
+        geofencing = features.geofencing,
+        qrKiosk = features.qrKiosk,
+        faceRecognition = features.faceRecognition,
+    ),
 )
 
 fun BranchDto.toEntity() = BranchEntity(

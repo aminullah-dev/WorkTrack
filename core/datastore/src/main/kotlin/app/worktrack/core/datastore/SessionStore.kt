@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.worktrack.core.model.CompanyFeatures
 import app.worktrack.core.model.RoleCode
 import app.worktrack.core.model.UserSession
 import javax.inject.Inject
@@ -37,6 +38,19 @@ class SessionStore @Inject constructor(
         val roles: List<String>,
         val branchIds: List<String>,
         val companyName: String,
+        val features: StoredFeatures = StoredFeatures(),
+    )
+
+    @Serializable
+    private data class StoredFeatures(
+        val shifts: Boolean = true,
+        val leave: Boolean = true,
+        val payroll: Boolean = true,
+        val regularization: Boolean = true,
+        val announcements: Boolean = true,
+        val geofencing: Boolean = true,
+        val qrKiosk: Boolean = true,
+        val faceRecognition: Boolean = true,
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -71,6 +85,16 @@ class SessionStore @Inject constructor(
         roles = roles.mapNotNull(RoleCode::fromCode).toSet(),
         branchIds = branchIds,
         companyName = companyName,
+        features = CompanyFeatures(
+            shifts = features.shifts,
+            leave = features.leave,
+            payroll = features.payroll,
+            regularization = features.regularization,
+            announcements = features.announcements,
+            geofencing = features.geofencing,
+            qrKiosk = features.qrKiosk,
+            faceRecognition = features.faceRecognition,
+        ),
     )
 
     private fun UserSession.toStored() = StoredSession(
@@ -83,6 +107,16 @@ class SessionStore @Inject constructor(
         roles = roles.map { it.name },
         branchIds = branchIds,
         companyName = companyName,
+        features = StoredFeatures(
+            shifts = features.shifts,
+            leave = features.leave,
+            payroll = features.payroll,
+            regularization = features.regularization,
+            announcements = features.announcements,
+            geofencing = features.geofencing,
+            qrKiosk = features.qrKiosk,
+            faceRecognition = features.faceRecognition,
+        ),
     )
 
     private companion object {

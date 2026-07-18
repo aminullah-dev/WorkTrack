@@ -39,6 +39,14 @@ val Amber40 = Color(0xFF7A5900)
 val Amber80 = Color(0xFFFABD1B)
 val Amber90 = Color(0xFFFFDF9E)
 
+// Secondary accent — energetic orange (M3 tertiary role), matches the web.
+val Orange10 = Color(0xFF351400)
+val Orange20 = Color(0xFF562300)
+val Orange30 = Color(0xFF7A3300)
+val Orange40 = Color(0xFFC2530A)
+val Orange80 = Color(0xFFFFB68A)
+val Orange90 = Color(0xFFFFDBC7)
+
 val Red10 = Color(0xFF410002)
 val Red20 = Color(0xFF690005)
 val Red30 = Color(0xFF93000A)

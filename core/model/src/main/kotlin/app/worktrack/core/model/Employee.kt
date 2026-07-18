@@ -50,6 +50,18 @@ data class Employee(
  * The authenticated user's resolved context: identity plus tenant scoping and
  * roles from Firebase custom claims, refreshed from GET /me.
  */
+/** Company module toggles configured by the admin; unknown → enabled. */
+data class CompanyFeatures(
+    val shifts: Boolean = true,
+    val leave: Boolean = true,
+    val payroll: Boolean = true,
+    val regularization: Boolean = true,
+    val announcements: Boolean = true,
+    val geofencing: Boolean = true,
+    val qrKiosk: Boolean = true,
+    val faceRecognition: Boolean = true,
+)
+
 data class UserSession(
     val uid: String,
     val companyId: String,
@@ -60,6 +72,7 @@ data class UserSession(
     val roles: Set<RoleCode>,
     val branchIds: List<String>,
     val companyName: String,
+    val features: CompanyFeatures = CompanyFeatures(),
 ) {
     fun hasAnyRole(vararg candidates: RoleCode): Boolean = candidates.any { it in roles }
 

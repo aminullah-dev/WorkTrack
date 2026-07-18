@@ -30,6 +30,7 @@ fun WorkTrackApp(viewModel: MainViewModel = hiltViewModel()) {
             }
         }
 
-        is RootUiState.SignedIn -> MainScaffold()
+        is RootUiState.SignedIn ->
+            MainScaffold((state as RootUiState.SignedIn).session.features)
     }
 }
