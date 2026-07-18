@@ -13,17 +13,22 @@ android {
 
         // Per-environment API endpoints are configured through build types below.
         buildConfigField("String", "API_BASE_URL", "\"https://api.worktrack.app/v1/\"")
+        // Production builds use real Firebase; debug overrides to the emulator.
+        buildConfigField("boolean", "USE_EMULATORS", "false")
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            // Local demo against the Firebase Emulator Suite. 10.0.2.2 is the
+            // host loopback as seen from the Android emulator (AVD). Project id
+            // matches the demo tenant started by run-demo.sh.
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                // Firebase emulator suite / local functions host from an emulator.
-                "\"http://10.0.2.2:5001/worktrack-dev/us-central1/api/v1/\"",
+                "\"http://10.0.2.2:5001/demo-worktrack/us-central1/api/v1/\"",
             )
+            buildConfigField("boolean", "USE_EMULATORS", "true")
         }
     }
 
