@@ -16,6 +16,7 @@ export function AttendancePage() {
   const overview = useAttendanceOverview(date);
 
   const canApprove = can("attendance:approve");
+  const [preview, setPreview] = useState<string | null>(null);
 
   const summary = useMemo(() => {
     const rows = overview.data ?? [];
@@ -75,7 +76,19 @@ export function AttendancePage() {
               <tbody>
                 {overview.data!.map((r) => (
                   <tr key={r.employeeId}>
-                    <td>{r.employeeName}</td>
+                    <td>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                        {r.checkInSelfie && (
+                          <img
+                            src={r.checkInSelfie}
+                            className="selfie-thumb"
+                            alt=""
+                            onClick={() => setPreview(r.checkInSelfie)}
+                          />
+                        )}
+                        {r.employeeName}
+                      </span>
+                    </td>
                     <td>
                       <StatusChip status={r.status} />
                       {r.lateMinutes > 0 && (
@@ -98,6 +111,12 @@ export function AttendancePage() {
             </table>
           </div>
         </>
+      )}
+
+      {preview && (
+        <div className="modal-backdrop" onClick={() => setPreview(null)}>
+          <img src={preview} className="selfie-full" alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
       )}
     </>
   );

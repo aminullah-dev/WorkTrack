@@ -72,6 +72,16 @@ function gregToShamsi(date) {
 const TODAY = isoDaysAgo(0);
 const YEAR = Number(TODAY.slice(0, 4));
 
+/** Placeholder check-in "selfie" avatars (SVG data URLs) for the demo overview.
+ *  Real captures come from the employee app's camera; these just demo the UI. */
+const SELFIE_AVATARS = ["#0a8394", "#2e7d32", "#8a5a00"].map(
+  (c) =>
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='120' height='120' fill='#e7f4f6'/><circle cx='60' cy='46' r='22' fill='${c}'/><path d='M20 110a40 40 0 0 1 80 0z' fill='${c}'/></svg>`,
+    ),
+);
+
 // --------------------------------------------------------------- org & people
 
 const company = {
@@ -91,7 +101,7 @@ const company = {
       announcements: true,
       geofencing: true,
       qrKiosk: true,
-      faceRecognition: false,
+      faceRecognition: true,
     },
     policies: {
       standardDailyMinutes: 480,
@@ -328,6 +338,10 @@ async function seedAttendance() {
         workedMinutes = 240;
       }
 
+      // Demo check-in selfies (placeholder avatars) on a few of today's present
+      // days, so the manager's overview visibly shows photo-verified attendance.
+      const hasSelfie = d === 0 && firstInAt && idx < 3;
+
       col("attendanceDays").doc(`${e.id}_${iso}`).set({
         employeeId: e.id,
         date: iso,
@@ -339,6 +353,7 @@ async function seedAttendance() {
         earlyOutMinutes: 0,
         overtimeMinutes: 0,
         status,
+        checkInSelfie: hasSelfie ? SELFIE_AVATARS[idx % SELFIE_AVATARS.length] : null,
         computedAt: now,
         updatedAt: now,
       });

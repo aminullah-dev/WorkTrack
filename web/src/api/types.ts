@@ -200,6 +200,8 @@ export interface AttendanceOverviewRow {
   lastOutAt: string | null;
   workedMinutes: number;
   lateMinutes: number;
+  /** Check-in selfie (base64 data URL) when photo-verified attendance is on. */
+  checkInSelfie: string | null;
 }
 
 export interface PayrollRun {

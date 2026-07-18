@@ -19,6 +19,10 @@ export const punchCreateSchema = z.object({
   insideFence: z.boolean().optional().default(false),
   kioskToken: z.string().nullish(),
   note: z.string().max(500).nullish(),
+  // Optional check-in selfie (small base64 JPEG data URL) for photo-verified
+  // attendance. Capped well under the Firestore 1MB doc limit.
+  selfie: z.string().max(200_000).nullish(),
+  faceVerified: z.boolean().optional(),
 });
 
 export type PunchCreate = z.infer<typeof punchCreateSchema>;
@@ -138,6 +142,8 @@ export async function applyPunch(
     insideFence,
     kioskId,
     note: payload.note ?? null,
+    selfie: payload.selfie ?? null,
+    faceVerified: payload.faceVerified ?? false,
     serverValidated,
     invalidReason,
     updatedAt: nowTimestamp(),

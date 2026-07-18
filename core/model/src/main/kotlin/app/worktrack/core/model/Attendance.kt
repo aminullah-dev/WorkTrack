@@ -58,6 +58,9 @@ data class PunchCommand(
     val insideFence: Boolean = false,
     val kioskToken: String? = null,
     val note: String? = null,
+    /** Base64 JPEG check-in selfie captured when photo-verified attendance is on. */
+    val selfie: String? = null,
+    val faceVerified: Boolean = false,
 )
 
 /**

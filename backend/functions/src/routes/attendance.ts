@@ -153,6 +153,7 @@ attendanceRouter.get(
         lastOutAt: toIso((day?.lastOutAt as Timestamp | undefined) ?? null),
         workedMinutes: (day?.workedMinutes as number | undefined) ?? 0,
         lateMinutes: (day?.lateMinutes as number | undefined) ?? 0,
+        checkInSelfie: (day?.checkInSelfie as string | undefined) ?? null,
       };
     });
 

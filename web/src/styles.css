@@ -1177,6 +1177,27 @@ table.data tbody tr:hover {
   margin-block-start: 18px;
 }
 
+/* ---------- Check-in selfie ---------- */
+.selfie-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--brand-100);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+}
+.selfie-thumb:hover {
+  transform: scale(1.08);
+}
+.selfie-full {
+  max-width: min(90vw, 420px);
+  max-height: 90vh;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
 /* ---------- Credentials box (kiosk / employee logins) ---------- */
 .creds-box {
   background: var(--brand-50);

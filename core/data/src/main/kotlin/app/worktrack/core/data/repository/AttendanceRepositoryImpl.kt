@@ -141,6 +141,8 @@ class AttendanceRepositoryImpl @Inject constructor(
             insideFence = entity.insideFence,
             kioskToken = command.kioskToken,
             note = entity.note,
+            selfie = command.selfie,
+            faceVerified = command.faceVerified,
         )
         outboxWriter.enqueue(
             opType = OutboxOpTypes.CREATE,

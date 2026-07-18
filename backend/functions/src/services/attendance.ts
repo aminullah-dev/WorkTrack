@@ -14,6 +14,8 @@ export interface PunchDoc {
   insideFence: boolean;
   kioskId: string | null;
   note: string | null;
+  selfie?: string | null;
+  faceVerified?: boolean;
   serverValidated: boolean;
   invalidReason: string | null;
   updatedAt: Timestamp;
@@ -68,9 +70,13 @@ export async function recomputeAttendanceDay(
   let firstInAt: Timestamp | null = null;
   let lastOutAt: Timestamp | null = null;
   let openIn: Timestamp | null = null;
+  let checkInSelfie: string | null = null;
   for (const punch of punches) {
     if (punch.type === "IN") {
-      if (!firstInAt) firstInAt = punch.punchedAt;
+      if (!firstInAt) {
+        firstInAt = punch.punchedAt;
+        checkInSelfie = punch.selfie ?? null; // the day carries the check-in photo
+      }
       if (!openIn) openIn = punch.punchedAt;
     } else if (openIn) {
       workedMinutes += Math.floor(
@@ -138,6 +144,7 @@ export async function recomputeAttendanceDay(
       earlyOutMinutes,
       overtimeMinutes,
       status,
+      checkInSelfie,
       computedAt: nowTimestamp(),
       updatedAt: nowTimestamp(),
     });

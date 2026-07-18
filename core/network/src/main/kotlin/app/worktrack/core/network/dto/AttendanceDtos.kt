@@ -20,6 +20,9 @@ data class PunchCreateDto(
     val insideFence: Boolean = false,
     val kioskToken: String? = null,
     val note: String? = null,
+    /** Optional check-in selfie (small base64 JPEG) for photo-verified attendance. */
+    val selfie: String? = null,
+    val faceVerified: Boolean = false,
 )
 
 @Serializable
