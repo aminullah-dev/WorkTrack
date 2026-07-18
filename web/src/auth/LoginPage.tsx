@@ -51,12 +51,33 @@ export function LoginPage() {
   const isSignup = mode === "signup";
 
   return (
-    <div className="login-page">
-      <form className="login-card" onSubmit={onSubmit}>
-        <div className="brand">WorkTrack</div>
-        <div className="tagline">{isSignup ? t("signup_title") : t("tagline")}</div>
+    <div className="auth">
+      <aside className="auth-hero">
+        <div className="auth-hero-inner">
+          <div className="auth-brand">
+            <span className="brand-mark">W</span> WorkTrack
+          </div>
+          <p className="auth-hero-tag">{t("tagline")}</p>
+          <ul className="auth-points">
+            <li>
+              <span className="tick">✓</span> {t("auth_point_1")}
+            </li>
+            <li>
+              <span className="tick">✓</span> {t("auth_point_2")}
+            </li>
+            <li>
+              <span className="tick">✓</span> {t("auth_point_3")}
+            </li>
+          </ul>
+        </div>
+      </aside>
 
-        {isSignup && (
+      <div className="auth-main">
+        <form className="auth-form" onSubmit={onSubmit}>
+          <h1>{isSignup ? t("signup_title") : t("login_welcome")}</h1>
+          <div className="sub">{isSignup ? t("signup_sub") : t("tagline")}</div>
+
+          {isSignup && (
           <>
             <Field label={t("signup_company")} value={companyName} onChange={setCompanyName} required />
             <div style={{ display: "flex", gap: 12 }}>
@@ -106,22 +127,23 @@ export function LoginPage() {
             setMode(isSignup ? "login" : "signup");
           }}
         >
-          {isSignup ? t("signup_have_account") : t("signup_no_account")}
-        </button>
+            {isSignup ? t("signup_have_account") : t("signup_no_account")}
+          </button>
 
-        <div className="lang-switch" style={{ marginTop: 20 }}>
-          {LOCALES.map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              className={l.code === locale ? "active" : ""}
-              onClick={() => setLocale(l.code)}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
-      </form>
+          <div className="lang-switch" style={{ marginTop: 20 }}>
+            {LOCALES.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                className={l.code === locale ? "active" : ""}
+                onClick={() => setLocale(l.code)}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

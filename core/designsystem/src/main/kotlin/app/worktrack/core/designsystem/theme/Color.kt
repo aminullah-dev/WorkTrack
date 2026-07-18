@@ -19,6 +19,18 @@ val Slate80 = Color(0xFFC2C7CA)
 val Slate90 = Color(0xFFDEE3E6)
 val Slate95 = Color(0xFFECF1F4)
 val Slate99 = Color(0xFFFBFDFE)
+val SlateOutline = Color(0xFF6E777C)
+
+// Layered light surfaces for a subtle elevation hierarchy (cards on background).
+val Surface0 = Color(0xFFFFFFFF)
+val SurfaceHighLight = Color(0xFFF3F7F9)
+
+// Layered dark surfaces: near-black base with progressively lighter containers.
+val SurfaceDarkLowest = Color(0xFF080D0F)
+val SurfaceDark0 = Color(0xFF0E1416)
+val SurfaceDark1 = Color(0xFF141B1E)
+val SurfaceDark2 = Color(0xFF192124)
+val SurfaceDark3 = Color(0xFF1F292C)
 
 val Amber10 = Color(0xFF261A00)
 val Amber20 = Color(0xFF402D00)

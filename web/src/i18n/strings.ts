@@ -15,7 +15,9 @@ type Dict = Record<string, string>;
 const fa: Dict = {
   app_title: "پورتال مدیر WorkTrack",
   tagline: "مدیریت هوشمند نیروی کار برای افغانستان",
+  brand_tagline: "سامانه منابع بشری",
 
+  nav_menu: "منو",
   nav_dashboard: "داشبورد",
   nav_employees: "کارمندان",
   nav_attendance: "حاضری",
@@ -49,8 +51,13 @@ const fa: Dict = {
   login_error: "ایمیل یا رمز عبور نادرست است",
   login_no_access: "این حساب دسترسی مدیریتی ندارد",
   login_signing_in: "در حال ورود…",
+  login_welcome: "خوش آمدید",
+  auth_point_1: "حاضری با GPS، QR و کیوسک",
+  auth_point_2: "معاش، رخصتی و اصلاح حاضری",
+  auth_point_3: "تقویم شمسی و گزارش‌های زنده",
 
   signup_title: "ثبت‌نام شرکت",
+  signup_sub: "فضای کاری شرکت خود را در چند ثانیه بسازید",
   signup_company: "نام شرکت",
   signup_admin_first: "نام مدیر",
   signup_admin_last: "تخلص مدیر",
@@ -167,7 +174,9 @@ const fa: Dict = {
 const ps: Dict = {
   app_title: "د WorkTrack مدیر پورتال",
   tagline: "د افغانستان لپاره د کاري ځواک هوښیار مدیریت",
+  brand_tagline: "د بشري منابعو سیسټم",
 
+  nav_menu: "مینو",
   nav_dashboard: "ډشبورډ",
   nav_employees: "کارکوونکي",
   nav_attendance: "حاضري",
@@ -201,8 +210,13 @@ const ps: Dict = {
   login_error: "برېښنالیک یا پټنوم سم نه دی",
   login_no_access: "دا حساب مدیریتي لاسرسی نه لري",
   login_signing_in: "ننوتل کېږي…",
+  login_welcome: "ښه راغلاست",
+  auth_point_1: "د GPS، QR او کیوسک له لارې حاضري",
+  auth_point_2: "معاش، رخصتي او د حاضرۍ سمون",
+  auth_point_3: "لمریز کلیز او ژوندي راپورونه",
 
   signup_title: "د شرکت ثبت",
+  signup_sub: "د خپل شرکت کاري ځای په څو ثانیو کې جوړ کړئ",
   signup_company: "د شرکت نوم",
   signup_admin_first: "د مدیر نوم",
   signup_admin_last: "د مدیر تخلص",
@@ -319,7 +333,9 @@ const ps: Dict = {
 const en: Dict = {
   app_title: "WorkTrack Manager Portal",
   tagline: "Smart workforce management for Afghanistan",
+  brand_tagline: "HR platform",
 
+  nav_menu: "Menu",
   nav_dashboard: "Dashboard",
   nav_employees: "Employees",
   nav_attendance: "Attendance",
@@ -353,8 +369,13 @@ const en: Dict = {
   login_error: "Email or password is incorrect",
   login_no_access: "This account has no manager access",
   login_signing_in: "Signing in…",
+  login_welcome: "Welcome back",
+  auth_point_1: "Attendance via GPS, QR and kiosk",
+  auth_point_2: "Payroll, leave and attendance corrections",
+  auth_point_3: "Solar Hijri calendar and live reports",
 
   signup_title: "Register your company",
+  signup_sub: "Spin up your company workspace in seconds",
   signup_company: "Company name",
   signup_admin_first: "Admin first name",
   signup_admin_last: "Admin last name",

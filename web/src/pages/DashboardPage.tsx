@@ -33,7 +33,7 @@ export function DashboardPage() {
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0, fontSize: 16 }}>{t("dash_trend")}</h2>
+        <h2 className="card-title">{t("dash_trend")}</h2>
         {trend.data && trend.data.length > 0 ? (
           <Trend
             points={trend.data.map((p) => ({

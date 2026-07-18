@@ -29,11 +29,18 @@ private val LightColors = lightColorScheme(
     onErrorContainer = Red10,
     background = Slate99,
     onBackground = Slate10,
-    surface = Slate99,
+    surface = Surface0,
     onSurface = Slate10,
     surfaceVariant = Slate95,
     onSurfaceVariant = Slate30,
-    outline = Slate30,
+    surfaceTint = Teal40,
+    surfaceContainerLowest = Surface0,
+    surfaceContainerLow = Slate99,
+    surfaceContainer = Slate95,
+    surfaceContainerHigh = SurfaceHighLight,
+    surfaceContainerHighest = Slate90,
+    outline = SlateOutline,
+    outlineVariant = Slate90,
 )
 
 private val DarkColors = darkColorScheme(
@@ -53,13 +60,20 @@ private val DarkColors = darkColorScheme(
     onError = Red20,
     errorContainer = Red30,
     onErrorContainer = Red90,
-    background = Slate10,
+    background = SurfaceDark0,
     onBackground = Slate90,
-    surface = Slate10,
+    surface = SurfaceDark0,
     onSurface = Slate90,
     surfaceVariant = Slate30,
     onSurfaceVariant = Slate80,
+    surfaceTint = Teal80,
+    surfaceContainerLowest = SurfaceDarkLowest,
+    surfaceContainerLow = SurfaceDark1,
+    surfaceContainer = SurfaceDark2,
+    surfaceContainerHigh = SurfaceDark3,
+    surfaceContainerHighest = Slate30,
     outline = Slate80,
+    outlineVariant = Slate30,
 )
 
 @Composable
@@ -83,6 +97,7 @@ fun WorkTrackTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = WorkTrackTypography,
+        shapes = WorkTrackShapes,
         content = content,
     )
 }
