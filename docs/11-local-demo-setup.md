@@ -33,15 +33,19 @@ npm install
 echo 'KIOSK_HMAC_SECRET=demo-secret' > .secret.local
 ```
 
-حالا emulator را با پروژهٔ نمونهٔ `demo-worktrack` روشن کنید:
+حالا emulator را روشن کنید. **از `npm run serve` استفاده کنید** — این دستور اول
+کد TypeScript را build می‌کند و بعد emulator را با پروژهٔ `demo-worktrack` و
+فایل تنظیمات درست اجرا می‌کند (build کردن الزامی است، وگرنه تابع `api` بارگذاری
+نمی‌شود):
 
 ```zsh
-cd ~/StudioProjects/WorkTrack/backend
-firebase emulators:start --project demo-worktrack --only functions,firestore,auth
+cd ~/StudioProjects/WorkTrack/backend/functions
+npm run serve
 ```
 
-این ترمینال را **باز بگذارید**. باید ببینید که Functions روی `5001`، Firestore روی
-`8080` و Auth روی `9099` اجرا شده‌اند.
+این ترمینال را **باز بگذارید**. باید یک جدول با آدرس تابع `api` ببینید و در آخر
+خط **`All emulators ready!`** (Functions روی `5001`، Firestore روی `8080`،
+Auth روی `9099`).
 
 > اگر Firebase CLI از شما login خواست، `firebase login` را اجرا کنید. برای emulator
 > نیازی به پروژهٔ واقعی نیست — پیشوند `demo-` یعنی هیچ منبع واقعی ساخته نمی‌شود.

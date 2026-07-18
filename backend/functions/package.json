@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
+    "serve": "npm run build && firebase emulators:start --config ../firebase.json --project demo-worktrack --only functions,firestore,auth",
     "seed": "node seed.js",
     "deploy": "firebase deploy --only functions",
     "typecheck": "tsc --noEmit"
