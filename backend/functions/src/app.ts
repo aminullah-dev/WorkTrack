@@ -10,6 +10,7 @@ import { announcementsRouter } from "./routes/announcements";
 import { employeesRouter } from "./routes/employees";
 import { analyticsRouter } from "./routes/analytics";
 import { payrollRouter } from "./routes/payroll";
+import { publicRouter } from "./routes/public";
 import { syncRouter } from "./routes/sync";
 
 /**
@@ -27,6 +28,10 @@ export function createApp(): express.Express {
   app.get("/v1/health", (_req, res) => {
     res.json({ data: { status: "ok" } });
   });
+
+  // Public, unauthenticated routes (company self-signup) — mounted BEFORE the
+  // auth middleware so a new company can be created without a token.
+  app.use("/v1/public", publicRouter);
 
   const v1 = express.Router();
   v1.use(requireAuth);

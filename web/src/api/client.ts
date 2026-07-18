@@ -100,3 +100,22 @@ export const api = {
   put: <T>(path: string, body: unknown) =>
     request<Envelope<T>>(path, { method: "PUT", body }),
 };
+
+/** Public (unauthenticated) endpoints — no bearer token attached. */
+export async function signupCompany(body: {
+  companyName: string;
+  adminFirstName: string;
+  adminLastName: string;
+  email: string;
+  password: string;
+}): Promise<{ companyId: string; employeeId: string }> {
+  const response = await fetch(`${BASE_URL}/public/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+  return ((await response.json()) as Envelope<{ companyId: string; employeeId: string }>).data;
+}

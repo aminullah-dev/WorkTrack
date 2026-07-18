@@ -13,6 +13,17 @@ teams to 100,000+ employees. Dari is the default language (full Pashto and Engli
 translations, RTL-first UI), and all dates/payroll periods use the Solar Hijri
 calendar — see `docs/10-localization-afghanistan.md`.
 
+**Two products, one backend.** Each company self-registers and gets its own
+isolated workspace (multi-tenant):
+
+| Product | Audience | Where |
+|---|---|---|
+| **Company Console** | managers, HR, payroll | web portal (`web/`) — dashboard, employees, attendance, leave, payroll |
+| **Employee App** | employees | Android app (`app/`) — attendance, leave, payslips |
+
+To take it live, see **[docs/12-production-deployment.md](docs/12-production-deployment.md)**.
+To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-local-demo-setup.md)**.
+
 ## Repository layout
 
 | Path | Contents |
@@ -37,6 +48,7 @@ calendar — see `docs/10-localization-afghanistan.md`.
 10. [Development roadmap](docs/09-roadmap.md)
 11. [Afghanistan localization (دری/پښتو, Solar Hijri)](docs/10-localization-afghanistan.md)
 12. [Local demo setup — run everything with sample data](docs/11-local-demo-setup.md)
+13. [Production deployment — take it live](docs/12-production-deployment.md)
 
 ## Android app
 
