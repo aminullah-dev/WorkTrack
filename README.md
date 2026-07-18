@@ -36,6 +36,7 @@ calendar — see `docs/10-localization-afghanistan.md`.
 9. [Offline-first sync strategy](docs/08-sync-strategy.md)
 10. [Development roadmap](docs/09-roadmap.md)
 11. [Afghanistan localization (دری/پښتو, Solar Hijri)](docs/10-localization-afghanistan.md)
+12. [Local demo setup — run everything with sample data](docs/11-local-demo-setup.md)
 
 ## Android app
 

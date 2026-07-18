@@ -16,6 +16,8 @@ captures/
 app/google-services.json
 backend/.firebaserc
 backend/functions/.env*
+backend/functions/.secret.local
+web/.env.local
 *.keystore
 *.jks
 
