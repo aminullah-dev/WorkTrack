@@ -8,6 +8,7 @@ import app.worktrack.core.common.result.onFailure
 import app.worktrack.core.common.result.onSuccess
 import app.worktrack.core.data.mapper.toSession
 import app.worktrack.core.database.WorkTrackDatabase
+import app.worktrack.core.database.clearAllTenantData
 import app.worktrack.core.datastore.SessionStore
 import app.worktrack.core.domain.repository.AuthRepository
 import app.worktrack.core.model.UserSession
@@ -80,7 +81,7 @@ class AuthRepositoryImpl @Inject constructor(
         sessionStore.clear()
         withContext(dispatchers.io) {
             // Tenant data never survives a sign-out on shared devices.
-            database.clearAllTables()
+            database.clearAllTenantData()
         }
     }
 
