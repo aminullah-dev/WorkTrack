@@ -35,7 +35,12 @@ export function DashboardPage() {
           accent="amber"
           icon={<IcInbox />}
         />
-        <Kpi value={`${num(k.attendanceRate)}٪`} label={t("dash_attendance_rate")} icon={<IcTrend />} />
+        <Kpi
+          value={`${num(k.attendanceRate)}٪`}
+          label={t("dash_attendance_rate")}
+          accent="orange"
+          icon={<IcTrend />}
+        />
       </div>
 
       <div className="card">
@@ -69,7 +74,7 @@ function Kpi({
 }: {
   value: string;
   label: string;
-  accent?: "red" | "amber";
+  accent?: "red" | "amber" | "orange";
   icon?: ReactNode;
 }) {
   return (
@@ -163,7 +168,13 @@ function Trend({ points }: { points: { present: number; cap: string; isToday: bo
         <path d={area} fill="url(#trendFill)" />
         <path d={line} className="stroke" fill="none" vectorEffect="non-scaling-stroke" />
         {xy.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={points[i].isToday ? 5 : 3.5} className="dot" />
+          <circle
+            key={i}
+            cx={x}
+            cy={y}
+            r={points[i].isToday ? 5 : 3.5}
+            className={points[i].isToday ? "dot today" : "dot"}
+          />
         ))}
         {todayPt && (
           <g>

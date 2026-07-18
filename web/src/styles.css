@@ -12,6 +12,12 @@
   --brand-100: #cdeaef;
   --on-brand: #ffffff;
 
+  /* Secondary accent — energetic orange (used sparingly for highlights/CTAs) */
+  --accent: #e2620e;
+  --accent-strong: #c2530a;
+  --accent-bg: #fdeadd;
+  --on-accent: #ffffff;
+
   /* Neutrals / surfaces */
   --bg: #f3f6f8;
   --bg-tint: radial-gradient(1200px 600px at 100% -10%, #e9f3f5 0%, rgba(233, 243, 245, 0) 55%);
@@ -70,6 +76,11 @@
   --brand-100: #123840;
   --on-brand: #00363d;
 
+  --accent: #ff8a4c;
+  --accent-strong: #ffa06b;
+  --accent-bg: #38200f;
+  --on-accent: #2a1200;
+
   --bg: #0c1315;
   --bg-tint: radial-gradient(1200px 600px at 100% -10%, #0f2429 0%, rgba(15, 36, 41, 0) 55%);
   --surface: #121b1e;
@@ -106,6 +117,11 @@
     --brand-50: #0e2a30;
     --brand-100: #123840;
     --on-brand: #00363d;
+
+    --accent: #ff8a4c;
+    --accent-strong: #ffa06b;
+    --accent-bg: #38200f;
+    --on-accent: #2a1200;
 
     --bg: #0c1315;
     --bg-tint: radial-gradient(1200px 600px at 100% -10%, #0f2429 0%, rgba(15, 36, 41, 0) 55%);
@@ -249,6 +265,14 @@ button {
 }
 .btn-danger:not(:disabled):hover {
   filter: brightness(0.97);
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 1px 2px rgba(194, 83, 10, 0.24), 0 4px 12px -4px rgba(194, 83, 10, 0.4);
+}
+.btn-accent:not(:disabled):hover {
+  background: var(--accent-strong);
 }
 .btn-sm {
   padding: 7px 15px;
@@ -698,6 +722,16 @@ button {
 .kpi.accent-amber .value {
   color: var(--amber);
 }
+.kpi.accent-orange::before {
+  background: var(--accent);
+}
+.kpi.accent-orange .value {
+  color: var(--accent);
+}
+.kpi.accent-orange .kpi-icon {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
 
 /* ---------- Table ---------- */
 .table-wrap {
@@ -998,14 +1032,18 @@ table.data tbody tr:hover {
   stroke: var(--brand);
   stroke-width: 2;
 }
+.linechart .dot.today {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
 .linechart .marker {
-  stroke: var(--brand);
+  stroke: var(--accent);
   stroke-width: 1;
   stroke-dasharray: 3 4;
-  opacity: 0.45;
+  opacity: 0.6;
 }
 .linechart .bubble {
-  fill: var(--brand);
+  fill: var(--accent);
 }
 .linechart .bubble-txt {
   fill: var(--on-brand);
