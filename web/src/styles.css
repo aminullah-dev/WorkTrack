@@ -1089,6 +1089,8 @@ table.data tbody tr:hover {
   background: var(--border-strong);
   border-radius: 999px;
   transition: background 0.18s ease;
+  /* The track paints over the checkbox; let clicks pass through to the input. */
+  pointer-events: none;
 }
 .switch .track::before {
   content: "";
