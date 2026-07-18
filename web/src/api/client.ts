@@ -1,7 +1,7 @@
 import { auth } from "../firebase";
 import type { Envelope, Problem } from "./types";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
 /** Typed API error carrying the RFC 7807 problem code and any field errors. */
 export class ApiError extends Error {
