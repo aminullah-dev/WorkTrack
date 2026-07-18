@@ -6,6 +6,8 @@ import type {
   Employee,
   EmployeeCreated,
   EmployeeWrite,
+  KioskAccount,
+  KioskAccountCreated,
   Kpis,
   LeaveRequest,
   PayrollRun,
@@ -169,11 +171,40 @@ export function useKioskToken(kioskId?: string) {
     queryKey: ["kiosk-token", kioskId ?? "default"],
     queryFn: () =>
       api
-        .get<{ token: string; kioskId: string; rotateSeconds: number }>("/kiosk/token", { kioskId })
+        .get<{ token: string; kioskId: string; companyName: string; rotateSeconds: number }>(
+          "/kiosk/token",
+          { kioskId },
+        )
         .then((e) => e.data),
     refetchInterval: 20_000,
     refetchIntervalInBackground: true,
     staleTime: 0,
+  });
+}
+
+export function useKioskAccounts(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["kiosk-accounts"],
+    queryFn: () => api.get<KioskAccount[]>("/kiosk/accounts").then((e) => e.data),
+  });
+}
+
+export function useCreateKioskAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { label: string; branchId?: string | null }) =>
+      api.post<KioskAccountCreated>("/kiosk/accounts", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kiosk-accounts"] }),
+  });
+}
+
+export function useResetKioskAccount() {
+  return useMutation({
+    mutationFn: (kioskId: string) =>
+      api
+        .post<{ kioskId: string; password: string }>(`/kiosk/accounts/${kioskId}/reset`, {})
+        .then((e) => e.data),
   });
 }
 

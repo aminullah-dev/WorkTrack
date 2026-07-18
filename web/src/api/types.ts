@@ -84,6 +84,24 @@ export interface ShiftWrite {
   active: boolean;
 }
 
+export interface KioskAccount {
+  kioskId: string;
+  label: string;
+  email: string | null;
+  branchId: string | null;
+  active: boolean;
+  createdAt: string | null;
+}
+
+/** POST /kiosk/accounts echoes the one-time device credentials. */
+export interface KioskAccountCreated {
+  kioskId: string;
+  label: string;
+  email: string;
+  password: string;
+  branchId: string | null;
+}
+
 export interface RosterRow {
   id: string;
   employeeId: string;

@@ -12,7 +12,7 @@ import { useI18n } from "../i18n/LocaleProvider";
  */
 export function KioskPage() {
   const { t, num } = useI18n();
-  const { me } = useAuth();
+  const { me, status, signOut } = useAuth();
   const navigate = useNavigate();
   const kiosk = useKioskToken(me?.branchIds[0]);
   const [clock, setClock] = useState(() => new Date());
@@ -24,16 +24,24 @@ export function KioskPage() {
 
   const hh = String(clock.getHours()).padStart(2, "0");
   const mm = String(clock.getMinutes()).padStart(2, "0");
+  // Device account → sign out (unlock the tablet); manager preview → back to portal.
+  const isDevice = status === "kiosk";
+  const onExit = () => (isDevice ? void signOut() : navigate("/"));
+  const companyName = kiosk.data?.companyName || me?.companyName || "WorkTrack";
 
   return (
     <div className="kiosk">
-      <button className="kiosk-exit" onClick={() => navigate("/")} aria-label={t("kiosk_exit")}>
+      <button
+        className="kiosk-exit"
+        onClick={onExit}
+        aria-label={isDevice ? t("nav_logout") : t("kiosk_exit")}
+      >
         ✕
       </button>
 
       <div className="kiosk-brand">
         <span className="brand-mark">W</span>
-        <span>{me?.companyName ?? "WorkTrack"}</span>
+        <span>{companyName}</span>
       </div>
 
       <div className="kiosk-clock" dir="ltr">

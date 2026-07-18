@@ -15,7 +15,7 @@ import { auth } from "../firebase";
 import { api, ApiError } from "../api/client";
 import type { CompanyFeatures, Me } from "../api/types";
 
-type Status = "loading" | "signedOut" | "signedIn";
+type Status = "loading" | "signedOut" | "signedIn" | "kiosk";
 
 interface AuthContextValue {
   status: Status;
@@ -39,6 +39,11 @@ const MANAGER_ROLES = new Set([
 
 export class NoManagerAccessError extends Error {}
 
+/** Firebase custom claim `r` (roles) is untyped — coerce to a string array. */
+function asRoles(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.map(String) : [];
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>("loading");
   const [me, setMe] = useState<Me | null>(null);
@@ -53,6 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
+        // A dedicated kiosk device account has no employee record; route it
+        // straight to the full-screen kiosk display from its token claims.
+        const claims = await user.getIdTokenResult();
+        if (asRoles(claims.claims.r).includes("KIOSK")) {
+          setMe(null);
+          setStatus("kiosk");
+          return;
+        }
         const { data } = await api.get<Me>("/me");
         if (!data.roles.some((r) => MANAGER_ROLES.has(r))) {
           await firebaseSignOut(auth);
@@ -77,6 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       me,
       signIn: async (email, password) => {
         const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const claims = await cred.user.getIdTokenResult();
+        if (asRoles(claims.claims.r).includes("KIOSK")) {
+          setMe(null);
+          setStatus("kiosk");
+          return;
+        }
         const { data } = await api.get<Me>("/me");
         if (!data.roles.some((r) => MANAGER_ROLES.has(r))) {
           await firebaseSignOut(auth);
@@ -84,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setMe(data);
         setStatus("signedIn");
-        void cred;
       },
       signOut: async () => {
         await firebaseSignOut(auth);

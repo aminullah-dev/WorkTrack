@@ -1177,6 +1177,37 @@ table.data tbody tr:hover {
   margin-block-start: 18px;
 }
 
+/* ---------- Credentials box (kiosk / employee logins) ---------- */
+.creds-box {
+  background: var(--brand-50);
+  border: 1px solid var(--brand-100);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-block-end: 14px;
+}
+.cred-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-block: 5px;
+}
+.cred-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 92px;
+}
+.cred-value {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 6px 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
 /* ---------- Kiosk mode ---------- */
 .kiosk {
   position: fixed;

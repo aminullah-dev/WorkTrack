@@ -21,6 +21,10 @@ export function App() {
   if (status === "signedOut") {
     return <LoginPage />;
   }
+  // A dedicated kiosk device is locked to the full-screen check-in display.
+  if (status === "kiosk") {
+    return <KioskPage />;
+  }
 
   return (
     <Routes>
