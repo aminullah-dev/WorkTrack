@@ -48,6 +48,14 @@ export interface Employee {
   updatedAt: string;
 }
 
+export type AssignableRole =
+  | "EMPLOYEE"
+  | "TEAM_LEAD"
+  | "BRANCH_MANAGER"
+  | "HR_ADMIN"
+  | "PAYROLL_ADMIN"
+  | "AUDITOR";
+
 export interface EmployeeWrite {
   employeeCode: string;
   firstName: string;
@@ -61,6 +69,14 @@ export interface EmployeeWrite {
   employmentType: EmploymentType;
   joinDate: string;
   status: EmployeeStatus;
+  role?: AssignableRole;
+  createLogin?: boolean;
+  initialPassword?: string;
+}
+
+/** POST /employees echoes the created employee plus the temp login password. */
+export interface EmployeeCreated extends Employee {
+  tempPassword: string | null;
 }
 
 export interface Branch {

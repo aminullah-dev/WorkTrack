@@ -3,6 +3,7 @@ import { api } from "./client";
 import type {
   AttendanceOverviewRow,
   Employee,
+  EmployeeCreated,
   EmployeeWrite,
   Kpis,
   LeaveRequest,
@@ -55,7 +56,8 @@ export function useEmployees(params: { cursor?: string; branchId?: string; statu
 export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: EmployeeWrite) => api.post<Employee>("/employees", body).then((e) => e.data),
+    mutationFn: (body: EmployeeWrite) =>
+      api.post<EmployeeCreated>("/employees", body).then((e) => e.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
   });
 }

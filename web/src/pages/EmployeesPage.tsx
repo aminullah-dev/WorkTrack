@@ -1,12 +1,26 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useCreateEmployee, useEmployees } from "../api/hooks";
 import { ApiError } from "../api/client";
-import type { Employee, EmployeeStatus, EmploymentType } from "../api/types";
+import type {
+  AssignableRole,
+  Employee,
+  EmployeeCreated,
+  EmployeeStatus,
+  EmploymentType,
+} from "../api/types";
 import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
 const EMPLOYMENT_TYPES: EmploymentType[] = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN"];
+const ROLES: AssignableRole[] = [
+  "EMPLOYEE",
+  "TEAM_LEAD",
+  "BRANCH_MANAGER",
+  "HR_ADMIN",
+  "PAYROLL_ADMIN",
+  "AUDITOR",
+];
 
 export function EmployeesPage() {
   const { t, num, shamsi } = useI18n();
@@ -14,6 +28,7 @@ export function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
 
   const employees = useEmployees({});
 
@@ -91,23 +106,84 @@ export function EmployeesPage() {
       {showForm && (
         <EmployeeForm
           onClose={() => setShowForm(false)}
-          onCreated={() => {
+          onCreated={(created) => {
             setShowForm(false);
-            setToast(t("emp_created"));
-            window.setTimeout(() => setToast(null), 2500);
+            if (created.tempPassword) {
+              setCredentials({ email: created.email, password: created.tempPassword });
+            } else {
+              setToast(t("emp_created"));
+              window.setTimeout(() => setToast(null), 2500);
+            }
           }}
         />
+      )}
+      {credentials && (
+        <CredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
       )}
       {toast && <Toast message={toast} />}
     </>
   );
 }
 
-function EmployeeForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CredentialsDialog({
+  credentials,
+  onClose,
+}: {
+  credentials: { email: string; password: string };
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+
+  function copy() {
+    void navigator.clipboard
+      .writeText(`${credentials.email} / ${credentials.password}`)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      });
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+        <h2>{t("emp_credentials_title")}</h2>
+        <p style={{ color: "var(--slate-50)", fontSize: 14 }}>{t("emp_credentials_hint")}</p>
+        <div className="card" style={{ boxShadow: "none", background: "var(--slate-95)" }}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--slate-50)" }}>{t("emp_credentials_email")}</div>
+            <div dir="ltr" style={{ fontWeight: 600 }}>{credentials.email}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: "var(--slate-50)" }}>{t("emp_credentials_password")}</div>
+            <div dir="ltr" style={{ fontWeight: 600, fontFamily: "monospace" }}>{credentials.password}</div>
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-outline" onClick={copy}>
+            {copied ? t("emp_credentials_copied") : t("emp_credentials_copy")}
+          </button>
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            {t("emp_credentials_done")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmployeeForm({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (created: EmployeeCreated) => void;
+}) {
   const { t } = useI18n();
   const { me } = useAuth();
   const create = useCreateEmployee();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState({
     employeeCode: "",
     firstName: "",
@@ -118,6 +194,9 @@ function EmployeeForm({ onClose, onCreated }: { onClose: () => void; onCreated: 
     employmentType: "FULL_TIME" as EmploymentType,
     joinDate: isoToday(),
     status: "ACTIVE" as EmployeeStatus,
+    role: "EMPLOYEE" as AssignableRole,
+    createLogin: true,
+    initialPassword: "",
   });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -127,8 +206,9 @@ function EmployeeForm({ onClose, onCreated }: { onClose: () => void; onCreated: 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFieldErrors({});
+    setFormError(null);
     try {
-      await create.mutateAsync({
+      const created = await create.mutateAsync({
         employeeCode: form.employeeCode,
         firstName: form.firstName,
         lastName: form.lastName,
@@ -138,10 +218,21 @@ function EmployeeForm({ onClose, onCreated }: { onClose: () => void; onCreated: 
         employmentType: form.employmentType,
         joinDate: form.joinDate,
         status: form.status,
+        role: form.role,
+        createLogin: form.createLogin,
+        initialPassword: form.initialPassword || undefined,
       });
-      onCreated();
+      onCreated(created);
     } catch (err) {
-      if (err instanceof ApiError) setFieldErrors(err.fieldErrors);
+      if (err instanceof ApiError) {
+        setFieldErrors(err.fieldErrors);
+        // Duplicate-email and other business errors carry no field map.
+        if (!Object.keys(err.fieldErrors).length) {
+          setFormError(err.code === "CONFLICT" ? t("signup_email_exists") : err.message);
+        }
+      } else {
+        setFormError(t("common_error"));
+      }
     }
   }
 
@@ -173,9 +264,37 @@ function EmployeeForm({ onClose, onCreated }: { onClose: () => void; onCreated: 
           </div>
         </div>
 
-        {create.isError && !Object.keys(fieldErrors).length && (
-          <div className="field-error">{t("common_error")}</div>
+        <div className="field">
+          <label>{t("emp_role")}</label>
+          <select className="select" value={form.role} onChange={(e) => set("role", e.target.value as AssignableRole)}>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {t(`role_${r.toLowerCase()}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={form.createLogin}
+            onChange={(e) => set("createLogin", e.target.checked)}
+          />
+          {t("emp_create_login")}
+        </label>
+
+        {form.createLogin && (
+          <Text
+            label={t("emp_password_optional")}
+            value={form.initialPassword}
+            onChange={(v) => set("initialPassword", v)}
+            dir="ltr"
+            error={fieldErrors.initialPassword}
+          />
         )}
+
+        {formError && <div className="field-error">{formError}</div>}
 
         <div className="modal-actions">
           <button type="button" className="btn btn-outline" onClick={onClose}>

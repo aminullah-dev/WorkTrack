@@ -8,6 +8,11 @@ import { ulid } from "../lib/ids";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
 import { parseBody } from "../middleware/validate";
+import {
+  ASSIGNABLE_ROLES,
+  createEmployeeLogin,
+  resetEmployeePassword,
+} from "../services/invite";
 
 export const employeesRouter = Router();
 
@@ -129,7 +134,33 @@ const employeeWriteSchema = z.object({
   employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN"]),
   joinDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.enum(["ACTIVE", "ON_LEAVE", "SUSPENDED", "EXITED"]).default("ACTIVE"),
+  // Login provisioning (create only): give the new employee a mobile-app login.
+  role: z.enum(ASSIGNABLE_ROLES).default("EMPLOYEE"),
+  createLogin: z.boolean().default(true),
+  initialPassword: z.string().min(8).max(100).optional(),
 });
+
+function toDoc(
+  payload: z.infer<typeof employeeWriteSchema>,
+  avatarUrl: string | null,
+): EmployeeDoc {
+  return {
+    employeeCode: payload.employeeCode,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    email: payload.email,
+    phone: payload.phone ?? null,
+    branchId: payload.branchId ?? null,
+    departmentId: payload.departmentId ?? null,
+    positionId: payload.positionId ?? null,
+    managerId: payload.managerId ?? null,
+    employmentType: payload.employmentType,
+    joinDate: payload.joinDate,
+    status: payload.status,
+    avatarUrl,
+    updatedAt: nowTimestamp(),
+  };
+}
 
 employeesRouter.post(
   "/",
@@ -138,16 +169,23 @@ employeesRouter.post(
     const auth = authOf(req);
     const payload = parseBody(req, employeeWriteSchema);
     const id = ulid();
-    const doc: EmployeeDoc = {
-      ...payload,
-      phone: payload.phone ?? null,
-      branchId: payload.branchId ?? null,
-      departmentId: payload.departmentId ?? null,
-      positionId: payload.positionId ?? null,
-      managerId: payload.managerId ?? null,
-      avatarUrl: null,
-      updatedAt: nowTimestamp(),
-    };
+    const doc = toDoc(payload, null);
+
+    // Create the login FIRST so a duplicate-email failure doesn't leave an
+    // orphaned employee record behind.
+    let tempPassword: string | null = null;
+    if (payload.createLogin) {
+      tempPassword = await createEmployeeLogin({
+        companyId: auth.companyId,
+        employeeId: id,
+        email: payload.email,
+        displayName: `${payload.firstName} ${payload.lastName}`.trim(),
+        role: payload.role,
+        branchIds: doc.branchId ? [doc.branchId] : [],
+        password: payload.initialPassword,
+      });
+    }
+
     await tenant(auth.companyId, "employees").doc(id).create(doc);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
@@ -155,9 +193,33 @@ employeesRouter.post(
       action: "employees.create",
       resourceType: "employees",
       resourceId: id,
-      after: { employeeCode: payload.employeeCode, email: payload.email },
+      after: { employeeCode: payload.employeeCode, email: payload.email, role: payload.role },
     });
-    res.status(201).json({ data: employeeToDto(id, auth.companyId, doc) });
+    res.status(201).json({
+      data: { ...employeeToDto(id, auth.companyId, doc), tempPassword },
+    });
+  }),
+);
+
+/** Reset an employee's login to a fresh temporary password (manager shares it). */
+employeesRouter.post(
+  "/:id/reset-password",
+  requirePermission("employees:write"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const emp = await tenant(auth.companyId, "employees").doc(req.params.id).get();
+    if (!emp.exists) {
+      throw ApiError.notFound("Employee not found");
+    }
+    const tempPassword = await resetEmployeePassword(req.params.id);
+    await audit(auth.companyId, {
+      actorId: auth.employeeId,
+      actorRole: auth.roles.join(","),
+      action: "employees.reset_password",
+      resourceType: "employees",
+      resourceId: req.params.id,
+    });
+    res.json({ data: { tempPassword } });
   }),
 );
 
@@ -172,16 +234,7 @@ employeesRouter.put(
     if (!existing.exists) {
       throw ApiError.notFound("Employee not found");
     }
-    const doc: EmployeeDoc = {
-      ...payload,
-      phone: payload.phone ?? null,
-      branchId: payload.branchId ?? null,
-      departmentId: payload.departmentId ?? null,
-      positionId: payload.positionId ?? null,
-      managerId: payload.managerId ?? null,
-      avatarUrl: (existing.data() as EmployeeDoc).avatarUrl ?? null,
-      updatedAt: nowTimestamp(),
-    };
+    const doc = toDoc(payload, (existing.data() as EmployeeDoc).avatarUrl ?? null);
     await ref.set(doc);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
