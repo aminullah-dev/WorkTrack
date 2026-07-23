@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,7 +68,7 @@ fun PayslipsRoute(
 
         if (state.payslips.isEmpty()) {
             EmptyState(
-                icon = Icons.Filled.ReceiptLong,
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
                 title = stringResource(
                     R.string.pay_no_payslips_title,
                     localizedDigits(state.year.toString()),
