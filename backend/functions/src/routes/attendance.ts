@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Timestamp } from "firebase-admin/firestore";
 import { asyncHandler, ApiError } from "../lib/errors";
-import { tenant, toIso } from "../lib/firestore";
+import { db, tenant, toIso } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
 import { hasPermission, requirePermission } from "../middleware/rbac";
 import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
@@ -165,13 +165,43 @@ attendanceRouter.get(
       dayByEmployee.set(day.employeeId, day as Record<string, unknown>);
     }
 
-    const rows = employeesSnap.docs.map((doc) => {
-      const emp = doc.data() as { firstName: string; lastName: string; branchId?: string | null };
-      const day = dayByEmployee.get(doc.id);
+    interface EmployeeRow {
+      firstName: string;
+      lastName: string;
+      branchId?: string | null;
+      status?: string;
+    }
+    const employeeDocs = new Map<string, EmployeeRow>();
+    for (const doc of employeesSnap.docs) {
+      employeeDocs.set(doc.id, doc.data() as EmployeeRow);
+    }
+
+    // Someone who clocked in must never be invisible here. Employees who are no
+    // longer ACTIVE (left, suspended, still onboarding) are excluded from the
+    // roster query above, so pull in any of them that actually have a day
+    // record — otherwise their attendance silently vanishes from the board.
+    const missingIds = [...dayByEmployee.keys()].filter((id) => !employeeDocs.has(id));
+    if (missingIds.length > 0) {
+      const refs = missingIds
+        .slice(0, 200)
+        .map((id) => tenant(auth.companyId, "employees").doc(id));
+      const extra = await db.getAll(...refs);
+      for (const doc of extra) {
+        if (!doc.exists) continue;
+        const emp = doc.data() as EmployeeRow;
+        // Branch managers stay scoped to their own branch.
+        if (branchFilter && (emp.branchId ?? null) !== branchFilter) continue;
+        employeeDocs.set(doc.id, emp);
+      }
+    }
+
+    const rows = [...employeeDocs.entries()].map(([employeeId, emp]) => {
+      const day = dayByEmployee.get(employeeId);
       return {
-        employeeId: doc.id,
+        employeeId,
         employeeName: `${emp.firstName} ${emp.lastName}`.trim(),
         branchId: emp.branchId ?? null,
+        employeeStatus: emp.status ?? "ACTIVE",
         status: (day?.status as string | undefined) ?? "ABSENT",
         firstInAt: toIso((day?.firstInAt as Timestamp | undefined) ?? null),
         lastOutAt: toIso((day?.lastOutAt as Timestamp | undefined) ?? null),
@@ -180,6 +210,10 @@ attendanceRouter.get(
         checkInSelfie: (day?.checkInSelfie as string | undefined) ?? null,
         checkInFaceVerified: (day?.checkInFaceVerified as boolean | undefined) ?? false,
         needsReview: (day?.needsReview as boolean | undefined) ?? false,
+        // Punches the server refused, so the portal can explain an empty day.
+        rejectedCount: (day?.rejectedCount as number | undefined) ?? 0,
+        rejectedReason: (day?.rejectedReason as string | undefined) ?? null,
+        rejectedAt: toIso((day?.rejectedAt as Timestamp | undefined) ?? null),
       };
     });
 

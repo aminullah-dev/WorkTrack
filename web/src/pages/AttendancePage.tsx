@@ -21,7 +21,10 @@ export function AttendancePage() {
   const summary = useMemo(() => {
     const rows = overview.data ?? [];
     const present = rows.filter((r) => r.status === "PRESENT" || r.status === "HALF_DAY").length;
-    return { present, absent: rows.length - present, total: rows.length };
+    // One "look at this" count: an unverified face and a refused punch are
+    // both things a manager has to act on.
+    const needsReview = rows.filter((r) => r.needsReview || r.rejectedCount > 0).length;
+    return { present, absent: rows.length - present, needsReview, total: rows.length };
   }, [overview.data]);
 
   return (
@@ -61,6 +64,13 @@ export function AttendancePage() {
               <div className="value">{num(summary.absent)}</div>
               <div className="label">{t("att_absent")}</div>
             </div>
+            {/* Only shown when there is something to act on, so it never adds noise. */}
+            {summary.needsReview > 0 && (
+              <div className="kpi accent-amber">
+                <div className="value">{num(summary.needsReview)}</div>
+                <div className="label">{t("att_needs_review")}</div>
+              </div>
+            )}
           </div>
 
           <div className="table-wrap">
@@ -87,6 +97,17 @@ export function AttendancePage() {
                           />
                         )}
                         {r.employeeName}
+                        {r.checkInFaceVerified && (
+                          <span className="verified-tick" title={t("att_face_verified")}>
+                            ✓
+                          </span>
+                        )}
+                        {/* Only reached when a non-active employee still has a
+                            day record — worth saying so rather than looking
+                            like a roster mistake. */}
+                        {r.employeeStatus !== "ACTIVE" && (
+                          <span className="chip chip-neutral">{t("att_inactive")}</span>
+                        )}
                       </span>
                     </td>
                     <td>
@@ -94,6 +115,31 @@ export function AttendancePage() {
                       {r.lateMinutes > 0 && (
                         <span className="chip chip-warning" style={{ marginInlineStart: 8 }}>
                           {t("att_late_by", num(r.lateMinutes))}
+                        </span>
+                      )}
+                      {r.needsReview && (
+                        <span
+                          className="chip chip-warning"
+                          style={{ marginInlineStart: 8 }}
+                          title={t("att_needs_review_hint")}
+                        >
+                          {t("att_needs_review")}
+                        </span>
+                      )}
+                      {/* A refused punch is why an otherwise-worked day can read
+                          as empty; say which rule rejected it, and when. */}
+                      {r.rejectedCount > 0 && (
+                        <span
+                          className="chip chip-negative"
+                          style={{ marginInlineStart: 8 }}
+                          title={t(
+                            "att_rejected_hint",
+                            t(rejectReasonKey(r.rejectedReason)),
+                            r.rejectedAt ? formatTime(r.rejectedAt, num) : "—",
+                          )}
+                        >
+                          {t(rejectReasonKey(r.rejectedReason))}
+                          {r.rejectedCount > 1 && ` (${num(r.rejectedCount)})`}
                         </span>
                       )}
                     </td>
@@ -210,6 +256,24 @@ function RegularizationApprovals() {
       {toast && <Toast message={toast} />}
     </section>
   );
+}
+
+/** Server invalidReason → translation key, so the manager sees a rule, not a code. */
+function rejectReasonKey(reason: string | null): string {
+  switch (reason) {
+    case "GEOFENCE_VIOLATION":
+      return "att_reason_geofence";
+    case "TIME_SKEW":
+      return "att_reason_time_skew";
+    case "TOO_OLD":
+      return "att_reason_too_old";
+    case "IMPLAUSIBLE_TRAVEL":
+      return "att_reason_travel";
+    case "KIOSK_TOKEN_INVALID":
+      return "att_reason_kiosk";
+    default:
+      return "att_reason_unknown";
+  }
 }
 
 function formatTime(iso: string, num: (v: string | number) => string): string {

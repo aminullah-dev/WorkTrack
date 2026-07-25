@@ -378,6 +378,14 @@ button {
   color: var(--neutral);
 }
 
+/* Quiet marker next to a name whose check-in was confirmed by face match. */
+.verified-tick {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
 /* ---------- Layout shell ---------- */
 .shell {
   display: grid;

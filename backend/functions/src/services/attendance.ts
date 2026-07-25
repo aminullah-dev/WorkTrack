@@ -69,9 +69,18 @@ export async function recomputeAttendanceDay(
     .orderBy("punchedAt", "asc")
     .get();
 
-  const punches = punchesSnap.docs
-    .map((d) => d.data() as PunchDoc)
-    .filter((p) => p.serverValidated);
+  const allPunches = punchesSnap.docs.map((d) => d.data() as PunchDoc);
+  const punches = allPunches.filter((p) => p.serverValidated);
+
+  // Punches the server refused (outside the geofence, bad device clock, …) are
+  // kept as evidence but excluded from the worked-time math above. Summarise
+  // them onto the day so the portal can show WHY a day looks empty, instead of
+  // silently reading as "absent" with no explanation anywhere.
+  const rejected = allPunches.filter((p) => !p.serverValidated);
+  const rejectedCount = rejected.length;
+  // Ordered by punchedAt asc, so this is the earliest refusal of the day.
+  const rejectedReason = rejected[0]?.invalidReason ?? null;
+  const rejectedAt = rejected[0]?.punchedAt ?? null;
 
   let workedMinutes = 0;
   let firstInAt: Timestamp | null = null;
@@ -166,6 +175,9 @@ export async function recomputeAttendanceDay(
       checkInSelfie,
       checkInFaceVerified,
       needsReview,
+      rejectedCount,
+      rejectedReason,
+      rejectedAt,
       computedAt: nowTimestamp(),
       updatedAt: nowTimestamp(),
     });

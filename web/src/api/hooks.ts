@@ -37,13 +37,27 @@ export function useAttendanceTrend(date?: string) {
   });
 }
 
+/** Local calendar date (YYYY-MM-DD), matching the page's date picker. */
+function isoToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+
 export function useAttendanceOverview(date?: string) {
+  // The live board must not go stale while a manager watches it: a check-in
+  // made now should appear without a manual reload. Past days never change,
+  // so they are fetched once instead of polled.
+  const isLive = date === undefined || date === isoToday();
   return useQuery({
     queryKey: ["attendance-overview", date ?? "today"],
     queryFn: () =>
       api
         .get<{ date: string; rows: AttendanceOverviewRow[] }>("/attendance/overview", { date })
         .then((e) => e.data.rows),
+    refetchInterval: isLive ? 60_000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

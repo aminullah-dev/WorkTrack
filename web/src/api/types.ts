@@ -202,6 +202,17 @@ export interface AttendanceOverviewRow {
   lateMinutes: number;
   /** Check-in selfie (base64 data URL) when photo-verified attendance is on. */
   checkInSelfie: string | null;
+  /** The check-in punch was confirmed against the employee's enrolled face. */
+  checkInFaceVerified: boolean;
+  /** Face recognition is on, but a punch this day was not face-verified. */
+  needsReview: boolean;
+  /** Employee record status; non-ACTIVE people appear only if they have a day. */
+  employeeStatus: string;
+  /** Punches the server refused (geofence, clock skew, …) and did not count. */
+  rejectedCount: number;
+  /** Machine-readable reason of the first refusal, e.g. GEOFENCE_VIOLATION. */
+  rejectedReason: string | null;
+  rejectedAt: string | null;
 }
 
 export interface PayrollRun {
