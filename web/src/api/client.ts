@@ -41,7 +41,10 @@ interface RequestOptions {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, query, idempotent } = options;
 
-  const url = new URL(`${BASE_URL}${path}`);
+  // Pass the page origin as the base so a relative BASE_URL (e.g. "/v1" behind
+  // Firebase Hosting in production) resolves; an absolute BASE_URL (the local
+  // emulator) ignores the base. Without it, new URL("/v1/me") throws.
+  const url = new URL(`${BASE_URL}${path}`, window.location.origin);
   if (query) {
     for (const [key, val] of Object.entries(query)) {
       if (val !== undefined && val !== null) url.searchParams.set(key, String(val));
@@ -99,6 +102,7 @@ export const api = {
     request<Envelope<T>>(path, { method: "POST", body, idempotent }),
   put: <T>(path: string, body: unknown) =>
     request<Envelope<T>>(path, { method: "PUT", body }),
+  del: <T>(path: string) => request<Envelope<T>>(path, { method: "DELETE" }),
 };
 
 /** Public (unauthenticated) endpoints — no bearer token attached. */
