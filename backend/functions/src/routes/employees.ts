@@ -8,6 +8,7 @@ import { ulid } from "../lib/ids";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
 import { parseBody } from "../middleware/validate";
+import { clearFace } from "../services/face";
 import {
   ASSIGNABLE_ROLES,
   createEmployeeLogin,
@@ -30,6 +31,7 @@ interface EmployeeDoc {
   employmentType: string;
   joinDate: string;
   status: string;
+  faceEmbedding?: unknown;
   updatedAt: Timestamp;
 }
 
@@ -50,6 +52,7 @@ function employeeToDto(id: string, companyId: string, doc: EmployeeDoc): Record<
     employmentType: doc.employmentType,
     joinDate: doc.joinDate,
     status: doc.status,
+    faceEnrolled: Array.isArray(doc.faceEmbedding),
     updatedAt: toIso(doc.updatedAt),
   };
 }
@@ -201,17 +204,23 @@ employeesRouter.post(
   }),
 );
 
-/** Reset an employee's login to a fresh temporary password (manager shares it). */
+const resetPasswordSchema = z.object({
+  // Optional: a manager-chosen permanent password; omitted → random temp one.
+  password: z.string().min(8).max(100).optional(),
+});
+
+/** Set an employee's login password — a manager-chosen one, or a random temp. */
 employeesRouter.post(
   "/:id/reset-password",
   requirePermission("employees:write"),
   asyncHandler(async (req, res) => {
     const auth = authOf(req);
+    const { password } = parseBody(req, resetPasswordSchema);
     const emp = await tenant(auth.companyId, "employees").doc(req.params.id).get();
     if (!emp.exists) {
       throw ApiError.notFound("Employee not found");
     }
-    const tempPassword = await resetEmployeePassword(req.params.id);
+    const tempPassword = await resetEmployeePassword(req.params.id, password);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
       actorRole: auth.roles.join(","),
@@ -234,8 +243,13 @@ employeesRouter.put(
     if (!existing.exists) {
       throw ApiError.notFound("Employee not found");
     }
-    const doc = toDoc(payload, (existing.data() as EmployeeDoc).avatarUrl ?? null);
-    await ref.set(doc);
+    const existingDoc = existing.data() as EmployeeDoc & { faceEnrolledAt?: unknown };
+    const doc = toDoc(payload, existingDoc.avatarUrl ?? null);
+    // A full set() would otherwise wipe face enrollment; carry it across edits.
+    const preserved: Record<string, unknown> = { ...doc };
+    if (existingDoc.faceEmbedding !== undefined) preserved.faceEmbedding = existingDoc.faceEmbedding;
+    if (existingDoc.faceEnrolledAt !== undefined) preserved.faceEnrolledAt = existingDoc.faceEnrolledAt;
+    await ref.set(preserved);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
       actorRole: auth.roles.join(","),
@@ -246,5 +260,27 @@ employeesRouter.put(
       after: employeeToDto(req.params.id, auth.companyId, doc),
     });
     res.json({ data: employeeToDto(req.params.id, auth.companyId, doc) });
+  }),
+);
+
+/** Admin: clear an employee's face enrollment (e.g. re-enroll after a bad capture). */
+employeesRouter.delete(
+  "/:id/face",
+  requirePermission("employees:write"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const ref = tenant(auth.companyId, "employees").doc(req.params.id);
+    if (!(await ref.get()).exists) {
+      throw ApiError.notFound("Employee not found");
+    }
+    await clearFace(auth.companyId, req.params.id);
+    await audit(auth.companyId, {
+      actorId: auth.employeeId,
+      actorRole: auth.roles.join(","),
+      action: "employees.face.reset",
+      resourceType: "employees",
+      resourceId: req.params.id,
+    });
+    res.json({ data: { faceEnrolled: false } });
   }),
 );

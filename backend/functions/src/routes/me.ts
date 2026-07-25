@@ -2,7 +2,10 @@ import { Router } from "express";
 import { ApiError, asyncHandler } from "../lib/errors";
 import { tenant, db } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
+import { requirePermission } from "../middleware/rbac";
+import { parseBody } from "../middleware/validate";
 import { mergeSettings } from "../services/settings";
+import { embeddingSchema, enrollFace } from "../services/face";
 
 export const meRouter = Router();
 
@@ -27,6 +30,7 @@ meRouter.get(
       lastName?: string;
       email?: string;
       avatarUrl?: string | null;
+      faceEmbedding?: unknown;
     };
 
     // Feature flags let both apps hide modules the company has turned off.
@@ -46,7 +50,27 @@ meRouter.get(
         roles: auth.roles,
         branchIds: auth.branchIds,
         features: settings.features,
+        faceEnrolled: Array.isArray(employee.faceEmbedding),
       },
     });
+  }),
+);
+
+/**
+ * Enroll the caller's own face: the app computes the embedding on-device and
+ * sends only the numeric vector (never a photo). Stored on the employee record
+ * and used to verify future face check-ins.
+ *
+ * Gated on self:punch so shared device accounts (kiosks) cannot enroll a face.
+ * Enrolling twice is refused — see enrollFace.
+ */
+meRouter.post(
+  "/face/enroll",
+  requirePermission("self:punch"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const { embedding } = parseBody(req, embeddingSchema);
+    await enrollFace(auth.companyId, auth.employeeId, embedding);
+    res.status(201).json({ data: { faceEnrolled: true } });
   }),
 );

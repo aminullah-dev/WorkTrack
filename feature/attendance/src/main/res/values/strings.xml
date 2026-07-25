@@ -54,4 +54,19 @@
     <string name="reg_submitted">درخواست اصلاح ثبت شد — بعد از تایید مدیر اعمال می‌شود</string>
     <string name="reg_err_times">حداقل وقت ورود یا خروج را انتخاب کنید</string>
     <string name="reg_err_reason">دلیل را بنویسید</string>
+    <string name="att_face_enroll_title">ثبت چهره</string>
+    <string name="att_face_enroll_hint">چهرهٔ خود را داخل دایره قرار دهید</string>
+    <string name="att_face_enroll_ready">چهره تشخیص شد — دکمه را بزنید</string>
+    <string name="att_face_enroll_capture">ثبت چهرهٔ من</string>
+    <string name="att_face_enroll_saving">در حال ثبت…</string>
+    <string name="att_face_enroll_done">چهرهٔ شما با موفقیت ثبت شد</string>
+    <string name="att_face_enroll_error">خطایی رخ داد، دوباره تلاش کنید</string>
+    <string name="att_face_enroll_no_model">مدل تشخیص چهره روی دستگاه موجود نیست</string>
+    <string name="att_face_enroll_already">چهره قبلاً ثبت شده است. از مدیر بخواهید آن را بازنشانی کند.</string>
+    <string name="att_face_verify_title">ورود با چهره</string>
+    <string name="att_face_verify_capture">تأیید و ثبت حاضری</string>
+    <string name="att_face_verify_done">چهره تأیید شد</string>
+    <string name="att_face_verify_no_match">این چهره با چهرهٔ ثبت‌شدهٔ شما مطابقت ندارد</string>
+    <string name="att_face_verify_not_enrolled">هنوز چهره‌ای ثبت نشده — ابتدا چهرهٔ خود را ثبت کنید</string>
+    <string name="att_punch_location_lost">موقعیت مکانی در دسترس نیست — حاضری ثبت نشد</string>
 </resources>

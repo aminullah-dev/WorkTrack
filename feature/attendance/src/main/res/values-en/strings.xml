@@ -54,4 +54,19 @@
     <string name="reg_submitted">Correction filed — applies once your manager approves</string>
     <string name="reg_err_times">Pick at least a clock-in or clock-out time</string>
     <string name="reg_err_reason">Enter a reason</string>
+    <string name="att_face_enroll_title">Enroll face</string>
+    <string name="att_face_enroll_hint">Position your face inside the circle</string>
+    <string name="att_face_enroll_ready">Face detected — tap to enroll</string>
+    <string name="att_face_enroll_capture">Enroll my face</string>
+    <string name="att_face_enroll_saving">Saving…</string>
+    <string name="att_face_enroll_done">Your face was enrolled successfully</string>
+    <string name="att_face_enroll_error">Something went wrong, please try again</string>
+    <string name="att_face_enroll_no_model">The face model is not installed on this device</string>
+    <string name="att_face_enroll_already">A face is already enrolled. Ask an administrator to reset it.</string>
+    <string name="att_face_verify_title">Face check-in</string>
+    <string name="att_face_verify_capture">Verify &amp; check in</string>
+    <string name="att_face_verify_done">Face verified</string>
+    <string name="att_face_verify_no_match">This face does not match your enrolled face</string>
+    <string name="att_face_verify_not_enrolled">No face enrolled yet — enroll your face first</string>
+    <string name="att_punch_location_lost">Location is no longer available — check-in was not recorded</string>
 </resources>

@@ -15,7 +15,11 @@ export interface PunchDoc {
   kioskId: string | null;
   note: string | null;
   selfie?: string | null;
+  /** Server-derived: true only when the punch carried a valid face token. */
   faceVerified?: boolean;
+  /** Set when the company expects face verification and this punch lacked it. */
+  needsReview?: boolean;
+  reviewReason?: string | null;
   serverValidated: boolean;
   invalidReason: string | null;
   updatedAt: Timestamp;
@@ -35,6 +39,9 @@ export function punchToDto(id: string, doc: PunchDoc): Record<string, unknown> {
     geofenceId: doc.geofenceId,
     insideFence: doc.insideFence,
     note: doc.note,
+    faceVerified: doc.faceVerified ?? false,
+    needsReview: doc.needsReview ?? false,
+    reviewReason: doc.reviewReason ?? null,
     serverValidated: doc.serverValidated,
     invalidReason: doc.invalidReason,
     updatedAt: toIso(doc.updatedAt),
@@ -71,11 +78,17 @@ export async function recomputeAttendanceDay(
   let lastOutAt: Timestamp | null = null;
   let openIn: Timestamp | null = null;
   let checkInSelfie: string | null = null;
+  let checkInFaceVerified = false;
+  // Any unverified punch in the day is worth a manager's attention, not just
+  // the first one — someone could verify at check-in and not at check-out.
+  let needsReview = false;
   for (const punch of punches) {
+    if (punch.needsReview) needsReview = true;
     if (punch.type === "IN") {
       if (!firstInAt) {
         firstInAt = punch.punchedAt;
         checkInSelfie = punch.selfie ?? null; // the day carries the check-in photo
+        checkInFaceVerified = punch.faceVerified ?? false;
       }
       if (!openIn) openIn = punch.punchedAt;
     } else if (openIn) {
@@ -128,7 +141,13 @@ export async function recomputeAttendanceDay(
     }
   }
 
-  const status = firstInAt ? (workedMinutes >= 240 ? "PRESENT" : "HALF_DAY") : "PENDING";
+  // Someone who has checked in counts as PRESENT while their session is still
+  // open (currently at work). Only a completed day under half the standard
+  // hours is HALF_DAY. No valid check-in stays PENDING (counts as absent).
+  const stillCheckedIn = openIn !== null;
+  const status = firstInAt
+    ? (stillCheckedIn || workedMinutes >= 240 ? "PRESENT" : "HALF_DAY")
+    : "PENDING";
 
   const dayId = `${employeeId}_${dateIso}`;
   await tenant(cid, "attendanceDays")
@@ -145,6 +164,8 @@ export async function recomputeAttendanceDay(
       overtimeMinutes,
       status,
       checkInSelfie,
+      checkInFaceVerified,
+      needsReview,
       computedAt: nowTimestamp(),
       updatedAt: nowTimestamp(),
     });

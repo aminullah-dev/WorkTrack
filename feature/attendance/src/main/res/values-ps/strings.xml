@@ -54,4 +54,19 @@
     <string name="reg_submitted">د سمون غوښتنه ثبت شوه — د مدیر له تایید وروسته پلي کېږي</string>
     <string name="reg_err_times">لږ تر لږه د ورتګ یا وتلو وخت وټاکئ</string>
     <string name="reg_err_reason">دلیل ولیکئ</string>
+    <string name="att_face_enroll_title">د مخ ثبتول</string>
+    <string name="att_face_enroll_hint">خپل مخ د دایرې دننه ونیسئ</string>
+    <string name="att_face_enroll_ready">مخ وپېژندل شو — تڼۍ کېکاږئ</string>
+    <string name="att_face_enroll_capture">زما مخ ثبت کړه</string>
+    <string name="att_face_enroll_saving">ثبتېږي…</string>
+    <string name="att_face_enroll_done">ستاسو مخ په بریالیتوب سره ثبت شو</string>
+    <string name="att_face_enroll_error">ستونزه رامنځته شوه، بیا هڅه وکړئ</string>
+    <string name="att_face_enroll_no_model">د مخ ماډل پدې وسیله نشته</string>
+    <string name="att_face_enroll_already">مخ دمخه ثبت شوی دی. له مدیر څخه وغواړئ چې بیا یې تنظیم کړي.</string>
+    <string name="att_face_verify_title">د مخ له لارې ننوتل</string>
+    <string name="att_face_verify_capture">تصدیق او ثبت</string>
+    <string name="att_face_verify_done">مخ تصدیق شو</string>
+    <string name="att_face_verify_no_match">دا مخ ستاسو له ثبت شوي مخ سره سمون نه خوري</string>
+    <string name="att_face_verify_not_enrolled">لا تر اوسه مخ نه دی ثبت شوی — لومړی خپل مخ ثبت کړئ</string>
+    <string name="att_punch_location_lost">موقعیت نور شتون نلري — حاضري ثبت نه شوه</string>
 </resources>

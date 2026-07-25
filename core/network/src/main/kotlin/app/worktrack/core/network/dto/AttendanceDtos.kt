@@ -22,7 +22,8 @@ data class PunchCreateDto(
     val note: String? = null,
     /** Optional check-in selfie (small base64 JPEG) for photo-verified attendance. */
     val selfie: String? = null,
-    val faceVerified: Boolean = false,
+    /** Signed proof of a face match; the server derives `faceVerified` from it. */
+    val faceToken: String? = null,
 )
 
 @Serializable

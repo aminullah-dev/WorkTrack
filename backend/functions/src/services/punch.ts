@@ -3,8 +3,10 @@ import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { isValidUlid } from "../lib/ids";
 import { audit, nowTimestamp, tenant } from "../lib/firestore";
+import { verifyFaceToken } from "../lib/face-token";
 import { haversineMeters, checkGeofence } from "./geo";
 import { verifyKioskToken } from "./kiosk";
+import { getSettings } from "./settings";
 import { localDateOf, punchToDto, recomputeAttendanceDay, type PunchDoc } from "./attendance";
 
 export const punchCreateSchema = z.object({
@@ -22,7 +24,11 @@ export const punchCreateSchema = z.object({
   // Optional check-in selfie (small base64 JPEG data URL) for photo-verified
   // attendance. Capped well under the Firestore 1MB doc limit.
   selfie: z.string().max(200_000).nullish(),
-  faceVerified: z.boolean().optional(),
+  /**
+   * Signed proof of a successful /attendance/face/verify. `faceVerified` is
+   * derived from this server-side and is never accepted from the client.
+   */
+  faceToken: z.string().max(200).nullish(),
 });
 
 export type PunchCreate = z.infer<typeof punchCreateSchema>;
@@ -40,7 +46,7 @@ export async function applyPunch(
   cid: string,
   employeeId: string,
   payload: PunchCreate,
-  kioskSecret: string,
+  hmacSecret: string,
 ): Promise<Record<string, unknown>> {
   if (!isValidUlid(payload.id)) {
     throw ApiError.validation("Punch id must be a ULID", { id: "Invalid ULID" });
@@ -70,10 +76,14 @@ export async function applyPunch(
     invalidReason = "TOO_OLD";
   }
 
-  if (serverValidated && payload.method === "GPS") {
+  // FACE punches are GPS punches with an identity check bolted on, so they go
+  // through exactly the same geofence validation — otherwise switching method
+  // would be a way to opt out of location rules.
+  const isLocatedMethod = payload.method === "GPS" || payload.method === "FACE";
+  if (serverValidated && isLocatedMethod) {
     if (payload.latitude == null || payload.longitude == null) {
-      throw ApiError.validation("GPS punches require coordinates", {
-        latitude: "Required for GPS method",
+      throw ApiError.validation(`${payload.method} punches require coordinates`, {
+        latitude: `Required for ${payload.method} method`,
       });
     }
     const check = await checkGeofence(
@@ -91,7 +101,7 @@ export async function applyPunch(
   }
 
   if (serverValidated && payload.method === "QR") {
-    const token = payload.kioskToken ? verifyKioskToken(kioskSecret, payload.kioskToken) : null;
+    const token = payload.kioskToken ? verifyKioskToken(hmacSecret, payload.kioskToken) : null;
     if (!token) {
       serverValidated = false;
       invalidReason = ErrorCodes.KIOSK_TOKEN_INVALID;
@@ -129,6 +139,24 @@ export async function applyPunch(
     }
   }
 
+  // Face verification is only ever believed when the punch carries a token this
+  // server signed after a real match. A missing or stale token does NOT void the
+  // punch — attendance must never hinge on a finicky face match — it simply
+  // means the punch is not verified, and is flagged below if the company
+  // expects verification.
+  const faceVerified =
+    payload.faceToken != null && verifyFaceToken(hmacSecret, employeeId, payload.faceToken);
+
+  const settings = await getSettings(cid);
+  const timezone = settings.profile.timezone;
+
+  // A company that turned face recognition on expects self-service check-ins to
+  // be identity-checked. Unverified ones still count, but a manager is told.
+  // QR/kiosk punches carry their own presence proof (a rotating token scanned at
+  // the device) and MANUAL ones are admin-entered, so neither is flagged here.
+  const needsReview =
+    settings.features.faceRecognition && isLocatedMethod && !faceVerified;
+
   const doc: PunchDoc = {
     companyId: cid,
     employeeId,
@@ -143,7 +171,9 @@ export async function applyPunch(
     kioskId,
     note: payload.note ?? null,
     selfie: payload.selfie ?? null,
-    faceVerified: payload.faceVerified ?? false,
+    faceVerified,
+    needsReview,
+    reviewReason: needsReview ? "FACE_NOT_VERIFIED" : null,
     serverValidated,
     invalidReason,
     updatedAt: nowTimestamp(),
@@ -151,8 +181,6 @@ export async function applyPunch(
   // create() (not set) preserves append-only semantics under write races.
   await ref.create(doc);
 
-  const companyDoc = await tenant(cid, "punches").parent!.get();
-  const timezone = (companyDoc.data()?.timezone as string | undefined) ?? "UTC";
   await recomputeAttendanceDay(cid, employeeId, localDateOf(punchedAt, timezone), timezone);
 
   await audit(cid, {
@@ -161,7 +189,14 @@ export async function applyPunch(
     action: "attendance.punch",
     resourceType: "punches",
     resourceId: payload.id,
-    after: { type: payload.type, method: payload.method, serverValidated, invalidReason },
+    after: {
+      type: payload.type,
+      method: payload.method,
+      faceVerified,
+      needsReview,
+      serverValidated,
+      invalidReason,
+    },
   });
 
   return punchToDto(payload.id, doc);

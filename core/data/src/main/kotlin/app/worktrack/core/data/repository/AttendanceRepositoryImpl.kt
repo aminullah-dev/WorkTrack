@@ -142,7 +142,7 @@ class AttendanceRepositoryImpl @Inject constructor(
             kioskToken = command.kioskToken,
             note = entity.note,
             selfie = command.selfie,
-            faceVerified = command.faceVerified,
+            faceToken = command.faceToken,
         )
         outboxWriter.enqueue(
             opType = OutboxOpTypes.CREATE,

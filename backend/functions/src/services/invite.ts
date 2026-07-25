@@ -65,14 +65,21 @@ export async function createEmployeeLogin(params: {
   return password;
 }
 
-/** Resets an employee's login password to a fresh temporary one. */
-export async function resetEmployeePassword(employeeId: string): Promise<string> {
+/**
+ * Sets an employee's login password. When `password` is given, that exact
+ * (permanent) password is used; otherwise a fresh random one is generated.
+ * Returns the password that was set so the manager can share it.
+ */
+export async function resetEmployeePassword(
+  employeeId: string,
+  password?: string,
+): Promise<string> {
   const auth = getAuth();
   const user = await auth.getUser(employeeId).catch(() => null);
   if (!user) {
     throw ApiError.notFound("This employee has no login account");
   }
-  const password = generateTempPassword();
-  await auth.updateUser(employeeId, { password });
-  return password;
+  const newPassword = password ?? generateTempPassword();
+  await auth.updateUser(employeeId, { password: newPassword });
+  return newPassword;
 }

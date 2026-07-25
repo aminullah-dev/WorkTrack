@@ -46,7 +46,8 @@ import app.worktrack.feature.attendance.R
 fun PunchRoute(
     onBack: () -> Unit,
     onScanQr: () -> Unit,
-    onCaptureSelfie: () -> Unit,
+    onVerifyFace: () -> Unit,
+    onEnrollFace: () -> Unit,
     viewModel: PunchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +80,10 @@ fun PunchRoute(
                 is PunchEffect.Failed ->
                     snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
 
+                is PunchEffect.LocationLost -> snackbarHostState.showSnackbar(
+                    context.getString(R.string.att_punch_location_lost),
+                )
+
                 is PunchEffect.PunchRecorded -> snackbarHostState.showSnackbar(
                     context.getString(
                         if (effect.type == PunchType.IN) {
@@ -99,13 +104,16 @@ fun PunchRoute(
         PunchScreen(
             state = state,
             clockedIn = today?.clockedIn == true,
-            // Photo-verified companies detour through the selfie camera; the
-            // ViewModel completes the GPS punch once the capture pops back.
-            onPunch = { if (faceRequired) onCaptureSelfie() else viewModel.onPunch() },
+            // Plain GPS check-in always works; face verification is a separate,
+            // optional action so a finicky match never blocks attendance.
+            onPunch = viewModel::onPunch,
             onRetryLocation = {
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             },
             onScanQr = onScanQr,
+            faceRequired = faceRequired,
+            onVerifyFace = onVerifyFace,
+            onEnrollFace = onEnrollFace,
             modifier = Modifier.padding(padding),
         )
     }
@@ -118,6 +126,9 @@ internal fun PunchScreen(
     onPunch: () -> Unit,
     onRetryLocation: () -> Unit,
     onScanQr: () -> Unit,
+    faceRequired: Boolean = false,
+    onVerifyFace: () -> Unit = {},
+    onEnrollFace: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -146,6 +157,22 @@ internal fun PunchScreen(
             onClick = onScanQr,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        if (faceRequired) {
+            Spacer(Modifier.height(16.dp))
+            WtSecondaryButton(
+                text = stringResource(R.string.att_face_verify_title),
+                onClick = onVerifyFace,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.location is LocationUiState.Ready,
+            )
+            Spacer(Modifier.height(16.dp))
+            WtSecondaryButton(
+                text = stringResource(R.string.att_face_enroll_title),
+                onClick = onEnrollFace,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

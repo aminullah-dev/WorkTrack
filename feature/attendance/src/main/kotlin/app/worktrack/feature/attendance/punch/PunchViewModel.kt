@@ -53,6 +53,9 @@ sealed interface PunchEffect {
     /** Localized by the UI via AppError.localizedMessage(). */
     data class Failed(val error: AppError) : PunchEffect
     data class PunchRecorded(val type: PunchType) : PunchEffect
+
+    /** Verification succeeded but the location fix was gone by the time we punched. */
+    data object LocationLost : PunchEffect
 }
 
 @HiltViewModel
@@ -89,12 +92,12 @@ class PunchViewModel @Inject constructor(
                 }
             }
         }
-        // A selfie arrives the same way when the capture screen pops back.
+        // A successful face verification pops back with the server's signed token.
         viewModelScope.launch {
-            savedStateHandle.getStateFlow<String?>(KEY_SELFIE, null).collect { selfie ->
-                if (!selfie.isNullOrBlank()) {
-                    savedStateHandle[KEY_SELFIE] = null
-                    punchWithSelfie(selfie)
+            savedStateHandle.getStateFlow<String?>(KEY_FACE_TOKEN, null).collect { token ->
+                if (!token.isNullOrBlank()) {
+                    savedStateHandle[KEY_FACE_TOKEN] = null
+                    punchWithFace(token)
                 }
             }
         }
@@ -149,20 +152,29 @@ class PunchViewModel @Inject constructor(
         )
     }
 
-    /** GPS punch carrying the captured check-in selfie (photo-verified path). */
-    private fun punchWithSelfie(selfie: String) {
-        val ready = _uiState.value.location as? LocationUiState.Ready ?: return
+    /**
+     * Punch verified by face recognition, carrying the server's signed proof.
+     *
+     * The user has just been told "face verified", so a location that went stale
+     * in the meantime must be reported — silently doing nothing would leave them
+     * believing they had checked in.
+     */
+    private fun punchWithFace(faceToken: String) {
+        val ready = _uiState.value.location as? LocationUiState.Ready
+        if (ready == null) {
+            viewModelScope.launch { _effects.send(PunchEffect.LocationLost) }
+            return
+        }
         val nextType = nextPunchType() ?: return
         submit(
             PunchCommand(
                 type = nextType,
-                method = PunchMethod.GPS,
+                method = PunchMethod.FACE,
                 latitude = ready.location.latitude,
                 longitude = ready.location.longitude,
                 accuracyMeters = ready.location.accuracyMeters,
                 isMockLocation = ready.location.isMock,
-                selfie = selfie,
-                faceVerified = true,
+                faceToken = faceToken,
             ),
         )
     }
@@ -203,6 +215,6 @@ class PunchViewModel @Inject constructor(
 
     companion object {
         const val KEY_KIOSK_TOKEN = "kioskToken"
-        const val KEY_SELFIE = "selfie"
+        const val KEY_FACE_TOKEN = "faceToken"
     }
 }

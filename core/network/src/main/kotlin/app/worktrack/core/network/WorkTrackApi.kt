@@ -3,6 +3,9 @@ package app.worktrack.core.network
 import app.worktrack.core.network.dto.AnnouncementDto
 import app.worktrack.core.network.dto.ApiEnvelope
 import app.worktrack.core.network.dto.AttendanceDayDto
+import app.worktrack.core.network.dto.FaceEmbeddingDto
+import app.worktrack.core.network.dto.FaceEnrollResultDto
+import app.worktrack.core.network.dto.FaceVerifyResultDto
 import app.worktrack.core.network.dto.LeaveDecisionDto
 import app.worktrack.core.network.dto.LeaveRequestDto
 import app.worktrack.core.network.dto.MeDto
@@ -26,6 +29,14 @@ interface WorkTrackApi {
 
     @GET("me")
     suspend fun me(): ApiEnvelope<MeDto>
+
+    /** Enroll the caller's own face (on-device embedding, never a photo). */
+    @POST("me/face/enroll")
+    suspend fun enrollFace(@Body body: FaceEmbeddingDto): ApiEnvelope<FaceEnrollResultDto>
+
+    /** Verify a face check-in against the caller's enrolled embedding. */
+    @POST("attendance/face/verify")
+    suspend fun verifyFace(@Body body: FaceEmbeddingDto): ApiEnvelope<FaceVerifyResultDto>
 
     @GET("attendance/days")
     suspend fun attendanceDays(

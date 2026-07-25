@@ -60,7 +60,11 @@ data class PunchCommand(
     val note: String? = null,
     /** Base64 JPEG check-in selfie captured when photo-verified attendance is on. */
     val selfie: String? = null,
-    val faceVerified: Boolean = false,
+    /**
+     * Server-signed proof of a face match, obtained from the verify endpoint.
+     * The server derives `faceVerified` from this; the client cannot assert it.
+     */
+    val faceToken: String? = null,
 )
 
 /**

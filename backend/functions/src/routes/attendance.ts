@@ -7,6 +7,8 @@ import { hasPermission, requirePermission } from "../middleware/rbac";
 import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
 import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
+import { embeddingSchema, verifyFace } from "../services/face";
+import { signFaceToken } from "../lib/face-token";
 import {
   createRegularization,
   decideRegularization,
@@ -17,6 +19,28 @@ import {
 import { kioskSecret } from "../config";
 
 export const attendanceRouter = Router();
+
+/**
+ * Verify a face check-in: the app sends the on-device embedding of the person
+ * at the camera; the server compares it to the caller's enrolled embedding.
+ *
+ * On a match the response carries a short-lived signed token. The punch that
+ * follows must present that token to be recorded as face-verified — the client
+ * cannot assert verification on its own.
+ */
+attendanceRouter.post(
+  "/face/verify",
+  requirePermission("self:punch"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const { embedding } = parseBody(req, embeddingSchema);
+    const result = await verifyFace(auth.companyId, auth.employeeId, embedding);
+    const token = result.match
+      ? signFaceToken(kioskSecret.value(), auth.employeeId)
+      : null;
+    res.json({ data: { ...result, token } });
+  }),
+);
 
 /** Direct online punch (web/kiosk clients; Android normally uses /sync/push). */
 attendanceRouter.post(
@@ -154,6 +178,8 @@ attendanceRouter.get(
         workedMinutes: (day?.workedMinutes as number | undefined) ?? 0,
         lateMinutes: (day?.lateMinutes as number | undefined) ?? 0,
         checkInSelfie: (day?.checkInSelfie as string | undefined) ?? null,
+        checkInFaceVerified: (day?.checkInFaceVerified as boolean | undefined) ?? false,
+        needsReview: (day?.needsReview as boolean | undefined) ?? false,
       };
     });
 
