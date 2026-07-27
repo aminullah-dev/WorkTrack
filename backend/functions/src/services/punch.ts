@@ -55,8 +55,20 @@ export async function applyPunch(
   const ref = tenant(cid, "punches").doc(payload.id);
   const existing = await ref.get();
   if (existing.exists) {
-    // Idempotent replay: the first write wins, return the stored state.
-    return punchToDto(payload.id, existing.data() as PunchDoc);
+    // Idempotent replay: the first write wins. Recompute the day before
+    // returning, because a replay almost always means the first attempt stored
+    // the punch and then failed while projecting it. Without this the
+    // projection is lost for good and the punch never reaches the attendance
+    // board, even though the client sees a success and stops retrying.
+    const stored = existing.data() as PunchDoc;
+    const { profile } = await getSettings(cid);
+    await recomputeAttendanceDay(
+      cid,
+      employeeId,
+      localDateOf(stored.punchedAt.toDate(), profile.timezone),
+      profile.timezone,
+    );
+    return punchToDto(payload.id, stored);
   }
 
   const punchedAt = new Date(payload.punchedAt);

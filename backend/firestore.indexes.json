@@ -17,6 +17,14 @@
       ]
     },
     {
+      "collectionGroup": "punches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "employeeId", "order": "ASCENDING" },
+        { "fieldPath": "punchedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "attendanceDays",
       "queryScope": "COLLECTION",
       "fields": [
