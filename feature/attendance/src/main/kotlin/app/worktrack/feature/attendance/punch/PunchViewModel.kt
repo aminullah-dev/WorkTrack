@@ -2,7 +2,6 @@ package app.worktrack.feature.attendance.punch
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.worktrack.core.common.result.AppError
@@ -25,9 +24,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -65,7 +67,6 @@ class PunchViewModel @Inject constructor(
     private val punchClock: PunchClockUseCase,
     private val evaluateGeofence: EvaluateGeofenceUseCase,
     private val locationClient: LocationClient,
-    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     val today: StateFlow<TodayAttendance?> = observeToday()
@@ -82,26 +83,22 @@ class PunchViewModel @Inject constructor(
     private val _effects = Channel<PunchEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    init {
-        // A kiosk token arrives via SavedStateHandle when the QR scanner pops back.
-        viewModelScope.launch {
-            savedStateHandle.getStateFlow<String?>(KEY_KIOSK_TOKEN, null).collect { token ->
-                if (!token.isNullOrBlank()) {
-                    savedStateHandle[KEY_KIOSK_TOKEN] = null
-                    punchWithQr(token)
-                }
-            }
-        }
-        // A successful face verification pops back with the server's signed token.
-        viewModelScope.launch {
-            savedStateHandle.getStateFlow<String?>(KEY_FACE_TOKEN, null).collect { token ->
-                if (!token.isNullOrBlank()) {
-                    savedStateHandle[KEY_FACE_TOKEN] = null
-                    punchWithFace(token)
-                }
-            }
-        }
-    }
+    /**
+     * A kiosk QR code was scanned; complete the punch with it.
+     *
+     * Results come in through explicit calls rather than this ViewModel reading
+     * a SavedStateHandle: the handle a navigation result is written to (the
+     * NavBackStackEntry's own) is a different object from the one injected
+     * here, so a value set there would never arrive.
+     */
+    fun onKioskTokenScanned(kioskToken: String) = punchWithQr(kioskToken)
+
+    /**
+     * The server confirmed the employee's face. [faceToken] is its signed proof
+     * when the backend issued one; the punch still goes through without it and
+     * is simply recorded as unverified.
+     */
+    fun onFaceVerified(faceToken: String?) = punchWithFace(faceToken)
 
     /** Invoked by the screen once ACCESS_FINE_LOCATION is granted. */
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -159,24 +156,35 @@ class PunchViewModel @Inject constructor(
      * in the meantime must be reported — silently doing nothing would leave them
      * believing they had checked in.
      */
-    private fun punchWithFace(faceToken: String) {
-        val ready = _uiState.value.location as? LocationUiState.Ready
-        if (ready == null) {
-            viewModelScope.launch { _effects.send(PunchEffect.LocationLost) }
-            return
+    private fun punchWithFace(faceToken: String?) {
+        viewModelScope.launch {
+            // Coming back from the camera restarts the location fix, so it is
+            // usually still arriving at this moment. Wait for it rather than
+            // discarding a verification the user has just completed — and only
+            // report failure if no fix turns up at all.
+            val ready = withTimeoutOrNull(LOCATION_WAIT_MS) {
+                _uiState
+                    .map { it.location }
+                    .filterIsInstance<LocationUiState.Ready>()
+                    .first()
+            }
+            if (ready == null) {
+                _effects.send(PunchEffect.LocationLost)
+                return@launch
+            }
+            val nextType = nextPunchType() ?: return@launch
+            submit(
+                PunchCommand(
+                    type = nextType,
+                    method = PunchMethod.FACE,
+                    latitude = ready.location.latitude,
+                    longitude = ready.location.longitude,
+                    accuracyMeters = ready.location.accuracyMeters,
+                    isMockLocation = ready.location.isMock,
+                    faceToken = faceToken,
+                ),
+            )
         }
-        val nextType = nextPunchType() ?: return
-        submit(
-            PunchCommand(
-                type = nextType,
-                method = PunchMethod.FACE,
-                latitude = ready.location.latitude,
-                longitude = ready.location.longitude,
-                accuracyMeters = ready.location.accuracyMeters,
-                isMockLocation = ready.location.isMock,
-                faceToken = faceToken,
-            ),
-        )
     }
 
     private fun punchWithQr(kioskToken: String) {
@@ -213,8 +221,8 @@ class PunchViewModel @Inject constructor(
     private fun nextPunchType(): PunchType? =
         today.value?.let { if (it.clockedIn) PunchType.OUT else PunchType.IN }
 
-    companion object {
-        const val KEY_KIOSK_TOKEN = "kioskToken"
-        const val KEY_FACE_TOKEN = "faceToken"
+    private companion object {
+        /** How long a face-verified punch waits for a GPS fix before giving up. */
+        const val LOCATION_WAIT_MS = 15_000L
     }
 }

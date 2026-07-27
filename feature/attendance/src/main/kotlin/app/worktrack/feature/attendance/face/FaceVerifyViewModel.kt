@@ -22,12 +22,12 @@ class FaceVerifyViewModel @Inject constructor(
                 val verification = result.data
                 when {
                     !verification.enrolled -> FaceCaptureResult.NotEnrolled
-                    // A match without a token is unusable: the punch would be
-                    // recorded as unverified, so treat it as a failure.
-                    verification.match && verification.token != null ->
-                        FaceCaptureResult.Success(verification.token)
-
-                    verification.match -> FaceCaptureResult.Failed
+                    // A match goes through even when the server sent no token
+                    // (an older deployment that predates them). Refusing here
+                    // would block a check-in the server just confirmed, and it
+                    // would buy nothing: only the server decides faceVerified,
+                    // so a tokenless punch is simply recorded as unverified.
+                    verification.match -> FaceCaptureResult.Success(verification.token)
                     else -> FaceCaptureResult.NoMatch
                 }
             }
