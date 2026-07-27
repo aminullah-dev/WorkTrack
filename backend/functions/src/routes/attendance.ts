@@ -9,6 +9,8 @@ import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
 import { embeddingSchema, verifyFace } from "../services/face";
 import { signFaceToken } from "../lib/face-token";
+import { localDateOf } from "../services/attendance";
+import { getSettings } from "../services/settings";
 import {
   createRegularization,
   decideRegularization,
@@ -137,9 +139,12 @@ attendanceRouter.get(
   requirePermission("attendance:read"),
   asyncHandler(async (req, res) => {
     const auth = authOf(req);
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? ""))
-      ? String(req.query.date)
-      : new Date().toISOString().slice(0, 10);
+    // Default to the company's calendar day, not UTC: days are filed in the
+    // company zone, so a UTC default silently asks for the wrong one.
+    const requestedDate = String(req.query.date ?? "");
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+      ? requestedDate
+      : localDateOf(new Date(), (await getSettings(auth.companyId)).profile.timezone);
 
     const companyWide =
       auth.roles.includes("COMPANY_ADMIN") ||

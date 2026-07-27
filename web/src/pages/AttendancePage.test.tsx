@@ -20,6 +20,8 @@ vi.mock("../api/hooks", () => ({
 
 vi.mock("../auth/AuthProvider", () => ({
   useHasPermission: () => () => true,
+  // The board resolves dates in the company's zone, not the viewer's.
+  useAuth: () => ({ me: { timezone: "Asia/Kabul" } }),
 }));
 
 // Imported after the mocks so the page picks them up.

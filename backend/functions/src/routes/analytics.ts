@@ -3,6 +3,8 @@ import { asyncHandler } from "../lib/errors";
 import { tenant } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
+import { localDateOf } from "../services/attendance";
+import { getSettings } from "../services/settings";
 
 export const analyticsRouter = Router();
 
@@ -19,9 +21,13 @@ analyticsRouter.get(
   requirePermission("attendance:read"),
   asyncHandler(async (req, res) => {
     const auth = authOf(req);
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? ""))
-      ? String(req.query.date)
-      : new Date().toISOString().slice(0, 10);
+    // Days are filed in the company's zone, so "today" must be resolved there.
+    // A UTC default puts the dashboard and the attendance board on different
+    // days for part of every evening.
+    const requestedDate = String(req.query.date ?? "");
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+      ? requestedDate
+      : localDateOf(new Date(), (await getSettings(auth.companyId)).profile.timezone);
 
     const [employeesSnap, daysSnap, pendingLeaveSnap] = await Promise.all([
       tenant(auth.companyId, "employees").where("status", "==", "ACTIVE").count().get(),
@@ -81,14 +87,17 @@ analyticsRouter.get(
   requirePermission("attendance:read"),
   asyncHandler(async (req, res) => {
     const auth = authOf(req);
-    const end = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? ""))
-      ? new Date(`${String(req.query.date)}T00:00:00Z`)
-      : new Date();
+    const requestedEnd = String(req.query.date ?? "");
+    const endDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedEnd)
+      ? requestedEnd
+      : localDateOf(new Date(), (await getSettings(auth.companyId)).profile.timezone);
 
+    // Step whole days from midday, so the offset can never push a label onto
+    // the neighbouring date.
+    const anchor = new Date(`${endDate}T12:00:00Z`);
     const dates: string[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(end.getTime() - i * 86_400_000);
-      dates.push(d.toISOString().slice(0, 10));
+      dates.push(new Date(anchor.getTime() - i * 86_400_000).toISOString().slice(0, 10));
     }
 
     const snap = await tenant(auth.companyId, "attendanceDays")

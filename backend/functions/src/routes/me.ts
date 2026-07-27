@@ -42,6 +42,10 @@ meRouter.get(
         companyId: auth.companyId,
         companyName: company?.name ?? "",
         currency: settings.profile.currency,
+        // Attendance days are filed in the company's timezone, so every client
+        // must resolve "today" in it — a manager abroad would otherwise ask for
+        // their own local date and see an empty board.
+        timezone: settings.profile.timezone,
         employeeId: auth.employeeId,
         displayName:
           [employee.firstName, employee.lastName].filter(Boolean).join(" ") || "Employee",

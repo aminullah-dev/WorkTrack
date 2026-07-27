@@ -145,6 +145,7 @@ const fa: Dict = {
   att_reason_kiosk: "کد کیوسک نامعتبر",
   att_reason_unknown: "دلیل نامشخص",
   att_inactive: "غیرفعال",
+  att_company_time: "به وقت شرکت",
 
   reg_title: "درخواست‌های اصلاح حاضری",
   reg_pending: "اصلاح‌های در انتظار",
@@ -401,6 +402,7 @@ const ps: Dict = {
   att_reason_kiosk: "د کیوسک کوډ ناسم دی",
   att_reason_unknown: "نامعلوم لامل",
   att_inactive: "غیرفعال",
+  att_company_time: "د شرکت په وخت",
 
   reg_title: "د حاضرۍ د سمون غوښتنې",
   reg_pending: "په تمه سمونونه",
@@ -657,6 +659,7 @@ const en: Dict = {
   att_reason_kiosk: "Invalid kiosk code",
   att_reason_unknown: "Unknown reason",
   att_inactive: "Inactive",
+  att_company_time: "Company time",
 
   reg_title: "Attendance correction requests",
   reg_pending: "Pending corrections",

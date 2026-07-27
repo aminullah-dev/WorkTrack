@@ -50,6 +50,8 @@ export interface Me {
   companyName: string;
   currency: string;
   employeeId: string;
+  /** IANA zone the company operates in; attendance dates are resolved in it. */
+  timezone: string;
   displayName: string;
   email: string;
   avatarUrl: string | null;

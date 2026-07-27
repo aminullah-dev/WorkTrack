@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
+import { isoTodayIn } from "../time";
 import type {
   AttendanceOverviewRow,
   CompanySettings,
@@ -37,19 +38,12 @@ export function useAttendanceTrend(date?: string) {
   });
 }
 
-/** Local calendar date (YYYY-MM-DD), matching the page's date picker. */
-function isoToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
-}
-
-export function useAttendanceOverview(date?: string) {
+export function useAttendanceOverview(date?: string, timeZone = "Asia/Kabul") {
   // The live board must not go stale while a manager watches it: a check-in
   // made now should appear without a manual reload. Past days never change,
-  // so they are fetched once instead of polled.
-  const isLive = date === undefined || date === isoToday();
+  // so they are fetched once instead of polled. "Today" is the company's day,
+  // which is not the viewer's when they are in another country.
+  const isLive = date === undefined || date === isoTodayIn(timeZone);
   return useQuery({
     queryKey: ["attendance-overview", date ?? "today"],
     queryFn: () =>

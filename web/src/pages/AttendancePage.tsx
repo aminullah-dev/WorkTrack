@@ -5,15 +5,22 @@ import {
   usePendingRegularizations,
 } from "../api/hooks";
 import type { Regularization } from "../api/types";
-import { useHasPermission } from "../auth/AuthProvider";
+import { useAuth, useHasPermission } from "../auth/AuthProvider";
+import { isoTodayIn, isViewerDayDifferent } from "../time";
 import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
 export function AttendancePage() {
   const { t, num, shamsi } = useI18n();
   const can = useHasPermission();
-  const [date, setDate] = useState(isoToday());
-  const overview = useAttendanceOverview(date);
+  const { me } = useAuth();
+  // Attendance belongs to the company's calendar day. A manager viewing from
+  // another timezone must not be shown their own "today" — in Ottawa that is
+  // yesterday in Kabul, and the board would look empty.
+  const timeZone = me?.timezone ?? "Asia/Kabul";
+  const companyToday = isoTodayIn(timeZone);
+  const [date, setDate] = useState(companyToday);
+  const overview = useAttendanceOverview(date, timeZone);
 
   const canApprove = can("attendance:approve");
   const [preview, setPreview] = useState<string | null>(null);
@@ -32,6 +39,13 @@ export function AttendancePage() {
       <div className="topbar">
         <h1 className="page-title">{t("att_title")}</h1>
         <div className="topbar-right">
+          {/* Only surfaces when the viewer is in another country, where "today"
+              on their own clock is not the company's working day. */}
+          {isViewerDayDifferent(timeZone) && (
+            <span className="chip chip-neutral" title={timeZone}>
+              {t("att_company_time")}
+            </span>
+          )}
           <span className="user-chip">{shamsi(date, { withYear: true })}</span>
           <input
             className="input"
@@ -39,7 +53,7 @@ export function AttendancePage() {
             dir="ltr"
             style={{ width: "auto" }}
             value={date}
-            max={isoToday()}
+            max={companyToday}
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
@@ -135,7 +149,7 @@ export function AttendancePage() {
                           title={t(
                             "att_rejected_hint",
                             t(rejectReasonKey(r.rejectedReason)),
-                            r.rejectedAt ? formatTime(r.rejectedAt, num) : "—",
+                            r.rejectedAt ? formatTime(r.rejectedAt, num, timeZone) : "—",
                           )}
                         >
                           {t(rejectReasonKey(r.rejectedReason))}
@@ -143,7 +157,7 @@ export function AttendancePage() {
                         </span>
                       )}
                     </td>
-                    <td dir="ltr">{r.firstInAt ? formatTime(r.firstInAt, num) : "—"}</td>
+                    <td dir="ltr">{r.firstInAt ? formatTime(r.firstInAt, num, timeZone) : "—"}</td>
                     <td>
                       {r.workedMinutes > 0
                         ? `${num(Math.floor(r.workedMinutes / 60))}:${num(
@@ -171,6 +185,8 @@ export function AttendancePage() {
 /** Manager review of employee-filed attendance corrections (attendance:approve). */
 function RegularizationApprovals() {
   const { t, num, shamsi } = useI18n();
+  const { me } = useAuth();
+  const timeZone = me?.timezone ?? "Asia/Kabul";
   const pending = usePendingRegularizations(true);
   const decide = useDecideRegularization();
   const [toast, setToast] = useState<string | null>(null);
@@ -227,8 +243,8 @@ function RegularizationApprovals() {
               <tr key={req.id}>
                 <td>{req.employeeName ?? req.employeeId}</td>
                 <td>{shamsi(req.date, { withYear: true })}</td>
-                <td dir="ltr">{req.requestedInAt ? formatTime(req.requestedInAt, num) : "—"}</td>
-                <td dir="ltr">{req.requestedOutAt ? formatTime(req.requestedOutAt, num) : "—"}</td>
+                <td dir="ltr">{req.requestedInAt ? formatTime(req.requestedInAt, num, timeZone) : "—"}</td>
+                <td dir="ltr">{req.requestedOutAt ? formatTime(req.requestedOutAt, num, timeZone) : "—"}</td>
                 <td style={{ whiteSpace: "normal", maxWidth: 260 }}>{req.reason}</td>
                 <td>
                   <div className="row-actions">
@@ -276,16 +292,22 @@ function rejectReasonKey(reason: string | null): string {
   }
 }
 
-function formatTime(iso: string, num: (v: string | number) => string): string {
-  const d = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return num(`${hh}:${mm}`);
+/**
+ * Renders a punch time in the company's zone. Using the viewer's clock would
+ * show a Kabul morning check-in as the previous evening for a manager abroad.
+ */
+function formatTime(
+  iso: string,
+  num: (v: string | number) => string,
+  timeZone: string,
+): string {
+  return num(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(iso)),
+  );
 }
 
-function isoToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
-}
