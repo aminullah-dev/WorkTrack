@@ -28,3 +28,10 @@ npm-debug.log*
 
 # Third-party Claude skills (installed locally, not vendored)
 .claude/skills/
+
+# Firebase local artifacts: emulator logs and the hosting upload cache.
+# Regenerated on every run/deploy, and machine-specific.
+.firebase/
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
