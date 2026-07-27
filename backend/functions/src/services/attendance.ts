@@ -59,7 +59,11 @@ export async function recomputeAttendanceDay(
   dateIso: string,
   timezone: string,
 ): Promise<void> {
-  const dayStart = new Date(`${dateIso}T00:00:00Z`);
+  // The day is keyed by the company's calendar date, so its window has to be
+  // that date's local midnight — not UTC midnight. In Kabul (UTC+4:30) a UTC
+  // window would start at 04:30 local, dropping every night-shift punch made
+  // between midnight and dawn from the very day it belongs to.
+  const dayStart = localTimeToUtc(dateIso, "00:00", timezone);
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   const punchesSnap = await tenant(cid, "punches")
