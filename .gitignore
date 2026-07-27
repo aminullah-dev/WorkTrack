@@ -25,3 +25,6 @@ web/.env.local
 node_modules/
 backend/functions/lib/
 npm-debug.log*
+
+# Third-party Claude skills (installed locally, not vendored)
+.claude/skills/
