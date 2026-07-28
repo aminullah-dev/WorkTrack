@@ -27,11 +27,13 @@ jobs:
           cache: npm
           cache-dependency-path: backend/functions/package-lock.json
 
-      # The Firestore emulator is a Java process.
+      # The Firestore emulator is a Java process, and current firebase-tools
+      # refuses to start on anything below JDK 21. This is unrelated to the
+      # Android toolchain below, which is pinned to 17 by the Gradle config.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - run: npm ci
       - run: npm run typecheck
