@@ -25,6 +25,10 @@ data class PayslipsUiState(
     val year: Int,
     val payslips: List<Payslip> = emptyList(),
     val canGoForward: Boolean = false,
+    /** Selected Shamsi month (1–12), or null for the whole year. */
+    val month: Int? = null,
+    /** Months of [year] that have a payslip, so the picker can dim the rest. */
+    val monthsWithPayslips: Set<Int> = emptySet(),
 )
 
 @HiltViewModel
@@ -40,13 +44,24 @@ class PayslipsViewModel @Inject constructor(
     private val year: StateFlow<Int> =
         savedStateHandle.getStateFlow(KEY_YEAR, currentShamsiYear())
 
+    /** 0 means "the whole year"; SavedStateHandle keeps no nullable Int. */
+    private val month: StateFlow<Int> =
+        savedStateHandle.getStateFlow(KEY_MONTH, ALL_MONTHS)
+
     val uiState: StateFlow<PayslipsUiState> = year
         .flatMapLatest { selected -> observePayslips(selected) }
-        .combine(year) { slips, selected ->
+        .combine(year) { slips, selected -> slips to selected }
+        .combine(month) { (slips, selected), selectedMonth ->
             PayslipsUiState(
                 year = selected,
-                payslips = slips,
+                // Filtering here rather than in the query keeps the month picker
+                // able to show which months exist without a second read.
+                payslips = slips.filter {
+                    selectedMonth == ALL_MONTHS || it.periodMonth == selectedMonth
+                },
                 canGoForward = selected < currentShamsiYear(),
+                month = selectedMonth.takeIf { it != ALL_MONTHS },
+                monthsWithPayslips = slips.map { it.periodMonth }.toSet(),
             )
         }
         .stateIn(
@@ -68,10 +83,19 @@ class PayslipsViewModel @Inject constructor(
         val target = year.value + delta
         if (target > currentShamsiYear()) return
         savedStateHandle[KEY_YEAR] = target
+        // Changing year keeps whichever month is selected, so stepping back a
+        // year lands on the same month rather than resetting to the full list.
         viewModelScope.launch { payslipRepository.refresh(target) }
+    }
+
+    /** Null selects the whole year. */
+    fun onMonthSelected(month: Int?) {
+        savedStateHandle[KEY_MONTH] = month ?: ALL_MONTHS
     }
 
     private companion object {
         const val KEY_YEAR = "year"
+        const val KEY_MONTH = "month"
+        const val ALL_MONTHS = 0
     }
 }

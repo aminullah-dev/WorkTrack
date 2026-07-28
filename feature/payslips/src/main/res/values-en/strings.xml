@@ -15,4 +15,6 @@
     <string name="pay_worked_days_label">Worked days</string>
     <string name="pay_paid_leave_label">Paid leave days</string>
     <string name="pay_lop_label">Loss-of-pay days</string>
+    <string name="pay_all_months">All months</string>
+    <string name="pay_no_payslips_month_title">No payslip for %1$s</string>
 </resources>

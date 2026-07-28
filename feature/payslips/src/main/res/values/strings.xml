@@ -15,4 +15,6 @@
     <string name="pay_worked_days_label">روزهای کارکرد</string>
     <string name="pay_paid_leave_label">روزهای رخصتی با معاش</string>
     <string name="pay_lop_label">روزهای کسر معاش</string>
+    <string name="pay_all_months">همه ماه‌ها</string>
+    <string name="pay_no_payslips_month_title">فیش معاشی برای %1$s نیست</string>
 </resources>

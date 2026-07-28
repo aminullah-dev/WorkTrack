@@ -15,4 +15,6 @@
     <string name="pay_worked_days_label">د کار ورځې</string>
     <string name="pay_paid_leave_label">له معاش سره د رخصتۍ ورځې</string>
     <string name="pay_lop_label">د معاش کسر ورځې</string>
+    <string name="pay_all_months">ټولې میاشتې</string>
+    <string name="pay_no_payslips_month_title">د %1$s لپاره د معاش فیش نشته</string>
 </resources>

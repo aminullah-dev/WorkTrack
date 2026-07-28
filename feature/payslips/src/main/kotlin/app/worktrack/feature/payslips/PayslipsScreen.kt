@@ -6,14 +6,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.worktrack.core.designsystem.component.EmptyState
 import app.worktrack.core.designsystem.l10n.formatShamsiMonthYear
 import app.worktrack.core.designsystem.l10n.localizedDigits
+import app.worktrack.core.designsystem.l10n.shamsiMonthName
 import app.worktrack.core.model.Payslip
 
 @Composable
@@ -66,13 +70,28 @@ fun PayslipsRoute(
             }
         }
 
+        MonthFilter(
+            selected = state.month,
+            available = state.monthsWithPayslips,
+            onSelect = viewModel::onMonthSelected,
+        )
+
         if (state.payslips.isEmpty()) {
             EmptyState(
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                title = stringResource(
-                    R.string.pay_no_payslips_title,
-                    localizedDigits(state.year.toString()),
-                ),
+                title = if (state.month != null) {
+                    // Naming the month is the difference between "nothing here"
+                    // and "nothing for the month you picked".
+                    stringResource(
+                        R.string.pay_no_payslips_month_title,
+                        formatShamsiMonthYear(state.year, state.month!!),
+                    )
+                } else {
+                    stringResource(
+                        R.string.pay_no_payslips_title,
+                        localizedDigits(state.year.toString()),
+                    )
+                },
                 message = stringResource(R.string.pay_no_payslips_msg),
             )
         } else {
@@ -81,6 +100,43 @@ fun PayslipsRoute(
                     PayslipCard(payslip = payslip, onClick = { onPayslipClick(payslip.id) })
                 }
             }
+        }
+    }
+}
+
+/**
+ * Month picker for the selected year.
+ *
+ * Months without a payslip stay visible but disabled, so the row doubles as an
+ * at-a-glance answer to "which months have I been paid for?" — the question
+ * that otherwise means scrolling the whole list.
+ */
+@Composable
+private fun MonthFilter(
+    selected: Int?,
+    available: Set<Int>,
+    onSelect: (Int?) -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            FilterChip(
+                selected = selected == null,
+                onClick = { onSelect(null) },
+                label = { Text(stringResource(R.string.pay_all_months)) },
+            )
+        }
+        items(12) { index ->
+            val month = index + 1
+            FilterChip(
+                selected = selected == month,
+                enabled = month in available,
+                onClick = { onSelect(if (selected == month) null else month) },
+                label = { Text(shamsiMonthName(month)) },
+            )
         }
     }
 }
