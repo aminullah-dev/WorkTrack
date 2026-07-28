@@ -3,6 +3,7 @@ import { api } from "./client";
 import { isoTodayIn } from "../time";
 import type {
   AttendanceOverviewRow,
+  WeeklyAttendance,
   CompanySettings,
   Employee,
   EmployeeCreated,
@@ -50,6 +51,18 @@ export function useAttendanceOverview(date?: string, timeZone = "Asia/Kabul") {
       api
         .get<{ date: string; rows: AttendanceOverviewRow[] }>("/attendance/overview", { date })
         .then((e) => e.data.rows),
+    refetchInterval: isLive ? 60_000 : false,
+    refetchIntervalInBackground: false,
+  });
+}
+
+/** One week of attendance for the whole team (manager's weekly review). */
+export function useWeeklyAttendance(date?: string, timeZone = "Asia/Kabul") {
+  const isLive = date === undefined || date === isoTodayIn(timeZone);
+  return useQuery({
+    queryKey: ["attendance-weekly", date ?? "today"],
+    queryFn: () =>
+      api.get<WeeklyAttendance>("/attendance/weekly", { date }).then((e) => e.data),
     refetchInterval: isLive ? 60_000 : false,
     refetchIntervalInBackground: false,
   });

@@ -146,6 +146,9 @@ const fa: Dict = {
   att_reason_unknown: "دلیل نامشخص",
   att_inactive: "غیرفعال",
   att_company_time: "به وقت شرکت",
+  att_view_daily: "روزانه",
+  att_view_weekly: "هفتگی",
+  att_week_total: "مجموع هفته",
 
   reg_title: "درخواست‌های اصلاح حاضری",
   reg_pending: "اصلاح‌های در انتظار",
@@ -403,6 +406,9 @@ const ps: Dict = {
   att_reason_unknown: "نامعلوم لامل",
   att_inactive: "غیرفعال",
   att_company_time: "د شرکت په وخت",
+  att_view_daily: "ورځنی",
+  att_view_weekly: "اونیز",
+  att_week_total: "د اونۍ ټولټال",
 
   reg_title: "د حاضرۍ د سمون غوښتنې",
   reg_pending: "په تمه سمونونه",
@@ -660,6 +666,9 @@ const en: Dict = {
   att_reason_unknown: "Unknown reason",
   att_inactive: "Inactive",
   att_company_time: "Company time",
+  att_view_daily: "Daily",
+  att_view_weekly: "Weekly",
+  att_week_total: "Week total",
 
   reg_title: "Attendance correction requests",
   reg_pending: "Pending corrections",

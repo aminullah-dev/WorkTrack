@@ -9,7 +9,7 @@ import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
 import { embeddingSchema, verifyFace } from "../services/face";
 import { signFaceToken } from "../lib/face-token";
-import { localDateOf } from "../services/attendance";
+import { localDateOf, weekOf } from "../services/attendance";
 import { getSettings } from "../services/settings";
 import {
   createRegularization,
@@ -223,6 +223,125 @@ attendanceRouter.get(
     });
 
     res.json({ data: { date, rows } });
+  }),
+);
+
+/**
+ * One week of attendance for the whole team, for the manager's weekly review.
+ *
+ * The daily board answers "who is in right now"; this answers "how did the week
+ * go" — which needs the days side by side rather than one at a time. Weeks run
+ * Saturday to Friday, the Afghan working week, and dates are resolved in the
+ * company timezone like every other attendance date.
+ */
+attendanceRouter.get(
+  "/weekly",
+  requirePermission("attendance:read"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const settings = await getSettings(auth.companyId);
+    const timezone = settings.profile.timezone;
+
+    const anchor = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? ""))
+      ? String(req.query.date)
+      : localDateOf(new Date(), timezone);
+    const dates = weekOf(anchor);
+
+    const companyWide =
+      auth.roles.includes("COMPANY_ADMIN") ||
+      auth.roles.includes("HR_ADMIN") ||
+      auth.roles.includes("AUDITOR") ||
+      auth.roles.includes("SUPER_ADMIN");
+    const branchFilter =
+      (req.query.branchId ? String(req.query.branchId) : null) ??
+      (!companyWide ? auth.branchIds[0] ?? null : null);
+
+    let employeesQuery = tenant(auth.companyId, "employees").where("status", "==", "ACTIVE");
+    if (branchFilter) {
+      employeesQuery = employeesQuery.where("branchId", "==", branchFilter);
+    }
+
+    interface DayDoc {
+      employeeId: string;
+      date: string;
+      status?: string;
+      workedMinutes?: number;
+      lateMinutes?: number;
+      needsReview?: boolean;
+      rejectedCount?: number;
+    }
+
+    const [employeesSnap, daysSnap] = await Promise.all([
+      employeesQuery.limit(500).get(),
+      tenant(auth.companyId, "attendanceDays")
+        .where("date", ">=", dates[0])
+        .where("date", "<=", dates[dates.length - 1])
+        .get(),
+    ]);
+
+    // employeeId -> date -> day
+    const byEmployee = new Map<string, Map<string, DayDoc>>();
+    for (const doc of daysSnap.docs) {
+      const day = doc.data() as DayDoc;
+      const forEmployee = byEmployee.get(day.employeeId) ?? new Map<string, DayDoc>();
+      forEmployee.set(day.date, day);
+      byEmployee.set(day.employeeId, forEmployee);
+    }
+
+    interface EmployeeRow {
+      firstName: string;
+      lastName: string;
+      branchId?: string | null;
+      status?: string;
+    }
+    const employees = new Map<string, EmployeeRow>();
+    for (const doc of employeesSnap.docs) {
+      employees.set(doc.id, doc.data() as EmployeeRow);
+    }
+
+    // Same rule as the daily board: someone who worked is never invisible,
+    // even if they have since left or are not yet activated.
+    const missingIds = [...byEmployee.keys()].filter((id) => !employees.has(id));
+    if (missingIds.length > 0) {
+      const extra = await db.getAll(
+        ...missingIds.slice(0, 200).map((id) => tenant(auth.companyId, "employees").doc(id)),
+      );
+      for (const doc of extra) {
+        if (!doc.exists) continue;
+        const emp = doc.data() as EmployeeRow;
+        if (branchFilter && (emp.branchId ?? null) !== branchFilter) continue;
+        employees.set(doc.id, emp);
+      }
+    }
+
+    const rows = [...employees.entries()].map(([employeeId, emp]) => {
+      const forEmployee = byEmployee.get(employeeId);
+      const days = dates.map((date) => {
+        const day = forEmployee?.get(date);
+        return {
+          date,
+          status: day?.status ?? "ABSENT",
+          workedMinutes: day?.workedMinutes ?? 0,
+          lateMinutes: day?.lateMinutes ?? 0,
+          needsReview: day?.needsReview ?? false,
+          rejectedCount: day?.rejectedCount ?? 0,
+        };
+      });
+      return {
+        employeeId,
+        employeeName: `${emp.firstName} ${emp.lastName}`.trim(),
+        employeeStatus: emp.status ?? "ACTIVE",
+        branchId: emp.branchId ?? null,
+        days,
+        totalWorkedMinutes: days.reduce((sum, d) => sum + d.workedMinutes, 0),
+        presentDays: days.filter((d) => d.status === "PRESENT" || d.status === "HALF_DAY").length,
+        lateDays: days.filter((d) => d.lateMinutes > 0).length,
+        needsReviewDays: days.filter((d) => d.needsReview || d.rejectedCount > 0).length,
+      };
+    });
+
+    rows.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+    res.json({ data: { from: dates[0], to: dates[dates.length - 1], dates, rows } });
   }),
 );
 

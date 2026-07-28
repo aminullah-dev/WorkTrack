@@ -217,6 +217,34 @@ export interface AttendanceOverviewRow {
   rejectedAt: string | null;
 }
 
+/** One employee's week on the manager's weekly report. */
+export interface WeeklyAttendanceRow {
+  employeeId: string;
+  employeeName: string;
+  employeeStatus: string;
+  branchId: string | null;
+  days: {
+    date: string;
+    status: string;
+    workedMinutes: number;
+    lateMinutes: number;
+    needsReview: boolean;
+    rejectedCount: number;
+  }[];
+  totalWorkedMinutes: number;
+  presentDays: number;
+  lateDays: number;
+  needsReviewDays: number;
+}
+
+export interface WeeklyAttendance {
+  from: string;
+  to: string;
+  /** The seven dates of the week, Saturday first. */
+  dates: string[];
+  rows: WeeklyAttendanceRow[];
+}
+
 export interface PayrollRun {
   id: string;
   periodYear: number;

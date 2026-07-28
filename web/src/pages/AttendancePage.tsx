@@ -7,6 +7,7 @@ import {
 import type { Regularization } from "../api/types";
 import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { isoTodayIn, isViewerDayDifferent } from "../time";
+import { AttendanceWeekly } from "./AttendanceWeekly";
 import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
@@ -24,6 +25,7 @@ export function AttendancePage() {
 
   const canApprove = can("attendance:approve");
   const [preview, setPreview] = useState<string | null>(null);
+  const [view, setView] = useState<"daily" | "weekly">("daily");
 
   const summary = useMemo(() => {
     const rows = overview.data ?? [];
@@ -46,6 +48,20 @@ export function AttendancePage() {
               {t("att_company_time")}
             </span>
           )}
+          <div className="chip-set">
+            <button
+              className={`chip-toggle${view === "daily" ? " on" : ""}`}
+              onClick={() => setView("daily")}
+            >
+              {t("att_view_daily")}
+            </button>
+            <button
+              className={`chip-toggle${view === "weekly" ? " on" : ""}`}
+              onClick={() => setView("weekly")}
+            >
+              {t("att_view_weekly")}
+            </button>
+          </div>
           <span className="user-chip">{shamsi(date, { withYear: true })}</span>
           <input
             className="input"
@@ -61,7 +77,9 @@ export function AttendancePage() {
 
       {canApprove && <RegularizationApprovals />}
 
-      {overview.isLoading ? (
+      {view === "weekly" ? (
+        <AttendanceWeekly date={date} />
+      ) : overview.isLoading ? (
         <LoadingState />
       ) : overview.isError ? (
         <ErrorState message={t("common_error")} onRetry={() => void overview.refetch()} />

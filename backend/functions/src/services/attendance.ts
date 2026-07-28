@@ -226,6 +226,23 @@ export function localTimeToUtc(dateIso: string, hhmm: string, timezone: string):
   );
 }
 
+/**
+ * The seven dates of the working week containing [dateIso], Saturday first.
+ *
+ * Afghanistan works Saturday through Thursday with Friday off, so a week
+ * starting on Monday would split every working week across two reports.
+ * Operates on plain date strings, which carry no timezone to get wrong.
+ */
+export function weekOf(dateIso: string): string[] {
+  const anchor = new Date(`${dateIso}T00:00:00Z`);
+  // getUTCDay: Sunday=0 … Saturday=6, so this is "days since Saturday".
+  const sinceSaturday = (anchor.getUTCDay() + 1) % 7;
+  const saturday = new Date(anchor.getTime() - sinceSaturday * 86_400_000);
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(saturday.getTime() + i * 86_400_000).toISOString().slice(0, 10),
+  );
+}
+
 /** Local calendar date (YYYY-MM-DD) of an instant in the given timezone. */
 export function localDateOf(at: Date, timezone: string): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {

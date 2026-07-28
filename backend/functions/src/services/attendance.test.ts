@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { localDateOf, localTimeToUtc } from "./attendance";
+import { localDateOf, localTimeToUtc, weekOf } from "./attendance";
 
 /**
  * The company-calendar maths behind attendance. Every bug found in this area
@@ -33,6 +33,38 @@ describe("localDateOf — which calendar day a punch belongs to", () => {
 
   it("agrees with UTC in the middle of the working day", () => {
     expect(localDateOf(new Date("2026-07-26T08:00:00Z"), KABUL)).toBe("2026-07-26");
+  });
+});
+
+describe("weekOf — the working week a date belongs to", () => {
+  // 2026-07-25 is a Saturday; the week runs to Friday 2026-07-31.
+  const week = ["2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"];
+
+  it("starts on Saturday, the first working day here", () => {
+    expect(weekOf("2026-07-25")).toEqual(week);
+  });
+
+  it("gives the same week from any day inside it", () => {
+    // Sunday, midweek, and the Friday that closes it.
+    expect(weekOf("2026-07-26")).toEqual(week);
+    expect(weekOf("2026-07-28")).toEqual(week);
+    expect(weekOf("2026-07-31")).toEqual(week);
+  });
+
+  it("rolls to the next week on the following Saturday", () => {
+    expect(weekOf("2026-08-01")[0]).toBe("2026-08-01");
+  });
+
+  it("crosses a month boundary without breaking", () => {
+    const w = weekOf("2026-08-01");
+    expect(w).toHaveLength(7);
+    expect(w[w.length - 1]).toBe("2026-08-07");
+  });
+
+  it("crosses a year boundary without breaking", () => {
+    const w = weekOf("2027-01-01"); // a Friday
+    expect(w[0]).toBe("2026-12-26");
+    expect(w[6]).toBe("2027-01-01");
   });
 });
 
