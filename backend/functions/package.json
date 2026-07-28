@@ -4,7 +4,7 @@
   "private": true,
   "description": "WorkTrack REST API v1 on Cloud Functions",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "lib/index.js",
   "scripts": {

@@ -1,15 +1,15 @@
 {
   "functions": {
-    "source": "functions",
-    "runtime": "nodejs20",
+    "source": "backend/functions",
+    "runtime": "nodejs22",
     "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
   },
   "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "rules": "backend/firestore.rules",
+    "indexes": "backend/firestore.indexes.json"
   },
   "hosting": {
-    "public": "../web/dist",
+    "public": "web/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/v1/**", "function": "api" },
