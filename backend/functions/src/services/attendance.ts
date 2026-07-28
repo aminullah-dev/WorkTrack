@@ -191,7 +191,7 @@ export async function recomputeAttendanceDay(
  * Converts a local wall-clock HH:mm on a date to a UTC Date using the IANA
  * timezone, correct across DST via Intl (no external tz library needed).
  */
-function localTimeToUtc(dateIso: string, hhmm: string, timezone: string): Date {
+export function localTimeToUtc(dateIso: string, hhmm: string, timezone: string): Date {
   const [hours, minutes] = hhmm.split(":").map((v) => Number.parseInt(v, 10));
   const naive = new Date(`${dateIso}T${hhmm.padStart(5, "0")}:00Z`);
   // Offset of the target zone at that moment, in minutes.
