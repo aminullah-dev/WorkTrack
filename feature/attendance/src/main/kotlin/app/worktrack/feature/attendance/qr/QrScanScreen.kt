@@ -148,6 +148,8 @@ private fun CameraQrScanner(
     )
 }
 
+// ImageProxy.getImage() is CameraX-experimental; ML Kit's own docs use it.
+@androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 private fun processFrame(
     imageProxy: ImageProxy,
     scanner: com.google.mlkit.vision.barcode.BarcodeScanner,

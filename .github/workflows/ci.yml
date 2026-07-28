@@ -1,0 +1,92 @@
+name: CI
+
+# Every bug that reached production this month was catchable by a test that
+# already existed but that nothing ran automatically. This runs them.
+on:
+  push:
+  pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (functions)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20" # matches the Cloud Functions runtime
+          cache: npm
+          cache-dependency-path: backend/functions/package-lock.json
+
+      # The Firestore emulator is a Java process.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Integration tests skip themselves without an emulator, so they need one
+      # started explicitly or they would silently pass by doing nothing.
+      - name: Integration tests (Firestore emulator)
+        run: |
+          npm install --global firebase-tools
+          npm run test:integration
+
+  web:
+    name: Web (manager portal)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # Catches what typecheck cannot: a broken import or a template that only
+      # fails when Vite actually bundles it.
+      - run: npm run build
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # google-services.json is never committed; the app module applies the
+      # plugin only when it is present, so the build works without it.
+      - run: ./gradlew compileDebugKotlin testDebugUnitTest lintDebug --no-daemon
+
+      - name: Upload lint report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
