@@ -49,6 +49,7 @@ To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-
 11. [Afghanistan localization (دری/پښتو, Solar Hijri)](docs/10-localization-afghanistan.md)
 12. [Local demo setup — run everything with sample data](docs/11-local-demo-setup.md)
 13. [Production deployment — take it live](docs/12-production-deployment.md)
+14. [Operations runbook — diagnosing and repairing a live system](docs/13-operations-runbook.md)
 
 ## Android app
 
