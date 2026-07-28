@@ -70,11 +70,16 @@ fun PayslipsRoute(
             }
         }
 
-        MonthFilter(
-            selected = state.month,
-            available = state.monthsWithPayslips,
-            onSelect = viewModel::onMonthSelected,
-        )
+        // With nothing paid in the whole year there is nothing to filter, and a
+        // row of twelve dead chips above the empty state is just noise. It stays
+        // when a month is selected, so the filter can always be cleared.
+        if (state.monthsWithPayslips.isNotEmpty() || state.month != null) {
+            MonthFilter(
+                selected = state.month,
+                available = state.monthsWithPayslips,
+                onSelect = viewModel::onMonthSelected,
+            )
+        }
 
         if (state.payslips.isEmpty()) {
             EmptyState(
