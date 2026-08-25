@@ -37,7 +37,7 @@ function row(over: Partial<AttendanceOverviewRow> = {}): AttendanceOverviewRow {
     lastOutAt: null,
     workedMinutes: 300,
     lateMinutes: 0,
-    checkInSelfie: null,
+    hasCheckInSelfie: false,
     checkInFaceVerified: false,
     needsReview: false,
     employeeStatus: "ACTIVE",
