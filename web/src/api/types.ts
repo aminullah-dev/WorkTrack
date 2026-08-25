@@ -321,3 +321,33 @@ export interface Regularization {
   createdAt: string;
   updatedAt: string;
 }
+
+/** An employee's basic pay. Null until someone configures it. */
+export interface EmployeeSalary {
+  employeeId: string;
+  basicAmount: number;
+  currency: string;
+  effectiveFrom: string | null;
+  revisionReason: string | null;
+  updatedAt: string | null;
+}
+
+export interface EmployeeSalaryWrite {
+  basicAmount: number;
+  effectiveFrom: string;
+  revisionReason?: string | null;
+}
+
+/** An allowance, deduction or employer cost applied to every payslip. */
+export interface SalaryComponent {
+  id: string;
+  name: string;
+  code: string;
+  type: "EARNING" | "DEDUCTION" | "EMPLOYER_COST";
+  calc: "FIXED" | "PERCENT_OF_BASIC" | "PERCENT_OF_GROSS";
+  value: number;
+  taxable: boolean;
+  active: boolean;
+}
+
+export type SalaryComponentWrite = Omit<SalaryComponent, "id">;

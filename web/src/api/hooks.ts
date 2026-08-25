@@ -6,6 +6,8 @@ import type {
   WeeklyAttendance,
   CompanySettings,
   Employee,
+  EmployeeSalary,
+  EmployeeSalaryWrite,
   EmployeeCreated,
   EmployeeWrite,
   KioskAccount,
@@ -13,6 +15,8 @@ import type {
   Kpis,
   LeaveRequest,
   PayrollRun,
+  SalaryComponent,
+  SalaryComponentWrite,
   PayrollRunResult,
   Regularization,
   RosterRow,
@@ -274,6 +278,52 @@ export function useDecideRegularization() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["regularizations", "approvals"] });
       void qc.invalidateQueries({ queryKey: ["attendance-overview"] });
+    },
+  });
+}
+
+// --------------------------------------------------------------- salary setup
+
+/**
+ * An employee's salary. Payroll skips anyone without one, so this is what
+ * stands between a company and its first payslip.
+ */
+export function useEmployeeSalary(employeeId: string | null) {
+  return useQuery({
+    queryKey: ["employee-salary", employeeId],
+    enabled: Boolean(employeeId),
+    queryFn: () =>
+      api.get<EmployeeSalary | null>(`/payroll/employees/${employeeId}/salary`).then((e) => e.data),
+  });
+}
+
+export function useSetEmployeeSalary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: EmployeeSalaryWrite }) =>
+      api.put<EmployeeSalary>(`/payroll/employees/${id}/salary`, body).then((e) => e.data),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-salary", v.id] });
+    },
+  });
+}
+
+export function useSalaryComponents() {
+  return useQuery({
+    queryKey: ["salary-components"],
+    queryFn: () => api.get<SalaryComponent[]>("/payroll/components").then((e) => e.data),
+  });
+}
+
+export function useSaveSalaryComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: SalaryComponentWrite }) =>
+      id
+        ? api.put<SalaryComponent>(`/payroll/components/${id}`, body).then((e) => e.data)
+        : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["salary-components"] });
     },
   });
 }
