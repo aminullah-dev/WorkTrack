@@ -1201,6 +1201,18 @@ table.data tbody tr:hover {
 .selfie-thumb:hover {
   transform: scale(1.08);
 }
+/* The board now carries a flag, not the image, so the thumbnail is a button
+   that fetches the photo when a manager actually asks for it. */
+.selfie-thumb-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--brand-50, var(--neutral-bg));
+  color: var(--brand-600, var(--neutral));
+  font-size: 15px;
+  line-height: 1;
+}
 .selfie-full {
   max-width: min(90vw, 420px);
   max-height: 90vh;

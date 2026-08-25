@@ -174,20 +174,27 @@ async function applyToAttendanceDay(cid: string, reg: RegularizationDoc): Promis
 
   const now = nowTimestamp();
   const ref = tenant(cid, "attendanceDays").doc(dayId);
-  const existing = await ref.get();
-  await ref.set({
-    employeeId: reg.employeeId,
-    date: reg.date,
-    shiftId: (existing.data()?.shiftId as string | undefined) ?? null,
-    firstInAt: inAt,
-    lastOutAt: outAt,
-    workedMinutes,
-    lateMinutes: 0,
-    earlyOutMinutes: 0,
-    overtimeMinutes: 0,
-    status,
+
+  // A correction amends the day; it does not replace it. A full set() built
+  // only from the requested times wiped the check-in photo, the face-verified
+  // flag, the review flags and the record of refused punches — and a request
+  // that supplied only one of the two times zeroed the other and the worked
+  // total with it. Only the fields the correction actually decides are written.
+  const patch: Record<string, unknown> = {
     regularized: true,
     computedAt: now,
     updatedAt: now,
-  });
+  };
+  if (inAt) patch.firstInAt = inAt;
+  if (outAt) patch.lastOutAt = outAt;
+  // Worked time and status are only recomputed when both ends are known;
+  // a one-sided correction leaves the existing figures alone.
+  if (inAt && outAt) {
+    patch.workedMinutes = workedMinutes;
+    patch.status = status;
+    patch.lateMinutes = 0;
+    patch.earlyOutMinutes = 0;
+    patch.overtimeMinutes = 0;
+  }
+  await ref.set(patch, { merge: true });
 }

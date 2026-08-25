@@ -202,8 +202,11 @@ export interface AttendanceOverviewRow {
   lastOutAt: string | null;
   workedMinutes: number;
   lateMinutes: number;
-  /** Check-in selfie (base64 data URL) when photo-verified attendance is on. */
-  checkInSelfie: string | null;
+  /**
+   * Whether a check-in photo exists. The image itself is fetched on demand —
+   * inlining it here made a 500-row board polled every minute unusable.
+   */
+  hasCheckInSelfie: boolean;
   /** The check-in punch was confirmed against the employee's enrolled face. */
   checkInFaceVerified: boolean;
   /** Face recognition is on, but a punch this day was not face-verified. */

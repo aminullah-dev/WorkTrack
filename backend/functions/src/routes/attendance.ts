@@ -23,6 +23,37 @@ import { kioskSecret } from "../config";
 export const attendanceRouter = Router();
 
 /**
+ * Which branch the caller is allowed to look at.
+ *
+ * A requested branchId used to win outright, so a BRANCH_MANAGER could read any
+ * other branch's board simply by passing its id. It is now honoured only for
+ * company-wide roles or a branch the caller actually belongs to; anything else
+ * is refused rather than quietly narrowed, so the caller learns it was denied.
+ */
+function resolveBranchScope(
+  auth: { roles: string[]; branchIds: string[] },
+  requested: string | null,
+): string | null {
+  const companyWide =
+    auth.roles.includes("COMPANY_ADMIN") ||
+    auth.roles.includes("HR_ADMIN") ||
+    auth.roles.includes("AUDITOR") ||
+    auth.roles.includes("SUPER_ADMIN");
+
+  if (companyWide) {
+    return requested;
+  }
+  if (requested !== null) {
+    if (!auth.branchIds.includes(requested)) {
+      throw ApiError.permissionDenied("Not a member of that branch");
+    }
+    return requested;
+  }
+  return auth.branchIds[0] ?? null;
+}
+
+
+/**
  * Verify a face check-in: the app sends the on-device embedding of the person
  * at the camera; the server compares it to the caller's enrolled embedding.
  *
@@ -146,14 +177,10 @@ attendanceRouter.get(
       ? requestedDate
       : localDateOf(new Date(), (await getSettings(auth.companyId)).profile.timezone);
 
-    const companyWide =
-      auth.roles.includes("COMPANY_ADMIN") ||
-      auth.roles.includes("HR_ADMIN") ||
-      auth.roles.includes("AUDITOR") ||
-      auth.roles.includes("SUPER_ADMIN");
-    const branchFilter =
-      (req.query.branchId ? String(req.query.branchId) : null) ??
-      (!companyWide ? auth.branchIds[0] ?? null : null);
+    const branchFilter = resolveBranchScope(
+      auth,
+      req.query.branchId ? String(req.query.branchId) : null,
+    );
 
     let employeesQuery = tenant(auth.companyId, "employees").where("status", "==", "ACTIVE");
     if (branchFilter) {
@@ -212,7 +239,11 @@ attendanceRouter.get(
         lastOutAt: toIso((day?.lastOutAt as Timestamp | undefined) ?? null),
         workedMinutes: (day?.workedMinutes as number | undefined) ?? 0,
         lateMinutes: (day?.lateMinutes as number | undefined) ?? 0,
-        checkInSelfie: (day?.checkInSelfie as string | undefined) ?? null,
+        // The photo itself is deliberately NOT sent here. This board carries up
+        // to 500 rows and the portal refreshes it every minute; a ~200 KB base64
+        // selfie per row made the response tens of megabytes. The flag lets the
+        // portal show a thumbnail affordance and fetch the image on demand.
+        hasCheckInSelfie: Boolean(day?.checkInSelfie),
         checkInFaceVerified: (day?.checkInFaceVerified as boolean | undefined) ?? false,
         needsReview: (day?.needsReview as boolean | undefined) ?? false,
         // Punches the server refused, so the portal can explain an empty day.
@@ -247,14 +278,10 @@ attendanceRouter.get(
       : localDateOf(new Date(), timezone);
     const dates = weekOf(anchor);
 
-    const companyWide =
-      auth.roles.includes("COMPANY_ADMIN") ||
-      auth.roles.includes("HR_ADMIN") ||
-      auth.roles.includes("AUDITOR") ||
-      auth.roles.includes("SUPER_ADMIN");
-    const branchFilter =
-      (req.query.branchId ? String(req.query.branchId) : null) ??
-      (!companyWide ? auth.branchIds[0] ?? null : null);
+    const branchFilter = resolveBranchScope(
+      auth,
+      req.query.branchId ? String(req.query.branchId) : null,
+    );
 
     let employeesQuery = tenant(auth.companyId, "employees").where("status", "==", "ACTIVE");
     if (branchFilter) {
@@ -342,6 +369,32 @@ attendanceRouter.get(
 
     rows.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
     res.json({ data: { from: dates[0], to: dates[dates.length - 1], dates, rows } });
+  }),
+);
+
+/**
+ * The check-in photo for one day, fetched only when a manager opens it.
+ *
+ * The board deliberately carries a boolean instead of the image; at 500 rows
+ * refreshed every minute, inlining base64 photos made the response unusable.
+ */
+attendanceRouter.get(
+  "/days/:employeeId/:date/selfie",
+  requirePermission("attendance:read"),
+  asyncHandler(async (req, res) => {
+    const auth = authOf(req);
+    const { employeeId, date } = req.params;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw ApiError.validation("date must be YYYY-MM-DD");
+    }
+    const snap = await tenant(auth.companyId, "attendanceDays")
+      .doc(`${employeeId}_${date}`)
+      .get();
+    const selfie = (snap.data() as { checkInSelfie?: string } | undefined)?.checkInSelfie;
+    if (!selfie) {
+      throw ApiError.notFound("No check-in photo for that day");
+    }
+    res.json({ data: { selfie } });
   }),
 );
 

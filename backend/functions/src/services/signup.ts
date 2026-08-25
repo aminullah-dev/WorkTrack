@@ -137,6 +137,9 @@ export async function provisionCompany(input: CompanySignup): Promise<SignupResu
       isPaid: true,
       requiresAttachment: false,
       active: true,
+      // The yearly grant lives on the type so every employee added later gets
+      // the same entitlement without anyone re-entering it.
+      defaultEntitlementDays: lt.entitled,
       updatedAt: now,
     });
     await tenant(companyId, "leaveBalances").doc(`${employeeId}_${lt.id}_${new Date().getUTCFullYear()}`).set({

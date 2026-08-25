@@ -11,9 +11,11 @@ payslipsRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     const auth = authOf(req);
+    // periodYear is a Solar Hijri year (payroll.ts writes 1405, not 2026), so a
+    // Gregorian range rejected every request the app has ever made.
     const year = Number.parseInt(String(req.query.year ?? ""), 10);
-    if (Number.isNaN(year) || year < 2000 || year > 2100) {
-      throw ApiError.validation("year query parameter is required");
+    if (Number.isNaN(year) || year < 1300 || year > 1500) {
+      throw ApiError.validation("year must be a Solar Hijri year (1300–1500)");
     }
 
     const snapshot = await tenant(auth.companyId, "payslips")

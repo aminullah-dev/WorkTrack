@@ -97,7 +97,10 @@ export async function computePayrollRun(
         workedDays += 0.5;
         lopDays += 0.5;
       } else if (status === "LEAVE") paidLeaveDays += 1;
-      else if (status === "ABSENT") lopDays += 1;
+      // PENDING is what the projection writes for a day that has punches but no
+      // valid check-in. Only "ABSENT" was counted, and nothing has ever written
+      // that status, so an employee who never worked was paid in full.
+      else if (status === "ABSENT" || status === "PENDING") lopDays += 1;
     }
 
     // Earnings: BASIC + each active earning component.

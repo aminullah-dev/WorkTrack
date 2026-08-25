@@ -38,18 +38,25 @@ class EvaluateGeofenceUseCase @Inject constructor(
             )
         }
 
-        val (nearest, distance) = fences
+        val measured = fences
             .map { it to GeoDistance.meters(latitude, longitude, it.latitude, it.longitude) }
-            .minBy { (_, d) -> d }
 
         // GPS accuracy is credited toward the fence: a reading whose error circle
         // overlaps the fence counts as inside, so poor urban GPS doesn't lock people out.
-        val effectiveDistance = distance - (accuracyMeters ?: 0f)
+        val slack = accuracyMeters ?: 0f
+        // Being inside ANY fence is enough. Judging only the closest centre shut
+        // out someone standing well inside a large site because a small fence
+        // happened to be centred nearer — mirrors the server's checkGeofence.
+        val containing = measured
+            .filter { (fence, d) -> d - slack <= fence.radiusMeters }
+            .minByOrNull { (_, d) -> d }
+        val (nearest, distance) = containing ?: measured.minBy { (_, d) -> d }
+
         return GeofenceEvaluation(
             fencesConfigured = true,
             nearestFence = nearest,
             distanceMeters = distance,
-            insideFence = effectiveDistance <= nearest.radiusMeters,
+            insideFence = containing != null,
         )
     }
 }

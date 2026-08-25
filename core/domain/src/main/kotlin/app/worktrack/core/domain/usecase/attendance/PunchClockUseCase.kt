@@ -31,7 +31,11 @@ class PunchClockUseCase @Inject constructor(
         }
 
         val enriched = when (command.method) {
-            PunchMethod.GPS -> {
+            // FACE is a GPS punch with an identity check on top: the server runs
+            // the same geofence validation on both. Letting FACE skip the client
+            // gate meant the employee was told "recorded" for a punch the server
+            // then marked invalid, and it never reached the attendance board.
+            PunchMethod.GPS, PunchMethod.FACE -> {
                 val lat = command.latitude
                 val lng = command.longitude
                 if (lat == null || lng == null) {

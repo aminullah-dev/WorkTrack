@@ -139,3 +139,59 @@ describe.skipIf(!EMULATOR)("recomputeAttendanceDay", () => {
     expect(day.status).toBe("PRESENT");
   });
 });
+
+describe.skipIf(!EMULATOR)("night shifts", () => {
+  beforeEach(async () => {
+    cid = `ns_${Date.now()}_${seq}`;
+    await db.collection("companies").doc(cid).set({ name: "Night", timezone: KABUL });
+  });
+
+  it("keeps a session with the day it started, not the day it ended", async () => {
+    // 22:00 on the 26th to 02:00 on the 27th, Kabul. The clock-out lands in the
+    // next day's window; the four hours belong to the 26th all the same.
+    await punch("e1", "2026-07-26T17:30:00Z", "IN");
+    await punch("e1", "2026-07-26T21:30:00Z", "OUT");
+
+    await recomputeAttendanceDay(cid, "e1", "2026-07-26", KABUL);
+    const day = await dayOf("e1", "2026-07-26");
+
+    expect(day.workedMinutes).toBe(240);
+    expect(day.lastOutAt).not.toBeNull();
+  });
+
+  it("does not also count that session on the day it ended", async () => {
+    await punch("e1", "2026-07-26T17:30:00Z", "IN");
+    await punch("e1", "2026-07-26T21:30:00Z", "OUT");
+
+    await recomputeAttendanceDay(cid, "e1", "2026-07-27", KABUL);
+    const day = await dayOf("e1", "2026-07-27");
+
+    // The stray clock-out must not open or close anything here.
+    expect(day.workedMinutes).toBe(0);
+    expect(day.status).toBe("PENDING");
+  });
+
+  it("does not treat an overnight shift as a full day of overtime", async () => {
+    await tenant(cid, "shifts").doc("night").set({
+      startTime: "22:00",
+      endTime: "06:00",
+      graceInMinutes: 10,
+      graceOutMinutes: 10,
+      breakMinutes: 0,
+    });
+    await tenant(cid, "shiftAssignments").doc("a1").set({
+      employeeId: "e1",
+      date: "2026-07-26",
+      shiftId: "night",
+    });
+    await punch("e1", "2026-07-26T17:30:00Z", "IN"); // 22:00 Kabul
+    await punch("e1", "2026-07-26T21:30:00Z", "OUT"); // 02:00 Kabul
+
+    await recomputeAttendanceDay(cid, "e1", "2026-07-26", KABUL);
+    const day = await dayOf("e1", "2026-07-26");
+
+    // Scheduled is 8h; four hours worked is under it, so no overtime at all.
+    // The pre-fix arithmetic made scheduled negative and called all 240 overtime.
+    expect(day.overtimeMinutes).toBe(0);
+  });
+});

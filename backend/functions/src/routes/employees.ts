@@ -3,7 +3,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import type { Query } from "firebase-admin/firestore";
 import { z } from "zod";
 import { ApiError, asyncHandler } from "../lib/errors";
-import { audit, nowTimestamp, tenant, toIso } from "../lib/firestore";
+import { audit, db, nowTimestamp, tenant, toIso } from "../lib/firestore";
 import { ulid } from "../lib/ids";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
@@ -190,6 +190,7 @@ employeesRouter.post(
     }
 
     await tenant(auth.companyId, "employees").doc(id).create(doc);
+    await seedLeaveBalances(auth.companyId, id);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
       actorRole: auth.roles.join(","),
@@ -284,3 +285,55 @@ employeesRouter.delete(
     res.json({ data: { faceEnrolled: false } });
   }),
 );
+
+/**
+ * Gives a new employee an entitlement row for every active leave type.
+ *
+ * Only the signup flow ever created these, so everyone added through the portal
+ * had no balance at all. Leave now refuses a request with no entitlement, which
+ * would strand them — so the rows are created up front, at the leave type's
+ * default. A zero-entitlement type still gets a row, so the refusal that
+ * follows is a deliberate "none granted" rather than "nothing configured".
+ */
+async function seedLeaveBalances(cid: string, employeeId: string): Promise<void> {
+  const typesSnap = await tenant(cid, "leaveTypes").get();
+  if (typesSnap.empty) return;
+
+  const periodYear = new Date().getUTCFullYear();
+  const now = nowTimestamp();
+  const batch = db.batch();
+  for (const typeDoc of typesSnap.docs) {
+    const type = typeDoc.data() as { defaultEntitlementDays?: number; active?: boolean };
+    if (type.active === false) continue;
+
+    // Tenants created before the type carried a default still have balances on
+    // their existing staff — mirror one rather than granting nobody anything.
+    let entitledDays = type.defaultEntitlementDays;
+    if (entitledDays === undefined) {
+      const peer = await tenant(cid, "leaveBalances")
+        .where("leaveTypeId", "==", typeDoc.id)
+        .limit(1)
+        .get();
+      entitledDays = peer.empty
+        ? 0
+        : ((peer.docs[0].data().entitledDays as number | undefined) ?? 0);
+    }
+
+    batch.set(
+      tenant(cid, "leaveBalances").doc(`${employeeId}_${typeDoc.id}_${periodYear}`),
+      {
+        employeeId,
+        leaveTypeId: typeDoc.id,
+        periodYear,
+        entitledDays,
+        accruedDays: 0,
+        usedDays: 0,
+        carriedOverDays: 0,
+        pendingDays: 0,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+  }
+  await batch.commit();
+}

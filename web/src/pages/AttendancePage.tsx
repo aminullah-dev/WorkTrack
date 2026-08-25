@@ -5,6 +5,7 @@ import {
   usePendingRegularizations,
 } from "../api/hooks";
 import type { Regularization } from "../api/types";
+import { api } from "../api/client";
 import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { isoTodayIn, isViewerDayDifferent } from "../time";
 import { AttendanceWeekly } from "./AttendanceWeekly";
@@ -25,6 +26,18 @@ export function AttendancePage() {
 
   const canApprove = can("attendance:approve");
   const [preview, setPreview] = useState<string | null>(null);
+
+  // Fetched only when a manager actually opens a photo.
+  async function openSelfie(employeeId: string) {
+    try {
+      const { data } = await api.get<{ selfie: string }>(
+        `/attendance/days/${employeeId}/${date}/selfie`,
+      );
+      setPreview(data.selfie);
+    } catch {
+      setPreview(null);
+    }
+  }
   const [view, setView] = useState<"daily" | "weekly">("daily");
 
   const summary = useMemo(() => {
@@ -120,13 +133,15 @@ export function AttendancePage() {
                   <tr key={r.employeeId}>
                     <td>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                        {r.checkInSelfie && (
-                          <img
-                            src={r.checkInSelfie}
-                            className="selfie-thumb"
-                            alt=""
-                            onClick={() => setPreview(r.checkInSelfie)}
-                          />
+                        {r.hasCheckInSelfie && (
+                          <button
+                            type="button"
+                            className="selfie-thumb selfie-thumb-button"
+                            title={t("att_view_selfie")}
+                            onClick={() => void openSelfie(r.employeeId)}
+                          >
+                            ◉
+                          </button>
                         )}
                         {r.employeeName}
                         {r.checkInFaceVerified && (

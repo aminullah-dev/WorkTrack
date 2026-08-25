@@ -125,8 +125,13 @@ export async function applyPunch(
 
   // Speed-of-travel plausibility vs the most recent located, validated punch.
   if (serverValidated && payload.latitude != null && payload.longitude != null) {
+    // Must be the newest punch BEFORE this one. Taking the newest punch overall
+    // compares an offline punch being synced late against a punch that happened
+    // after it; the negative interval was floored at one second, turning any
+    // backdated punch into an implausible-travel rejection.
     const prevSnap = await tenant(cid, "punches")
       .where("employeeId", "==", employeeId)
+      .where("punchedAt", "<", Timestamp.fromDate(punchedAt))
       .orderBy("punchedAt", "desc")
       .limit(1)
       .get();

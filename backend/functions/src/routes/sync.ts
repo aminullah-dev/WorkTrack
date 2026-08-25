@@ -7,7 +7,7 @@ import { asyncHandler } from "../lib/errors";
 import { tenant } from "../lib/firestore";
 import type { TenantCollection } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
-import { parseBody } from "../middleware/validate";
+import { parseBody, parsePayload } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
 import { createLeaveRequest, leaveCreateSchema } from "../services/leave";
 import { createRegularization, regularizationCreateSchema } from "../services/regularization";
@@ -78,11 +78,11 @@ async function applyOp(
 ): Promise<Record<string, unknown>> {
   switch (resourceType) {
     case "punches":
-      return applyPunch(cid, employeeId, punchCreateSchema.parse(payload), kioskSecret.value());
+      return applyPunch(cid, employeeId, parsePayload(payload, punchCreateSchema), kioskSecret.value());
     case "leaveRequests":
-      return createLeaveRequest(cid, employeeId, leaveCreateSchema.parse(payload));
+      return createLeaveRequest(cid, employeeId, parsePayload(payload, leaveCreateSchema));
     case "regularizations":
-      return createRegularization(cid, employeeId, regularizationCreateSchema.parse(payload));
+      return createRegularization(cid, employeeId, parsePayload(payload, regularizationCreateSchema));
     default:
       throw ApiError.business(
         ErrorCodes.UNSUPPORTED_RESOURCE,

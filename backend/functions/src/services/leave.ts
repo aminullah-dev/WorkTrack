@@ -126,7 +126,16 @@ export async function createLeaveRequest(
       .limit(1);
     const balanceSnap = await tx.get(balanceQuery);
 
-    if (!balanceSnap.empty) {
+    // No balance row used to mean no limit, and POST /employees never created
+    // one — so every employee added through the portal had unlimited leave.
+    // Absence of an entitlement is now a refusal, not a free pass.
+    if (balanceSnap.empty) {
+      throw ApiError.business(
+        ErrorCodes.INSUFFICIENT_LEAVE_BALANCE,
+        "No leave entitlement is configured for this employee and leave type",
+      );
+    }
+    {
       const balance = balanceSnap.docs[0].data() as {
         entitledDays: number;
         accruedDays: number;
@@ -238,6 +247,14 @@ export async function decideLeaveRequest(
     return leaveRequestToDto(requestId, { ...request, ...updated } as LeaveRequestDoc);
   });
 
+  // Approving leave used to touch nothing but the request itself, so the person
+  // on approved leave still showed as ABSENT on the attendance board, the
+  // dashboard's on-leave tile stayed at zero, and payroll's paidLeaveDays was
+  // always zero. Mark the days so all three read the truth.
+  if (decision === "APPROVE") {
+    await markLeaveDays(cid, dto);
+  }
+
   await audit(cid, {
     actorId: decidedBy,
     actorRole: deciderRoles.join(","),
@@ -294,4 +311,45 @@ export async function cancelLeaveRequest(
     tx.update(requestRef, updated);
     return leaveRequestToDto(requestId, { ...request, ...updated } as LeaveRequestDoc);
   });
+}
+
+/**
+ * Stamps LEAVE onto each attendance day the approved request covers.
+ *
+ * Merged, not replaced: a day may already carry punches (someone who worked a
+ * half day before going home) and that evidence is not the approval's to erase.
+ */
+async function markLeaveDays(cid: string, dto: Record<string, unknown>): Promise<void> {
+  const employeeId = String(dto.employeeId ?? "");
+  const startDate = String(dto.startDate ?? "");
+  const endDate = String(dto.endDate ?? "");
+  if (!employeeId || !/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    return;
+  }
+
+  const now = nowTimestamp();
+  const batch = db.batch();
+  let written = 0;
+  for (
+    let d = new Date(`${startDate}T00:00:00Z`);
+    d <= new Date(`${endDate}T00:00:00Z`) && written < 120; // a sane upper bound
+    d = new Date(d.getTime() + 24 * 60 * 60 * 1000)
+  ) {
+    const dateIso = d.toISOString().slice(0, 10);
+    batch.set(
+      tenant(cid, "attendanceDays").doc(`${employeeId}_${dateIso}`),
+      {
+        employeeId,
+        date: dateIso,
+        status: "LEAVE",
+        leaveRequestId: dto.id ?? null,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+    written++;
+  }
+  if (written > 0) {
+    await batch.commit();
+  }
 }

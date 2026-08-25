@@ -1,6 +1,9 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { nowTimestamp, tenant, toIso } from "../lib/firestore";
 
+/** How far past a day's end a session started that day may still close. */
+const OVERNIGHT_LOOKAHEAD_MS = 12 * 60 * 60 * 1000;
+
 export interface PunchDoc {
   companyId: string;
   employeeId: string;
@@ -66,21 +69,27 @@ export async function recomputeAttendanceDay(
   const dayStart = localTimeToUtc(dateIso, "00:00", timezone);
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
+  // A night shift clocks out after midnight, which is the NEXT day's window. A
+  // work session belongs to the day it started, so the read reaches past the
+  // boundary to find the closing punch; punches that open a session after the
+  // boundary are left to the day they actually belong to.
+  const lookaheadEnd = new Date(dayEnd.getTime() + OVERNIGHT_LOOKAHEAD_MS);
   const punchesSnap = await tenant(cid, "punches")
     .where("employeeId", "==", employeeId)
     .where("punchedAt", ">=", Timestamp.fromDate(dayStart))
-    .where("punchedAt", "<", Timestamp.fromDate(dayEnd))
+    .where("punchedAt", "<", Timestamp.fromDate(lookaheadEnd))
     .orderBy("punchedAt", "asc")
     .get();
 
   const allPunches = punchesSnap.docs.map((d) => d.data() as PunchDoc);
+  const ownedByDay = (p: PunchDoc): boolean => p.punchedAt.toMillis() < dayEnd.getTime();
   const punches = allPunches.filter((p) => p.serverValidated);
 
   // Punches the server refused (outside the geofence, bad device clock, …) are
   // kept as evidence but excluded from the worked-time math above. Summarise
   // them onto the day so the portal can show WHY a day looks empty, instead of
   // silently reading as "absent" with no explanation anywhere.
-  const rejected = allPunches.filter((p) => !p.serverValidated);
+  const rejected = allPunches.filter((p) => ownedByDay(p) && !p.serverValidated);
   const rejectedCount = rejected.length;
   // Ordered by punchedAt asc, so this is the earliest refusal of the day.
   const rejectedReason = rejected[0]?.invalidReason ?? null;
@@ -96,8 +105,11 @@ export async function recomputeAttendanceDay(
   // the first one — someone could verify at check-in and not at check-out.
   let needsReview = false;
   for (const punch of punches) {
-    if (punch.needsReview) needsReview = true;
+    const owned = ownedByDay(punch);
+    if (owned && punch.needsReview) needsReview = true;
     if (punch.type === "IN") {
+      // An arrival past the boundary starts the next day, not this one.
+      if (!owned) break;
       if (!firstInAt) {
         firstInAt = punch.punchedAt;
         checkInSelfie = punch.selfie ?? null; // the day carries the check-in photo
@@ -138,7 +150,12 @@ export async function recomputeAttendanceDay(
         breakMinutes: number;
       };
       const shiftStart = localTimeToUtc(dateIso, shift.startTime, timezone);
-      const shiftEnd = localTimeToUtc(dateIso, shift.endTime, timezone);
+      let shiftEnd = localTimeToUtc(dateIso, shift.endTime, timezone);
+      // 22:00–06:00 ends the next morning. Without this the scheduled length is
+      // negative, and every worked minute is counted as overtime.
+      if (shiftEnd.getTime() <= shiftStart.getTime()) {
+        shiftEnd = new Date(shiftEnd.getTime() + 24 * 60 * 60 * 1000);
+      }
 
       const lateBy = Math.floor((firstInAt.toMillis() - shiftStart.getTime()) / 60_000);
       lateMinutes = Math.max(0, lateBy - shift.graceInMinutes);

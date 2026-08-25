@@ -40,23 +40,36 @@ export async function checkGeofence(
     return { fencesConfigured: false, insideFence: false, geofenceId: null, distanceMeters: null };
   }
 
+  // Being inside ANY fence is enough. Judging only the nearest centre rejected
+  // someone standing well inside a large site simply because a small fence
+  // happened to have its centre closer — overlapping areas are normal when a
+  // compound and a building inside it are both mapped.
   let nearestId: string | null = null;
   let nearestDistance = Number.POSITIVE_INFINITY;
-  let nearestRadius = 0;
+  let insideId: string | null = null;
+  let insideDistance = Number.POSITIVE_INFINITY;
+
   for (const doc of snapshot.docs) {
     const fence = doc.data() as { latitude: number; longitude: number; radiusMeters: number };
     const distance = haversineMeters(latitude, longitude, fence.latitude, fence.longitude);
     if (distance < nearestDistance) {
       nearestDistance = distance;
       nearestId = doc.id;
-      nearestRadius = fence.radiusMeters;
+    }
+    // GPS accuracy is credited toward the radius, as on the client.
+    if (distance - accuracyMeters <= fence.radiusMeters && distance < insideDistance) {
+      insideDistance = distance;
+      insideId = doc.id;
     }
   }
 
+  const inside = insideId !== null;
   return {
     fencesConfigured: true,
-    insideFence: nearestDistance - accuracyMeters <= nearestRadius,
-    geofenceId: nearestId,
-    distanceMeters: Math.round(nearestDistance),
+    insideFence: inside,
+    // Attribute the punch to the fence it is inside; otherwise report the
+    // closest one, which is what a manager needs to see to judge the refusal.
+    geofenceId: inside ? insideId : nearestId,
+    distanceMeters: Math.round(inside ? insideDistance : nearestDistance),
   };
 }
