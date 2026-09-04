@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default locale is Dari (fa-AF): WorkTrack is built for Afghanistan, so any
+     unmatched device locale falls back to Dari. values-ps = Pashto, values-en = English. -->
+<resources>
+    <string name="ds_retry">تلاش دوباره</string>
+    <string name="ds_back">بازگشت</string>
+    <string name="ds_ok">تایید</string>
+    <string name="ds_cancel">لغو</string>
+
+    <string name="ds_err_network">آفلاین هستید. تغییرات ذخیره شد و به صورت خودکار همگام می‌شود.</string>
+    <string name="ds_err_unauthenticated">نشست شما پایان یافته است. لطفاً دوباره وارد شوید.</string>
+    <string name="ds_err_permission">اجازهٔ این کار را ندارید.</string>
+    <string name="ds_err_not_found">مورد موردنظر یافت نشد.</string>
+    <string name="ds_err_unexpected">مشکلی پیش آمد. لطفاً دوباره تلاش کنید.</string>
+    <string name="ds_err_server">خطای سرور رخ داد (%1$s).</string>
+    <string name="ds_err_validation">معلومات واردشده درست نیست.</string>
+
+    <string name="ds_err_invalid_credentials">ایمیل یا رمز عبور نادرست است.</string>
+    <string name="ds_err_mock_location">استفاده از موقعیت جعلی برای حاضری مجاز نیست.</string>
+    <string name="ds_err_geofence">شما خارج از ساحهٔ کاری مجاز هستید.</string>
+    <string name="ds_err_leave_balance">بیلانس رخصتی شما کافی نیست.</string>
+    <string name="ds_err_not_synced">صبر کنید تا این درخواست اول همگام شود.</string>
+    <string name="ds_err_kiosk_token">کود QR کیوسک معتبر نیست؛ دوباره اسکن کنید.</string>
+    <string name="ds_err_invalid_state">این درخواست قبلاً نهایی شده است.</string>
+
+    <!-- Solar Hijri months (Afghan names), index 0 = حمل -->
+    <string-array name="ds_shamsi_months">
+        <item>حمل</item>
+        <item>ثور</item>
+        <item>جوزا</item>
+        <item>سرطان</item>
+        <item>اسد</item>
+        <item>سنبله</item>
+        <item>میزان</item>
+        <item>عقرب</item>
+        <item>قوس</item>
+        <item>جدی</item>
+        <item>دلو</item>
+        <item>حوت</item>
+    </string-array>
+
+    <!-- Weekdays, index 0 = Monday (java.time.DayOfWeek.value - 1) -->
+    <string-array name="ds_weekdays">
+        <item>دوشنبه</item>
+        <item>سه‌شنبه</item>
+        <item>چهارشنبه</item>
+        <item>پنجشنبه</item>
+        <item>جمعه</item>
+        <item>شنبه</item>
+        <item>یکشنبه</item>
+    </string-array>
+</resources>

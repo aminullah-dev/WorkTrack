@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_tagline">مدیریت هوشمند نیروی کار برای افغانستان</string>
+    <string name="auth_email">ایمیل کاری</string>
+    <string name="auth_password">رمز عبور</string>
+    <string name="auth_sign_in">ورود</string>
+    <string name="auth_show_password">نمایش رمز عبور</string>
+    <string name="auth_hide_password">پنهان کردن رمز عبور</string>
+    <string name="auth_email_invalid">یک ایمیل معتبر درج کنید</string>
+    <string name="auth_password_short">رمز عبور باید حداقل ۸ حرف باشد</string>
+</resources>

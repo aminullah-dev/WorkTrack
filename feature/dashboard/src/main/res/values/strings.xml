@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dash_greeting">سلام، %1$s</string>
+    <string name="dash_clocked_in">حاضری ورود ثبت شده</string>
+    <string name="dash_not_clocked_in">هنوز حاضری نزده‌اید</string>
+    <string name="dash_first_in">اولین ورود %1$s</string>
+    <string name="dash_worked">کارکرد %1$s ساعت و %2$s دقیقه</string>
+    <string name="dash_shift">شفت: %1$s (%2$s تا %3$s)</string>
+    <string name="dash_clock_in">ثبت ورود</string>
+    <string name="dash_clock_out">ثبت خروج</string>
+    <string name="dash_history">تاریخچه</string>
+    <string name="dash_leave_balances">بیلانس رخصتی</string>
+    <string name="dash_days_available">روز باقی‌مانده</string>
+    <string name="dash_announcements">اعلانات</string>
+    <string name="dash_chip_in">حاضر</string>
+    <string name="dash_chip_out">خارج</string>
+    <string name="dash_priority_important">مهم</string>
+    <string name="dash_priority_urgent">عاجل</string>
+</resources>

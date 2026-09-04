@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="leave_apply">غوښتنه</string>
+    <string name="leave_pending_team">د ټیم غوښتنې ستاسو په تمه دي</string>
+    <string name="leave_review">کتنه</string>
+    <string name="leave_balances">بیلانسونه</string>
+    <string name="leave_my_requests">زما غوښتنې</string>
+    <string name="leave_empty_title">تر اوسه غوښتنه نه لرئ</string>
+    <string name="leave_empty_msg">د رخصتۍ غوښتنې لپاره د غوښتنې تڼۍ کېکاږئ.</string>
+    <string name="leave_balances_after_sync">بیلانسونه د لومړي همغږي کولو وروسته ښکاري.</string>
+    <string name="leave_days_pending">%1$s ورځې په تمه</string>
+    <string name="leave_days_count">%1$s ورځې</string>
+    <string name="leave_waiting_sync">د همغږۍ په تمه…</string>
+    <string name="leave_sync_failed">همغږي ناکامه شوه — سرور دا غوښتنه رد کړه</string>
+    <string name="leave_cancel_request">غوښتنه لغوه کړئ</string>
+    <string name="leave_generic_type">رخصتي</string>
+    <string name="leave_msg_cancelled">غوښتنه لغوه شوه</string>
+
+    <string name="leave_status_draft">مسوده</string>
+    <string name="leave_status_pending">په تمه</string>
+    <string name="leave_status_approved">تایید شوې</string>
+    <string name="leave_status_rejected">رد شوې</string>
+    <string name="leave_status_cancelled">لغوه شوې</string>
+
+    <string name="leave_apply_title">د رخصتۍ غوښتنه</string>
+    <string name="leave_type_section">د رخصتۍ ډول</string>
+    <string name="leave_dates_section">نېټې</string>
+    <string name="leave_start_date">د پیل نېټه</string>
+    <string name="leave_end_date">د پای نېټه</string>
+    <string name="leave_half_first">لومړۍ نیمه ورځ</string>
+    <string name="leave_half_last">وروستۍ نیمه ورځ</string>
+    <string name="leave_estimate">≈ %1$s ورځې (جمعې او عمومي رخصتۍ د تایید پر مهال حسابېږي)</string>
+    <string name="leave_reason_section">دلیل</string>
+    <string name="leave_reason_label">ولې دې رخصتۍ ته اړتیا لرئ؟</string>
+    <string name="leave_submit">غوښتنه واستوئ</string>
+    <string name="leave_err_type">د رخصتۍ ډول وټاکئ</string>
+    <string name="leave_err_start">د پیل نېټه وټاکئ</string>
+    <string name="leave_err_end">د پای نېټه وټاکئ</string>
+    <string name="leave_err_reason">دلیل لیکل اړین دي</string>
+
+    <string name="leave_approvals_title">تاییدونه</string>
+    <string name="leave_approvals_empty_title">ټول کتل شوي</string>
+    <string name="leave_approvals_empty_msg">هېڅ د رخصتۍ غوښتنه ستاسو د پرېکړې په تمه نه ده.</string>
+    <string name="leave_approve">تایید</string>
+    <string name="leave_reject">رد</string>
+    <string name="leave_reject_dialog_title">غوښتنه رد کړئ</string>
+    <string name="leave_reject_dialog_msg">%1$s ته ووایاست چې دا غوښتنه ولې ردېږي.</string>
+    <string name="leave_reject_reason">دلیل</string>
+    <string name="leave_msg_approved">غوښتنه تایید شوه</string>
+    <string name="leave_msg_rejected">غوښتنه رد شوه</string>
+</resources>

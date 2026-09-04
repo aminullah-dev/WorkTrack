@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prof_payroll">Payroll</string>
+    <string name="prof_my_payslips">My payslips</string>
+    <string name="prof_language">Language</string>
+    <string name="prof_sync">Sync</string>
+    <string name="prof_sync_now">Sync now</string>
+    <string name="prof_syncing">Syncing…</string>
+    <string name="prof_pending_changes">%1$s changes waiting to sync</string>
+    <string name="prof_up_to_date">Everything is up to date</string>
+    <string name="prof_last_synced">Last synced: %1$s</string>
+    <string name="prof_rejected_changes">%1$s changes were rejected by the server</string>
+    <string name="prof_sync_unavailable">Sync status unavailable</string>
+    <string name="prof_sign_out">Sign out</string>
+
+    <string name="prof_chip_syncing">Syncing</string>
+    <string name="prof_chip_attention">Attention</string>
+    <string name="prof_chip_pending">Pending</string>
+    <string name="prof_chip_ok">Up to date</string>
+
+    <string name="prof_role_super_admin">System admin</string>
+    <string name="prof_role_company_admin">Company admin</string>
+    <string name="prof_role_hr_admin">HR admin</string>
+    <string name="prof_role_payroll_admin">Payroll admin</string>
+    <string name="prof_role_branch_manager">Branch manager</string>
+    <string name="prof_role_team_lead">Team lead</string>
+    <string name="prof_role_employee">Employee</string>
+    <string name="prof_role_auditor">Auditor</string>
+    <string name="prof_role_kiosk">Kiosk</string>
+
+    <string name="prof_lang_dari">دری</string>
+    <string name="prof_lang_pashto">پښتو</string>
+    <string name="prof_lang_english">English</string>
+</resources>

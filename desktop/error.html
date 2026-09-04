@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>WorkTrack</title>
+<style>
+  body {
+    margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: "Segoe UI", Tahoma, sans-serif; background: #f4f6f8; color: #1d3b3f;
+  }
+  .card { text-align: center; padding: 40px; }
+  .mark {
+    width: 72px; height: 72px; border-radius: 18px; margin: 0 auto 20px;
+    background: linear-gradient(135deg, #2f6f75, #1d4c52);
+    color: #fff; font-size: 40px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { margin: 0 0 24px; color: #4c6a6e; }
+  button {
+    background: #2f6f75; color: #fff; border: 0; border-radius: 8px;
+    padding: 10px 28px; font-size: 15px; cursor: pointer;
+  }
+  button:hover { background: #275e63; }
+  .en { margin-top: 16px; font-size: 13px; color: #7b9296; direction: ltr; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="mark">W</div>
+    <h1>اتصال برقرار نشد</h1>
+    <p>به انترنت وصل نیستید یا پورتال در دسترس نیست. لطفاً اتصال خود را بررسی کنید.</p>
+    <button onclick="location.href='https://worktrack-prod.web.app'">تلاش دوباره</button>
+    <div class="en">Could not reach the WorkTrack portal — check your internet connection and retry.</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prof_payroll">معاشات</string>
+    <string name="prof_my_payslips">زما د معاش فیشونه</string>
+    <string name="prof_language">ژبه</string>
+    <string name="prof_sync">همغږي</string>
+    <string name="prof_sync_now">اوس همغږي کړئ</string>
+    <string name="prof_syncing">همغږي کېږي…</string>
+    <string name="prof_pending_changes">%1$s بدلونونه د همغږۍ په تمه</string>
+    <string name="prof_up_to_date">هر څه تازه دي</string>
+    <string name="prof_last_synced">وروستۍ همغږي: %1$s</string>
+    <string name="prof_rejected_changes">%1$s بدلونونه سرور رد کړل</string>
+    <string name="prof_sync_unavailable">د همغږۍ حالت نشته</string>
+    <string name="prof_sign_out">له حسابه ووځئ</string>
+
+    <string name="prof_chip_syncing">همغږي کېږي</string>
+    <string name="prof_chip_attention">پاملرنې ته اړتیا</string>
+    <string name="prof_chip_pending">په تمه</string>
+    <string name="prof_chip_ok">تازه</string>
+
+    <string name="prof_role_super_admin">د سیستم مدیر</string>
+    <string name="prof_role_company_admin">د شرکت مدیر</string>
+    <string name="prof_role_hr_admin">د بشري منابعو مدیر</string>
+    <string name="prof_role_payroll_admin">د معاشاتو مدیر</string>
+    <string name="prof_role_branch_manager">د څانګې مدیر</string>
+    <string name="prof_role_team_lead">د ډلې مشر</string>
+    <string name="prof_role_employee">کارکوونکی</string>
+    <string name="prof_role_auditor">پلټونکی</string>
+    <string name="prof_role_kiosk">کیوسک</string>
+
+    <string name="prof_lang_dari">دری</string>
+    <string name="prof_lang_pashto">پښتو</string>
+    <string name="prof_lang_english">English</string>
+</resources>

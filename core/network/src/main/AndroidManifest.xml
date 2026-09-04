@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      ConnectivityNetworkMonitor reads the active network to drive offline
+      state. The permission is declared by the module that needs it rather than
+      only by the app, so any consumer inherits it through manifest merging and
+      the module is correct when built on its own.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+</manifest>
