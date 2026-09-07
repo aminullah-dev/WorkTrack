@@ -27,12 +27,19 @@ export type TenantCollection =
   | "leavePolicies"
   | "leaveBalances"
   | "leaveRequests"
-  | "holidayCalendars"
+  // One working calendar per company, keyed by the Gregorian date, so saving
+  // the same day twice corrects it rather than double-counting. The original
+  // design allowed several named calendars per tenant; nothing has needed that,
+  // and a second calendar can be added later without moving these documents.
+  | "holidays"
   | "salaryComponents"
   | "salaryStructures"
   | "employeeSalaries"
   | "payrollRuns"
   | "payslips"
+  | "expenses"
+  | "accounts"
+  | "journalEntries"
   | "announcements"
   | "documents"
   | "auditLogs"

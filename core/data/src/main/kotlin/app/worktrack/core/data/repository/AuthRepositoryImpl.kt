@@ -12,6 +12,7 @@ import app.worktrack.core.domain.repository.AuthRepository
 import app.worktrack.core.model.UserSession
 import app.worktrack.core.network.WorkTrackApi
 import app.worktrack.core.network.apiCall
+import app.worktrack.core.network.di.ApiConfig
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -30,6 +31,7 @@ class AuthRepositoryImpl @Inject constructor(
     // would crash the app on startup instead of failing only at sign-in.
     private val firebaseAuthProvider: Lazy<FirebaseAuth>,
     private val api: WorkTrackApi,
+    private val apiConfig: ApiConfig,
     private val sessionStore: SessionStore,
     // DatabaseCleaner (not WorkTrackDatabase) so this module needs no Room on
     // its classpath; see DatabaseCleaner's doc for the rationale.
@@ -39,6 +41,11 @@ class AuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth get() = firebaseAuthProvider.get()
 
     override val session: Flow<UserSession?> = sessionStore.session
+
+    override val biometricLockEnabled: Flow<Boolean> = sessionStore.biometricLockEnabled
+
+    override suspend fun setBiometricLock(enabled: Boolean) =
+        sessionStore.setBiometricLock(enabled)
 
     override suspend fun signIn(email: String, password: String): AppResult<UserSession> {
         try {
@@ -52,7 +59,12 @@ class AuthRepositoryImpl @Inject constructor(
         } catch (e: FirebaseNetworkException) {
             return AppResult.failure(AppError.Network)
         } catch (e: Exception) {
-            return AppResult.failure(AppError.Unexpected(e))
+            // Firebase wraps a failure to reach the auth backend in a generic
+            // "internal error", which used to surface as "something went wrong"
+            // and told nobody anything. A build pointed at the local emulators
+            // hits this the moment they are not running, so say so plainly
+            // instead of leaving a developer staring at the login screen.
+            return AppResult.failure(unreachableOrUnexpected(e))
         }
 
         // Resolve tenant context. A Firebase account without a provisioned
@@ -85,6 +97,35 @@ class AuthRepositoryImpl @Inject constructor(
         sessionStore.clear()
         // Tenant data never survives a sign-out on shared devices.
         databaseCleaner.clearAllTenantData()
+    }
+
+    /** True when the throwable, or anything under it, is a connection failure. */
+    private fun isConnectionFailure(e: Throwable): Boolean {
+        var t: Throwable? = e
+        while (t != null) {
+            val m = t.message.orEmpty()
+            if (m.contains("Failed to connect", ignoreCase = true) ||
+                m.contains("Unable to resolve host", ignoreCase = true) ||
+                m.contains("ECONNREFUSED", ignoreCase = true)
+            ) {
+                return true
+            }
+            t = t.cause
+        }
+        return false
+    }
+
+    private fun unreachableOrUnexpected(e: Exception): AppError = when {
+        !isConnectionFailure(e) -> AppError.Unexpected(e)
+        // Only a developer ever sees this, and only they can fix it.
+        // Kept to one short line: this renders inside a right-to-left layout,
+        // and a long Latin sentence gets its tail reordered by the bidi
+        // algorithm into something unreadable.
+        apiConfig.useEmulators -> AppError.Business(
+            "EMULATOR_UNREACHABLE",
+            "Local Firebase emulators are not running.",
+        )
+        else -> AppError.Network
     }
 
     private fun invalidCredentials() = AppError.Business(

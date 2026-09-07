@@ -2,15 +2,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 import { isoTodayIn } from "../time";
 import type {
+  Account,
   AttendanceOverviewRow,
   WeeklyAttendance,
   CompanySettings,
+  CalendarDay,
+  CompanyDeletion,
+  DayKind,
   Employee,
   EmployeeSalary,
   EmployeeSalaryWrite,
   EmployeeCreated,
   EmployeeWrite,
+  Expense,
+  ExpenseCategory,
+  FinanceOverview,
+  JournalEntry,
+  JournalLine,
+  Holiday,
+  HolidayWrite,
   KioskAccount,
+  License,
+  LicensedDevice,
   KioskAccountCreated,
   Kpis,
   LeaveRequest,
@@ -24,6 +37,7 @@ import type {
   Shift,
   ShiftWrite,
   TrendPoint,
+  TrialBalance,
 } from "./types";
 
 export function useKpis(date?: string) {
@@ -48,15 +62,39 @@ export function useAttendanceOverview(date?: string, timeZone = "Asia/Kabul") {
   // made now should appear without a manual reload. Past days never change,
   // so they are fetched once instead of polled. "Today" is the company's day,
   // which is not the viewer's when they are in another country.
+  return useQuery({ ...overviewQuery(date, timeZone), select: (d) => d.rows });
+}
+
+interface OverviewResponse {
+  date: string;
+  dayKind: DayKind;
+  holidayName: string | null;
+  rows: AttendanceOverviewRow[];
+}
+
+/**
+ * Shared so the rows and the day kind come from one request. React Query keys
+ * them the same, and each hook picks its slice with `select`.
+ */
+function overviewQuery(date: string | undefined, timeZone: string) {
   const isLive = date === undefined || date === isoTodayIn(timeZone);
-  return useQuery({
-    queryKey: ["attendance-overview", date ?? "today"],
+  return {
+    queryKey: ["attendance-overview", date ?? "today"] as const,
     queryFn: () =>
-      api
-        .get<{ date: string; rows: AttendanceOverviewRow[] }>("/attendance/overview", { date })
-        .then((e) => e.data.rows),
-    refetchInterval: isLive ? 60_000 : false,
+      api.get<OverviewResponse>("/attendance/overview", { date }).then((e) => e.data),
+    refetchInterval: isLive ? (60_000 as const) : (false as const),
     refetchIntervalInBackground: false,
+  };
+}
+
+/**
+ * Whether the board's day is worked at all. Without this a Friday or a public
+ * holiday renders as a full page of ABSENT with nothing explaining why.
+ */
+export function useAttendanceDay(date?: string, timeZone = "Asia/Kabul") {
+  return useQuery({
+    ...overviewQuery(date, timeZone),
+    select: (d) => ({ date: d.date, kind: d.dayKind, holidayName: d.holidayName }),
   });
 }
 
@@ -94,6 +132,37 @@ export function useCreateEmployee() {
   });
 }
 
+export function useUpdateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; body: EmployeeWrite }) =>
+      api.put<Employee>(`/employees/${args.id}`, args.body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function useResetEmployeePassword() {
+  return useMutation({
+    mutationFn: (args: { id: string; password?: string }) =>
+      api
+        .post<{ tempPassword: string }>(
+          `/employees/${args.id}/reset-password`,
+          args.password ? { password: args.password } : {},
+        )
+        .then((e) => e.data),
+  });
+}
+
+/** Admin: clear an employee's face enrollment so they can re-enroll. */
+export function useResetEmployeeFace() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (employeeId: string) =>
+      api.del<{ faceEnrolled: boolean }>(`/employees/${employeeId}/face`).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
 export function usePayrollRuns() {
   return useQuery({
     queryKey: ["payroll", "runs"],
@@ -118,6 +187,128 @@ export function useRunPayroll() {
     mutationFn: (args: { periodYear: number; periodMonth: number }) =>
       api.post<PayrollRunResult>("/payroll/runs", args).then((e) => e.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payroll"] }),
+  });
+}
+
+// --------------------------------------------------------------------- finance
+
+export function useFinanceOverview(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "overview"],
+    queryFn: () => api.get<FinanceOverview>("/finance/overview").then((e) => e.data),
+  });
+}
+
+export function useExpenses(status?: string) {
+  return useQuery({
+    queryKey: ["finance", "expenses", status ?? "all"],
+    queryFn: () =>
+      api.get<Expense[]>("/finance/expenses", { status }).then((e) => e.data),
+  });
+}
+
+// --------------------------------------------------------------- salary setup
+
+/**
+ * An employee's salary. Payroll skips anyone without one, so this is what
+ * stands between a company and its first payslip.
+ */
+export function useEmployeeSalary(employeeId: string | null) {
+  return useQuery({
+    queryKey: ["employee-salary", employeeId],
+    enabled: Boolean(employeeId),
+    queryFn: () =>
+      api.get<EmployeeSalary | null>(`/payroll/employees/${employeeId}/salary`).then((e) => e.data),
+  });
+}
+
+export function useSetEmployeeSalary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: EmployeeSalaryWrite }) =>
+      api.put<EmployeeSalary>(`/payroll/employees/${id}/salary`, body).then((e) => e.data),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-salary", v.id] });
+    },
+  });
+}
+
+export function useSalaryComponents() {
+  return useQuery({
+    queryKey: ["salary-components"],
+    queryFn: () => api.get<SalaryComponent[]>("/payroll/components").then((e) => e.data),
+  });
+}
+
+export function useSaveSalaryComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: SalaryComponentWrite }) =>
+      id
+        ? api.put<SalaryComponent>(`/payroll/components/${id}`, body).then((e) => e.data)
+        : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["salary-components"] });
+    },
+  });
+}
+
+export function useCreateExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      category: ExpenseCategory;
+      vendor: string;
+      description: string;
+      amount: number;
+      date: string;
+    }) => api.post<Expense>("/finance/expenses", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useDecideExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; action: "APPROVE" | "REJECT" | "PAY" }) =>
+      api
+        .post<Expense>(`/finance/expenses/${args.id}/decide`, { action: args.action })
+        .then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useAccounts(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "accounts"],
+    queryFn: () => api.get<Account[]>("/finance/accounts").then((e) => e.data),
+  });
+}
+
+export function useJournal(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "journal"],
+    queryFn: () => api.get<JournalEntry[]>("/finance/journal").then((e) => e.data),
+  });
+}
+
+export function useCreateJournalEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { date: string; memo: string; lines: JournalLine[] }) =>
+      api.post<{ id: string }>("/finance/journal", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useTrialBalance(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "trial-balance"],
+    queryFn: () => api.get<TrialBalance>("/finance/trial-balance").then((e) => e.data),
   });
 }
 
@@ -282,48 +473,125 @@ export function useDecideRegularization() {
   });
 }
 
-// --------------------------------------------------------------- salary setup
+// ------------------------------------------------------------ device licence
 
-/**
- * An employee's salary. Payroll skips anyone without one, so this is what
- * stands between a company and its first payslip.
- */
-export function useEmployeeSalary(employeeId: string | null) {
+export function useLicense(enabled: boolean) {
   return useQuery({
-    queryKey: ["employee-salary", employeeId],
-    enabled: Boolean(employeeId),
-    queryFn: () =>
-      api.get<EmployeeSalary | null>(`/payroll/employees/${employeeId}/salary`).then((e) => e.data),
+    enabled,
+    queryKey: ["license"],
+    queryFn: () => api.get<License>("/devices/license").then((e) => e.data),
   });
 }
 
-export function useSetEmployeeSalary() {
+export function useSaveLicense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: EmployeeSalaryWrite }) =>
-      api.put<EmployeeSalary>(`/payroll/employees/${id}/salary`, body).then((e) => e.data),
-    onSuccess: (_d, v) => {
-      void qc.invalidateQueries({ queryKey: ["employee-salary", v.id] });
-    },
-  });
-}
-
-export function useSalaryComponents() {
-  return useQuery({
-    queryKey: ["salary-components"],
-    queryFn: () => api.get<SalaryComponent[]>("/payroll/components").then((e) => e.data),
-  });
-}
-
-export function useSaveSalaryComponent() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, body }: { id?: string; body: SalaryComponentWrite }) =>
-      id
-        ? api.put<SalaryComponent>(`/payroll/components/${id}`, body).then((e) => e.data)
-        : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
+    mutationFn: (body: License) => api.put<License>("/devices/license", body).then((e) => e.data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["salary-components"] });
+      void qc.invalidateQueries({ queryKey: ["license"] });
+      void qc.invalidateQueries({ queryKey: ["devices"] });
     },
+  });
+}
+
+export function useDevices(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["devices"],
+    queryFn: () => api.get<LicensedDevice[]>("/devices").then((e) => e.data),
+  });
+}
+
+export function useSetDeviceStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ deviceId, action }: { deviceId: string; action: "revoke" | "restore" }) =>
+      api.post<LicensedDevice>(`/devices/${deviceId}/${action}`, {}).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["devices"] });
+    },
+  });
+}
+
+// ------------------------------------------------------------ working calendar
+
+export function useHolidays(from?: string, to?: string) {
+  const qs = from && to ? `?from=${from}&to=${to}` : "";
+  return useQuery({
+    queryKey: ["holidays", from ?? null, to ?? null],
+    queryFn: () => api.get<Holiday[]>(`/calendar/holidays${qs}`).then((e) => e.data),
+  });
+}
+
+/** Every date in a range with whether it is worked, a weekend, or a holiday. */
+export function useCalendarDays(from: string, to: string, enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["calendar-days", from, to],
+    queryFn: () =>
+      api.get<CalendarDay[]>(`/calendar/days?from=${from}&to=${to}`).then((e) => e.data),
+  });
+}
+
+export function useSaveHoliday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, ...body }: HolidayWrite & { date: string }) =>
+      api.put<Holiday>(`/calendar/holidays/${date}`, body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+export function useDeleteHoliday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (date: string) => api.del(`/calendar/holidays/${date}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+/** Generates the fixed Solar Hijri holidays for a year. */
+export function useSeedHolidays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (year: number) =>
+      api.post<{ year: number; added: number }>("/calendar/holidays/seed", { year }).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+// --------------------------------------------------------- closing the account
+
+export function useCompanyDeletion(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["company-deletion"],
+    queryFn: () => api.get<CompanyDeletion>("/company/deletion").then((e) => e.data),
+  });
+}
+
+export function useRequestCompanyDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { confirmName: string; reason?: string | null }) =>
+      api.post<CompanyDeletion>("/company/deletion", body).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["company-deletion"] }),
+  });
+}
+
+export function useCancelCompanyDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.del<CompanyDeletion>("/company/deletion"),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["company-deletion"] }),
   });
 }

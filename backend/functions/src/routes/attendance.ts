@@ -4,13 +4,14 @@ import { asyncHandler, ApiError } from "../lib/errors";
 import { db, tenant, toIso } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
 import { hasPermission, requirePermission } from "../middleware/rbac";
-import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
+import { withIdempotency } from "../middleware/idempotency";
 import { parseBody } from "../middleware/validate";
 import { applyPunch, punchCreateSchema } from "../services/punch";
 import { embeddingSchema, verifyFace } from "../services/face";
 import { signFaceToken } from "../lib/face-token";
 import { localDateOf, weekOf } from "../services/attendance";
 import { getSettings } from "../services/settings";
+import { classifyDay, listHolidays } from "../services/calendar";
 import {
   createRegularization,
   decideRegularization,
@@ -83,21 +84,13 @@ attendanceRouter.post(
     const auth = authOf(req);
     const payload = parseBody(req, punchCreateSchema);
 
-    const idempotencyKey = req.header("Idempotency-Key");
-    if (idempotencyKey) {
-      const replay = await checkIdempotency(auth.companyId, idempotencyKey);
-      if (replay !== null) {
-        res.json({ data: replay });
-        return;
-      }
-    }
+    const { result: dto, replayed } = await withIdempotency(
+      auth.companyId,
+      req.header("Idempotency-Key"),
+      () => applyPunch(auth.companyId, auth.employeeId, payload, kioskSecret.value()),
+    );
 
-    const dto = await applyPunch(auth.companyId, auth.employeeId, payload, kioskSecret.value());
-
-    if (idempotencyKey) {
-      await recordIdempotency(auth.companyId, idempotencyKey, dto);
-    }
-    res.status(201).json({ data: dto });
+    res.status(replayed ? 200 : 201).json({ data: dto });
   }),
 );
 
@@ -172,10 +165,21 @@ attendanceRouter.get(
     const auth = authOf(req);
     // Default to the company's calendar day, not UTC: days are filed in the
     // company zone, so a UTC default silently asks for the wrong one.
+    const settings = await getSettings(auth.companyId);
     const requestedDate = String(req.query.date ?? "");
     const date = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
       ? requestedDate
-      : localDateOf(new Date(), (await getSettings(auth.companyId)).profile.timezone);
+      : localDateOf(new Date(), settings.profile.timezone);
+
+    // What kind of day this is. Without it a Friday and a public holiday look
+    // exactly like a day the whole company failed to turn up: every row reads
+    // ABSENT and nothing on the board says why.
+    const holidays = await listHolidays(auth.companyId, date, date);
+    const dayKind = classifyDay(
+      date,
+      settings.policies.weekendDays,
+      new Set(holidays.map((h) => h.date)),
+    );
 
     const branchFilter = resolveBranchScope(
       auth,
@@ -253,7 +257,14 @@ attendanceRouter.get(
       };
     });
 
-    res.json({ data: { date, rows } });
+    res.json({
+      data: {
+        date,
+        dayKind,
+        holidayName: holidays[0]?.name ?? null,
+        rows,
+      },
+    });
   }),
 );
 

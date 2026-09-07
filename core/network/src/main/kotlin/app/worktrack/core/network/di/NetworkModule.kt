@@ -22,7 +22,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /** Base URL for the versioned API; supplied by the app module per build variant. */
-data class ApiConfig(val baseUrl: String)
+/**
+ * Where this build talks to. [useEmulators] is carried alongside the URL so
+ * failures can say something useful: a debug build that cannot reach the local
+ * emulator looks identical to a real outage unless the code knows which it is.
+ */
+data class ApiConfig(val baseUrl: String, val useEmulators: Boolean = false)
 
 @Module
 @InstallIn(SingletonComponent::class)

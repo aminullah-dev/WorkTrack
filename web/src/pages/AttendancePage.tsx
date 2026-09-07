@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  useAttendanceDay,
   useAttendanceOverview,
   useDecideRegularization,
   usePendingRegularizations,
@@ -23,6 +24,7 @@ export function AttendancePage() {
   const companyToday = isoTodayIn(timeZone);
   const [date, setDate] = useState(companyToday);
   const overview = useAttendanceOverview(date, timeZone);
+  const day = useAttendanceDay(date, timeZone);
 
   const canApprove = can("attendance:approve");
   const [preview, setPreview] = useState<string | null>(null);
@@ -89,6 +91,19 @@ export function AttendancePage() {
       </div>
 
       {canApprove && <RegularizationApprovals />}
+
+      {/* A closed day explains itself. Otherwise every row reads ABSENT and the
+          manager is left wondering whether the whole company skipped work. */}
+      {view === "daily" && day.data && day.data.kind !== "WORKING" && (
+        <div className="notice" style={{ marginBlockEnd: 14 }}>
+          <b>
+            {day.data.kind === "WEEKEND"
+              ? t("att_weekend")
+              : (day.data.holidayName || t("att_holiday"))}
+          </b>
+          <span style={{ marginInlineStart: 8 }}>{t("att_closed_hint")}</span>
+        </div>
+      )}
 
       {view === "weekly" ? (
         <AttendanceWeekly date={date} />

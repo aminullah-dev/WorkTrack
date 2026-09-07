@@ -18,7 +18,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideApiConfig(): ApiConfig = ApiConfig(baseUrl = BuildConfig.API_BASE_URL)
+    fun provideApiConfig(): ApiConfig =
+        ApiConfig(baseUrl = BuildConfig.API_BASE_URL, useEmulators = BuildConfig.USE_EMULATORS)
 
     @Provides
     @Singleton

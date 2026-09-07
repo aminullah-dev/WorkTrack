@@ -1,39 +1,39 @@
 /* WorkTrack manager portal — design system.
    RTL-first via CSS logical properties (margin-inline, inset-inline) so
-   Dari/Pashto and English share one stylesheet. Teal brand matches the
-   Android app. Light + dark themes via prefers-color-scheme. */
+   Dari/Pashto and English share one stylesheet. Brand palette: deep blue #004E72 with a coral #FF6D41 accent,
+   on petrol #0A2735 / near-white #F9F9F9. Matches the Android app. Light + dark themes via prefers-color-scheme. */
 
 :root {
   /* Brand — teal, shared with the Android app */
-  --brand: #006874;
-  --brand-strong: #004f58;
-  --brand-bright: #0a8394;
-  --brand-50: #e7f4f6;
-  --brand-100: #cdeaef;
+  --brand: #004E72;
+  --brand-strong: #003A56;
+  --brand-bright: #0A6E9C;
+  --brand-50: #E8F1F6;
+  --brand-100: #CCE0EC;
   --on-brand: #ffffff;
 
   /* Secondary accent — energetic orange (used sparingly for highlights/CTAs) */
-  --accent: #e2620e;
-  --accent-strong: #c2530a;
-  --accent-bg: #fdeadd;
-  --on-accent: #ffffff;
+  --accent: #FF6D41;
+  --accent-strong: #B94418;
+  --accent-bg: #FFE7DF;
+  --on-accent: #0A2735;
 
   /* Neutrals / surfaces */
-  --bg: #f3f6f8;
-  --bg-tint: radial-gradient(1200px 600px at 100% -10%, #e9f3f5 0%, rgba(233, 243, 245, 0) 55%);
+  --bg: #F9F9F9;
+  --bg-tint: radial-gradient(1200px 600px at 100% -10%, #EAF1F6 0%, rgba(234, 241, 246, 0) 55%);
   --surface: #ffffff;
-  --surface-2: #f8fafb;
-  --surface-inset: #f2f5f7;
-  --border: #e4e9ed;
-  --border-strong: #d3dbe0;
+  --surface-2: #FCFDFD;
+  --surface-inset: #F1F4F6;
+  --border: #E2E8EB;
+  --border-strong: #CDD7DD;
 
   /* Text */
-  --text: #101a1f;
-  --text-muted: #5a6b74;
-  --text-subtle: #869199;
+  --text: #0A2735;
+  --text-muted: #4A5F6B;
+  --text-subtle: #667985;
 
   /* Semantic */
-  --green: #1f7a37;
+  --green: #1F7A4D;
   --green-bg: #dcf3e1;
   --amber: #8a5a00;
   --amber-bg: #ffeccb;
@@ -49,10 +49,10 @@
   --radius-xs: 8px;
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(16, 26, 31, 0.06), 0 1px 3px rgba(16, 26, 31, 0.05);
-  --shadow: 0 2px 4px rgba(16, 26, 31, 0.05), 0 6px 16px -6px rgba(16, 26, 31, 0.12);
-  --shadow-lg: 0 12px 32px -8px rgba(16, 26, 31, 0.22), 0 4px 10px -4px rgba(16, 26, 31, 0.12);
-  --ring: 0 0 0 3px rgba(0, 104, 116, 0.22);
+  --shadow-sm: 0 1px 2px rgba(10, 39, 53, 0.06), 0 1px 3px rgba(10, 39, 53, 0.05);
+  --shadow: 0 2px 4px rgba(10, 39, 53, 0.05), 0 6px 16px -6px rgba(10, 39, 53, 0.12);
+  --shadow-lg: 0 12px 32px -8px rgba(10, 39, 53, 0.22), 0 4px 10px -4px rgba(10, 39, 53, 0.12);
+  --ring: 0 0 0 3px rgba(0, 78, 114, 0.28);
 
   --sidebar-width: 250px;
   --font: "Vazirmatn", "Segoe UI", "Noto Naskh Arabic", system-ui, -apple-system,
@@ -69,31 +69,31 @@
    in sync. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --brand: #4fd8eb;
-  --brand-strong: #7fe6f4;
-  --brand-bright: #6fe0f0;
-  --brand-50: #0e2a30;
-  --brand-100: #123840;
-  --on-brand: #00363d;
+  --brand: #6FC3EC;
+  --brand-strong: #93D4F3;
+  --brand-bright: #8ACFF2;
+  --brand-50: #0E3346;
+  --brand-100: #143F55;
+  --on-brand: #04202D;
 
-  --accent: #ff8a4c;
-  --accent-strong: #ffa06b;
-  --accent-bg: #38200f;
-  --on-accent: #2a1200;
+  --accent: #FF8A63;
+  --accent-strong: #FFA284;
+  --accent-bg: #3A1B10;
+  --on-accent: #2A0E04;
 
-  --bg: #0c1315;
-  --bg-tint: radial-gradient(1200px 600px at 100% -10%, #0f2429 0%, rgba(15, 36, 41, 0) 55%);
-  --surface: #121b1e;
-  --surface-2: #161f23;
-  --surface-inset: #1a2529;
-  --border: #24312f;
-  --border-strong: #30403f;
+  --bg: #0A2735;
+  --bg-tint: radial-gradient(1200px 600px at 100% -10%, #103444 0%, rgba(16, 52, 68, 0) 55%);
+  --surface: #10303F;
+  --surface-2: #143544;
+  --surface-inset: #17394A;
+  --border: #1E4557;
+  --border-strong: #2A5468;
 
-  --text: #e5edf0;
-  --text-muted: #9db0b8;
-  --text-subtle: #7c8f97;
+  --text: #F9F9F9;
+  --text-muted: #A9BCC7;
+  --text-subtle: #8199A6;
 
-  --green: #7fd68f;
+  --green: #7FD6A4;
   --green-bg: #17301d;
   --amber: #f2c164;
   --amber-bg: #35280d;
@@ -105,37 +105,37 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 40px -10px rgba(0, 0, 0, 0.6);
-  --ring: 0 0 0 3px rgba(79, 216, 235, 0.28);
+  --ring: 0 0 0 3px rgba(111, 195, 236, 0.30);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --brand: #4fd8eb;
-    --brand-strong: #7fe6f4;
-    --brand-bright: #6fe0f0;
-    --brand-50: #0e2a30;
-    --brand-100: #123840;
-    --on-brand: #00363d;
+    --brand: #6FC3EC;
+    --brand-strong: #93D4F3;
+    --brand-bright: #8ACFF2;
+    --brand-50: #0E3346;
+    --brand-100: #143F55;
+    --on-brand: #04202D;
 
-    --accent: #ff8a4c;
-    --accent-strong: #ffa06b;
-    --accent-bg: #38200f;
-    --on-accent: #2a1200;
+    --accent: #FF8A63;
+    --accent-strong: #FFA284;
+    --accent-bg: #3A1B10;
+    --on-accent: #2A0E04;
 
-    --bg: #0c1315;
-    --bg-tint: radial-gradient(1200px 600px at 100% -10%, #0f2429 0%, rgba(15, 36, 41, 0) 55%);
-    --surface: #121b1e;
-    --surface-2: #161f23;
-    --surface-inset: #1a2529;
-    --border: #24312f;
-    --border-strong: #30403f;
+    --bg: #0A2735;
+    --bg-tint: radial-gradient(1200px 600px at 100% -10%, #103444 0%, rgba(16, 52, 68, 0) 55%);
+    --surface: #10303F;
+    --surface-2: #143544;
+    --surface-inset: #17394A;
+    --border: #1E4557;
+    --border-strong: #2A5468;
 
-    --text: #e5edf0;
-    --text-muted: #9db0b8;
-    --text-subtle: #7c8f97;
+    --text: #F9F9F9;
+    --text-muted: #A9BCC7;
+    --text-subtle: #8199A6;
 
-    --green: #7fd68f;
+    --green: #7FD6A4;
     --green-bg: #17301d;
     --amber: #f2c164;
     --amber-bg: #35280d;
@@ -147,7 +147,7 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 16px 40px -10px rgba(0, 0, 0, 0.6);
-    --ring: 0 0 0 3px rgba(79, 216, 235, 0.28);
+    --ring: 0 0 0 3px rgba(111, 195, 236, 0.30);
   }
 }
 
@@ -315,6 +315,32 @@ button {
 .field-error {
   color: var(--red);
   font-size: 13px;
+}
+
+/* Show/hide password toggle inside a password .input */
+.pw-toggle {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pw-toggle:hover {
+  color: var(--brand);
+  background: var(--surface-inset);
+}
+.pw-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
 }
 
 /* ---------- Card ---------- */
@@ -1140,6 +1166,34 @@ table.data tbody tr:hover {
   color: var(--text-subtle);
 }
 
+/* Company-settings module toggles: a tidy responsive grid of clickable tiles
+   (collapses to one column when the card is narrow). */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+.feature-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.feature-toggle:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-inset);
+}
+.feature-toggle b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Selectable pill (weekday / employee picker) */
 .chip-toggle {
   display: inline-flex;
@@ -1367,3 +1421,45 @@ table.data tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* A quiet banner for a day the office is closed. Uses the accent tokens rather
+   than a literal colour so it follows the light and dark palettes. */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-bg);
+  border-inline-start: 3px solid var(--accent);
+  color: var(--text);
+}
+.notice span {
+  color: var(--text-muted);
+}
+
+/* Closing the account. Set apart from the rest of settings on purpose. */
+.danger-card {
+  border: 1px solid var(--red);
+}
+.danger-card .card-title { color: var(--red); }
+.danger-banner {
+  background: var(--red-bg);
+  border-inline-start: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+.danger-banner b { display: block; margin-block-end: 4px; }
+.danger-banner p { margin: 0; color: var(--text-muted); }
+.danger-confirm {
+  margin-block-start: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+}
+.danger-confirm ul { margin: 0; padding-inline-start: 1.2em; color: var(--text-muted); }
+.danger-confirm li { margin-block-end: 4px; }

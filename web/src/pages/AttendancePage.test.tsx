@@ -5,8 +5,12 @@ import type { AttendanceOverviewRow } from "../api/types";
 import { LocaleProvider } from "../i18n/LocaleProvider";
 
 const overviewRows = vi.hoisted(() => ({ current: [] as AttendanceOverviewRow[] }));
+const dayInfo = vi.hoisted(() => ({
+  current: { date: "2026-07-24", kind: "WORKING" as string, holidayName: null as string | null },
+}));
 
 vi.mock("../api/hooks", () => ({
+  useAttendanceDay: () => ({ data: dayInfo.current, isLoading: false, isError: false }),
   useAttendanceOverview: () => ({
     data: overviewRows.current,
     isLoading: false,
@@ -60,6 +64,7 @@ function renderPage() {
 beforeEach(() => {
   localStorage.setItem("worktrack.locale", "en");
   overviewRows.current = [];
+  dayInfo.current = { date: "2026-07-24", kind: "WORKING", holidayName: null };
 });
 
 describe("attendance overview — face verification signals", () => {
@@ -153,5 +158,40 @@ describe("attendance overview — non-active employees", () => {
     overviewRows.current = [row()];
     renderPage();
     expect(screen.queryByText("Inactive")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * A Friday and a public holiday used to look exactly like a day the whole
+ * company failed to turn up: every row ABSENT, nothing saying why.
+ */
+describe("attendance overview — days the office is shut", () => {
+  it("says nothing on an ordinary working day", () => {
+    overviewRows.current = [row()];
+    renderPage();
+    expect(screen.queryByText("Weekend")).not.toBeInTheDocument();
+    expect(screen.queryByText("Public holiday")).not.toBeInTheDocument();
+  });
+
+  it("names the weekend rather than showing a wall of absences", () => {
+    dayInfo.current = { date: "2026-07-24", kind: "WEEKEND", holidayName: null };
+    overviewRows.current = [row({ status: "ABSENT", workedMinutes: 0 })];
+    renderPage();
+    expect(screen.getByText("Weekend")).toBeInTheDocument();
+    expect(screen.getByText(/does not count as absence/)).toBeInTheDocument();
+  });
+
+  it("names the actual holiday when there is one", () => {
+    dayInfo.current = { date: "2026-08-19", kind: "HOLIDAY", holidayName: "روز استقلال" };
+    overviewRows.current = [row({ status: "ABSENT", workedMinutes: 0 })];
+    renderPage();
+    expect(screen.getByText("روز استقلال")).toBeInTheDocument();
+  });
+
+  it("falls back to a generic label when the holiday has no name", () => {
+    dayInfo.current = { date: "2026-08-19", kind: "HOLIDAY", holidayName: null };
+    overviewRows.current = [row()];
+    renderPage();
+    expect(screen.getByText("Public holiday")).toBeInTheDocument();
   });
 });

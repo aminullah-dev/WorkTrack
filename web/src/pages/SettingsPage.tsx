@@ -7,8 +7,10 @@ import {
   useUpdateSettings,
 } from "../api/hooks";
 import type { CompanyFeatures, CompanySettings, KioskAccountCreated } from "../api/types";
-import { useHasPermission } from "../auth/AuthProvider";
+import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
+import { DangerZoneCard } from "./DangerZoneCard";
+import { HolidaysCard } from "./HolidaysCard";
 import { Chip, ErrorState, LoadingState, Switch, Toast } from "../ui/components";
 
 const FEATURE_KEYS: (keyof CompanyFeatures)[] = [
@@ -20,6 +22,7 @@ const FEATURE_KEYS: (keyof CompanyFeatures)[] = [
   "geofencing",
   "qrKiosk",
   "faceRecognition",
+  "finance",
 ];
 
 const FEATURE_LABEL: Record<keyof CompanyFeatures, string> = {
@@ -31,6 +34,7 @@ const FEATURE_LABEL: Record<keyof CompanyFeatures, string> = {
   geofencing: "feat_geofencing",
   qrKiosk: "feat_qr",
   faceRecognition: "feat_face",
+  finance: "feat_finance",
 };
 
 // ISO weekday numbers in Afghan week order (Saturday-first).
@@ -46,6 +50,7 @@ const WEEK_DAYS: { iso: number; key: string }[] = [
 
 export function SettingsPage() {
   const { t, num } = useI18n();
+  const { refreshMe } = useAuth();
   const settings = useSettings();
   const save = useUpdateSettings();
   const [draft, setDraft] = useState<CompanySettings | null>(null);
@@ -73,6 +78,10 @@ export function SettingsPage() {
     if (!draft) return;
     try {
       await save.mutateAsync(draft);
+      // Refresh the session so the sidebar and feature-gated routes reflect the
+      // updated module flags immediately (otherwise they stay stale until a
+      // full reload). A refresh failure shouldn't mask a successful save.
+      await refreshMe().catch(() => undefined);
       flash(t("set_saved"));
     } catch {
       flash(t("common_error"));
@@ -107,18 +116,18 @@ export function SettingsPage() {
         <div className="card">
           <h2 className="card-title">{t("set_features")}</h2>
           <p className="section-hint">{t("set_features_hint")}</p>
-          {FEATURE_KEYS.map((k) => (
-            <div className="switch-row" key={k}>
-              <div className="txt">
+          <div className="feature-grid">
+            {FEATURE_KEYS.map((k) => (
+              <label className="feature-toggle" key={k}>
                 <b>{t(FEATURE_LABEL[k])}</b>
-              </div>
-              <Switch
-                checked={feature(k)}
-                onChange={(v) => setFeature(k, v)}
-                label={t(FEATURE_LABEL[k])}
-              />
-            </div>
-          ))}
+                <Switch
+                  checked={feature(k)}
+                  onChange={(v) => setFeature(k, v)}
+                  label={t(FEATURE_LABEL[k])}
+                />
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Work policies */}
@@ -233,6 +242,8 @@ export function SettingsPage() {
       {draft.features.qrKiosk && <KioskDevicesCard />}
 
       {toast && <Toast message={toast} />}
+      <HolidaysCard />
+      <DangerZoneCard />
     </>
   );
 }

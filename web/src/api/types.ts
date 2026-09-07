@@ -23,6 +23,7 @@ export interface CompanyFeatures {
   geofencing: boolean;
   qrKiosk: boolean;
   faceRecognition: boolean;
+  finance: boolean;
 }
 
 export interface CompanyPolicies {
@@ -49,9 +50,9 @@ export interface Me {
   companyId: string;
   companyName: string;
   currency: string;
-  employeeId: string;
   /** IANA zone the company operates in; attendance dates are resolved in it. */
   timezone: string;
+  employeeId: string;
   displayName: string;
   email: string;
   avatarUrl: string | null;
@@ -133,6 +134,7 @@ export interface Employee {
   employmentType: EmploymentType;
   joinDate: string;
   status: EmployeeStatus;
+  faceEnrolled: boolean;
   updatedAt: string;
 }
 
@@ -248,6 +250,99 @@ export interface WeeklyAttendance {
   rows: WeeklyAttendanceRow[];
 }
 
+/** An employee's basic pay. Null until someone configures it. */
+export interface EmployeeSalary {
+  employeeId: string;
+  basicAmount: number;
+  currency: string;
+  effectiveFrom: string | null;
+  revisionReason: string | null;
+  updatedAt: string | null;
+}
+
+export interface EmployeeSalaryWrite {
+  basicAmount: number;
+  effectiveFrom: string;
+  revisionReason?: string | null;
+}
+
+/** An allowance, deduction or employer cost applied to every payslip. */
+export interface SalaryComponent {
+  id: string;
+  name: string;
+  code: string;
+  type: "EARNING" | "DEDUCTION" | "EMPLOYER_COST";
+  calc: "FIXED" | "PERCENT_OF_BASIC" | "PERCENT_OF_GROSS";
+  value: number;
+  taxable: boolean;
+  active: boolean;
+}
+
+export type SalaryComponentWrite = Omit<SalaryComponent, "id">;
+
+/** A company's device licence: how many devices may run the app at once. */
+export interface License {
+  plan: "FREE" | "STANDARD" | "ENTERPRISE";
+  deviceLimit: number;
+  status: "ACTIVE" | "SUSPENDED" | "EXPIRED";
+  expiresAt: string | null;
+  /** When false, devices are tracked but never refused — the rollout switch. */
+  enforceDevices: boolean;
+}
+
+/** One phone or kiosk occupying a licence seat. */
+export interface LicensedDevice {
+  deviceId: string;
+  type: string;
+  label: string | null;
+  platform: string | null;
+  model: string | null;
+  appVersion: string | null;
+  employeeId: string | null;
+  branchId: string | null;
+  status: "ACTIVE" | "REVOKED";
+  activatedAt: string | null;
+  lastSeenAt: string | null;
+}
+
+/** A day the company is closed. Keyed by the Gregorian date it is observed. */
+export interface Holiday {
+  date: string;
+  name: string;
+  nameEn: string;
+  paid: boolean;
+  /** SOLAR_RECURRING entries are generated per year; MANUAL ones were entered. */
+  source: "SOLAR_RECURRING" | "MANUAL";
+}
+
+export interface HolidayWrite {
+  name: string;
+  nameEn?: string | null;
+  paid: boolean;
+}
+
+export type DayKind = "WORKING" | "WEEKEND" | "HOLIDAY";
+
+/** One date and what kind of day it is, for the attendance board. */
+export interface CalendarDay {
+  date: string;
+  kind: DayKind;
+  holidayName: string | null;
+  holidayNameEn: string | null;
+  paid: boolean | null;
+}
+
+/** Where the company account stands: running, or scheduled to be closed. */
+export interface CompanyDeletion {
+  status: "NONE" | "SCHEDULED";
+  requestedAt: string | null;
+  requestedBy: string | null;
+  /** Date from which the data is destroyed, YYYY-MM-DD. */
+  purgeAfter: string | null;
+  reason: string | null;
+  graceDays: number;
+}
+
 export interface PayrollRun {
   id: string;
   periodYear: number;
@@ -257,6 +352,8 @@ export interface PayrollRun {
   payslipCount: number;
   totalGross: number;
   totalNet: number;
+  totalTax: number;
+  totalEmployerCost: number;
   lockedAt: string | null;
   createdAt: string | null;
 }
@@ -269,6 +366,8 @@ export interface PayrollRunResult {
   payslipCount: number;
   totalNet: number;
   totalGross: number;
+  totalTax: number;
+  totalEmployerCost: number;
 }
 
 export interface RunPayslipRow {
@@ -279,9 +378,99 @@ export interface RunPayslipRow {
   gross: number;
   totalDeductions: number;
   net: number;
+  incomeTax: number;
+  employerCost: number;
+  costToCompany: number;
   workedDays: number;
   lopDays: number;
   status: string;
+}
+
+// ------------------------------------------------------------------- finance
+
+export type ExpenseStatus = "DRAFT" | "APPROVED" | "REJECTED" | "PAID";
+export type ExpenseCategory =
+  | "rent"
+  | "utilities"
+  | "supplies"
+  | "travel"
+  | "services"
+  | "other";
+
+export interface Expense {
+  id: string;
+  category: ExpenseCategory;
+  vendor: string;
+  description: string;
+  amount: number;
+  currency: string;
+  date: string;
+  status: ExpenseStatus;
+  accountCode: string;
+  createdBy: string;
+  createdAt: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+}
+
+export type AccountType = "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+
+export interface Account {
+  id: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  active: boolean;
+}
+
+export interface JournalLine {
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+}
+
+export interface JournalEntry {
+  id: string;
+  date: string;
+  memo: string;
+  reference: string | null;
+  source: "MANUAL" | "EXPENSE" | "PAYROLL";
+  lines: JournalLine[];
+  totalDebit: number;
+  createdBy: string;
+  createdAt: string | null;
+}
+
+export interface TrialBalanceRow {
+  code: string;
+  name: string;
+  type: AccountType;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface TrialBalance {
+  rows: TrialBalanceRow[];
+  totalDebit: number;
+  totalCredit: number;
+  byType: Record<AccountType, number>;
+  netProfit: number;
+}
+
+export interface FinanceOverview {
+  currency: string;
+  ledger: {
+    incomeTotal: number;
+    expenseTotal: number;
+    assetTotal: number;
+    liabilityTotal: number;
+    netProfit: number;
+  };
+  expenses: { count: number; pendingCount: number; approvedTotal: number };
+  payroll: { runCount: number; netTotal: number };
+  trend: { month: string; income: number; expense: number; net: number }[];
 }
 
 export interface LeaveRequest {
@@ -321,33 +510,3 @@ export interface Regularization {
   createdAt: string;
   updatedAt: string;
 }
-
-/** An employee's basic pay. Null until someone configures it. */
-export interface EmployeeSalary {
-  employeeId: string;
-  basicAmount: number;
-  currency: string;
-  effectiveFrom: string | null;
-  revisionReason: string | null;
-  updatedAt: string | null;
-}
-
-export interface EmployeeSalaryWrite {
-  basicAmount: number;
-  effectiveFrom: string;
-  revisionReason?: string | null;
-}
-
-/** An allowance, deduction or employer cost applied to every payslip. */
-export interface SalaryComponent {
-  id: string;
-  name: string;
-  code: string;
-  type: "EARNING" | "DEDUCTION" | "EMPLOYER_COST";
-  calc: "FIXED" | "PERCENT_OF_BASIC" | "PERCENT_OF_GROSS";
-  value: number;
-  taxable: boolean;
-  active: boolean;
-}
-
-export type SalaryComponentWrite = Omit<SalaryComponent, "id">;

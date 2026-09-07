@@ -21,7 +21,10 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "payroll:read",
     "rosters:read",
     "rosters:write",
+    "calendar:write",
     "kiosk:issue",
+    "devices:read",
+    "devices:manage",
     "announcements:read",
     "announcements:write",
     "audit:read",
@@ -34,6 +37,23 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "payroll:run",
     "payroll:approve",
   ]),
+  // Dedicated finance & accounting admin: owns payroll, expenses, the general
+  // ledger and financial reporting. Read-only on the HR context it reports on.
+  FINANCE_ADMIN: new Set([
+    "employees:read",
+    "attendance:read",
+    "leave:read",
+    "payroll:read",
+    "payroll:run",
+    "payroll:approve",
+    "finance:read",
+    "expenses:read",
+    "expenses:write",
+    "expenses:approve",
+    "ledger:read",
+    "ledger:write",
+    "audit:read",
+  ]),
   BRANCH_MANAGER: new Set([
     "employees:read",
     "attendance:read",
@@ -43,6 +63,7 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "rosters:read",
     "rosters:write",
     "kiosk:issue",
+    "devices:read",
     "announcements:read",
   ]),
   TEAM_LEAD: new Set([
