@@ -34,6 +34,8 @@ payrollRouter.get(
           totalNet: (d.totalNet as number) ?? 0,
           totalTax: (d.totalTax as number) ?? 0,
           totalEmployerCost: (d.totalEmployerCost as number) ?? 0,
+          // Runs written before this field existed were all whole months.
+          periodComplete: (d.periodComplete as boolean | undefined) ?? true,
           lockedAt: toIso((d.lockedAt as Timestamp | null | undefined) ?? null),
           createdAt: toIso((d.createdAt as Timestamp | null | undefined) ?? null),
         };

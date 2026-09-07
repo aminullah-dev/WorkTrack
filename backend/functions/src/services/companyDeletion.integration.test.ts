@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { db, tenant } from "../lib/firestore";
 import {
+  allDocIds,
   cancelDeletion,
   companiesDueForPurge,
   getDeletion,
@@ -98,6 +99,27 @@ describe.skipIf(!EMULATOR)("closing a company account", () => {
     expect((await tenant(cid, "payslips").get()).size).toBe(0);
     expect((await tenant(cid, "employees").get()).size).toBe(0);
   });
+
+  it("collects every login, not just the first page", async () => {
+    // The purge deletes the tree straight after collecting the ids, so anything
+    // a single capped read left behind would be an orphaned Firebase Auth
+    // account — still carrying valid cid/eid claims — with no record left of
+    // which accounts to clean up. 1,050 crosses the 1,000-document page.
+    const writer = db.bulkWriter();
+    for (let i = 0; i < 1050; i++) {
+      void writer.set(tenant(cid, "employees").doc(`emp_${String(i).padStart(5, "0")}`), {
+        firstName: "A",
+        lastName: String(i),
+        status: "ACTIVE",
+      });
+    }
+    await writer.close();
+
+    const ids = await allDocIds(cid, "employees");
+    // 1,050 seeded here plus the emp_1 the fixture creates.
+    expect(ids.length).toBe(1051);
+    expect(new Set(ids).size).toBe(1051); // no page overlap
+  }, 60_000);
 
   it("lists only the companies that are actually due", async () => {
     await requestDeletion(cid, "admin", "COMPANY_ADMIN", { confirmName: NAME }, "2026-08-01");

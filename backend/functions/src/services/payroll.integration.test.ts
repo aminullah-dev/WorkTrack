@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
 import { db, tenant } from "../lib/firestore";
 import { computePayrollRun } from "./payroll";
+import { currentShamsiMonth, shamsiMonthStartIso } from "../lib/shamsi";
+import { localDateOf } from "./attendance";
 
 /**
  * Payroll's engine was correct all along; nothing could feed it. employeeSalaries
@@ -393,6 +395,42 @@ describe.skipIf(!EMULATOR)("payroll — the working calendar", () => {
     // working days, none of them attended. A fully absent month costs the month.
     expect(run.payslipCount).toBe(1);
     expect(run.totalNet).toBe(0);
+  });
+
+  it("does not dock days that have not happened yet", async () => {
+    // Payroll walks the month's expected working days, so running the month
+    // that is still in progress used to charge every day from today to the end
+    // of the month as unexcused absence: an employee with a clean record was
+    // issued a FINALIZED payslip for roughly half their salary. A day in the
+    // future is neither worked nor absent — it has not happened.
+    await employee("e1");
+    await salary("e1", 30000);
+
+    const { year, month } = currentShamsiMonth();
+    const today = localDateOf(new Date(), "Asia/Kabul");
+    for (
+      let t = new Date(`${shamsiMonthStartIso(year, month)}T00:00:00Z`).getTime();
+      t <= new Date(`${today}T00:00:00Z`).getTime();
+      t += 86_400_000
+    ) {
+      const d = new Date(t);
+      if (d.getUTCDay() === 5) continue; // Friday
+      await present("e1", d.toISOString().slice(0, 10));
+    }
+
+    const run = await computePayrollRun(cid, year, month, "admin", "AFN");
+    const slip = (
+      await tenant(cid, "payslips")
+        .doc(`e1_${year}_${String(month).padStart(2, "0")}`)
+        .get()
+    ).data()!;
+
+    // Every elapsed working day was attended, so nothing is owed back — and the
+    // rest of the month must not be counted against them.
+    expect(slip.lopDays).toBe(0);
+    // Full month's pay less income tax — the same figure a clean, completed
+    // month produces, not a fraction of it.
+    expect(slip.net).toBe(30000 - slip.incomeTax);
   });
 
   it("pays in full when every working day is attended", async () => {

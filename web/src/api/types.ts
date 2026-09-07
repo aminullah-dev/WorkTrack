@@ -354,6 +354,8 @@ export interface PayrollRun {
   totalNet: number;
   totalTax: number;
   totalEmployerCost: number;
+  /** Absent on runs made before this field existed; those were all whole months. */
+  periodComplete?: boolean;
   lockedAt: string | null;
   createdAt: string | null;
 }

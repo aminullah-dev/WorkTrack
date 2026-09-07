@@ -1,7 +1,9 @@
+import { FieldPath } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { audit, db, nowTimestamp, tenant } from "../lib/firestore";
+import type { TenantCollection } from "../lib/firestore";
 
 /**
  * Closing a company account.
@@ -164,6 +166,35 @@ export interface PurgeResult {
  * Destroys the tenant. Refuses unless a scheduled request has actually come due,
  * so neither a stray call nor a bug in a caller can delete a live company.
  */
+/**
+ * Every document id in a tenant collection, paged to exhaustion.
+ *
+ * A single capped `.get()` would leave the overflow behind, and because the
+ * purge then destroys the tree, the ids of the accounts it missed would be
+ * unrecoverable — orphaned logins with valid claims and no record of them.
+ * Paging by document name is stable here: nothing writes to the tenant during
+ * a purge, and the read happens before anything is deleted.
+ */
+export async function allDocIds(
+  cid: string,
+  collection: TenantCollection,
+  keep: (data: FirebaseFirestore.DocumentData) => boolean = () => true,
+): Promise<string[]> {
+  const PAGE = 1000;
+  const ids: string[] = [];
+  let cursor: string | null = null;
+  for (;;) {
+    let q = tenant(cid, collection).orderBy(FieldPath.documentId()).limit(PAGE);
+    if (cursor !== null) q = q.startAfter(cursor);
+    const snap: FirebaseFirestore.QuerySnapshot = await q.get();
+    if (snap.empty) break;
+    for (const doc of snap.docs) if (keep(doc.data())) ids.push(doc.id);
+    if (snap.size < PAGE) break;
+    cursor = snap.docs[snap.docs.length - 1].id;
+  }
+  return ids;
+}
+
 export async function purgeCompany(cid: string, todayIso: string): Promise<PurgeResult> {
   const deletion = await getDeletion(cid);
   if (!isDueForPurge(deletion, todayIso)) {
@@ -178,14 +209,11 @@ export async function purgeCompany(cid: string, todayIso: string): Promise<Purge
   // listing every user of the project to filter them is not workable at size.
   const auth = getAuth();
   const [employees, devices] = await Promise.all([
-    tenant(cid, "employees").limit(5000).get(),
-    tenant(cid, "devices").limit(1000).get(),
+    allDocIds(cid, "employees"),
+    allDocIds(cid, "devices", (d) => d.type === "KIOSK"),
   ]);
-  const uids = [
-    ...employees.docs.map((d) => d.id),
-    // Kiosk accounts are real logins too, keyed by the device id.
-    ...devices.docs.filter((d) => d.data().type === "KIOSK").map((d) => d.id),
-  ];
+  // Kiosk accounts are real logins too, keyed by the device id.
+  const uids = [...employees, ...devices];
 
   let authUsersDeleted = 0;
   for (let i = 0; i < uids.length; i += 1000) {

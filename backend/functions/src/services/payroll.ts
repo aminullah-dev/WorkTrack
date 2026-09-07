@@ -1,6 +1,7 @@
 import { nowTimestamp, tenant } from "../lib/firestore";
 import { shamsiMonthEndIso, shamsiMonthStartIso } from "../lib/shamsi";
 import { ensureAccounts, postJournalEntry } from "./accounting";
+import { localDateOf } from "./attendance";
 import { expectedWorkingDays, holidaySet } from "./calendar";
 import { getSettings } from "./settings";
 
@@ -46,6 +47,12 @@ export interface PayrollRunResult {
   totalGross: number;
   totalTax: number;
   totalEmployerCost: number;
+  /**
+   * False when the period had not ended yet at the time of the run, so the
+   * figures cover only the days elapsed so far and will change if it is run
+   * again after the month closes.
+   */
+  periodComplete: boolean;
 }
 
 /**
@@ -109,6 +116,17 @@ export async function computePayrollRun(
     holidays,
   );
 
+  // …but only the ones that have actually happened can be judged. A run for the
+  // month still in progress — which is what the portal offers by default — would
+  // otherwise charge every remaining day as unexcused absence and halve the pay
+  // of someone with a clean record. A future day is neither worked nor absent.
+  //
+  // The divisor below stays the whole month, because a day of salary is worth
+  // basic ÷ the month's working days no matter when the run happens.
+  const todayIso = localDateOf(new Date(), settings.profile.timezone);
+  const elapsedWorkingDays = workingDays.filter((d) => d <= todayIso);
+  const periodComplete = toIso <= todayIso;
+
   const components = componentsSnap.docs.map((d) => d.data() as SalaryComponentDoc);
   const earnings = components.filter((c) => c.type === "EARNING");
   const deductions = components.filter((c) => c.type === "DEDUCTION");
@@ -154,7 +172,7 @@ export async function computePayrollRun(
     let workedDays = 0;
     let paidLeaveDays = 0;
     let lopDays = 0;
-    for (const date of workingDays) {
+    for (const date of elapsedWorkingDays) {
       const status = byDate.get(date);
       if (status === "PRESENT") workedDays += 1;
       else if (status === "HALF_DAY") {
@@ -276,6 +294,8 @@ export async function computePayrollRun(
     periodYear,
     periodMonth,
     status: "APPROVED",
+    // A run for a month still in progress is a preview, not the final word.
+    periodComplete,
     startedBy,
     approvedBy: startedBy,
     currency,
@@ -357,5 +377,6 @@ export async function computePayrollRun(
     totalGross: round2(totalGross),
     totalTax: round2(totalTax),
     totalEmployerCost: round2(totalEmployerCost),
+    periodComplete,
   };
 }

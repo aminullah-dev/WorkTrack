@@ -70,6 +70,10 @@ export function PayrollPage() {
         )}
       </div>
 
+      {can("payroll:run") && year === today.year && month >= today.month && (
+        <p className="hint-provisional">{t("pay_provisional_hint")}</p>
+      )}
+
       {runs.isLoading ? (
         <LoadingState />
       ) : runs.isError ? (
@@ -95,6 +99,11 @@ export function PayrollPage() {
                 <tr key={run.id}>
                   <td>
                     {shamsiMonthName(run.periodMonth)} {locale === "en" ? run.periodYear : num(run.periodYear)}
+                    {run.periodComplete === false && (
+                      <span className="badge-provisional" title={t("pay_provisional_hint")}>
+                        {t("pay_provisional")}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <StatusChip status={run.status === "APPROVED" ? "PRESENT" : run.status} />
