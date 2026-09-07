@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useDevices, useLicense, useSaveLicense, useSetDeviceStatus } from "../api/hooks";
+import { useDevices, useLicense, useSetDeviceStatus } from "../api/hooks";
 import { useHasPermission } from "../auth/AuthProvider";
 import type { License, LicensedDevice } from "../api/types";
 import { useI18n } from "../i18n/LocaleProvider";
-import { Chip, EmptyState, ErrorState, LoadingState, Switch, Toast } from "../ui/components";
+import { Chip, EmptyState, ErrorState, LoadingState, Toast } from "../ui/components";
 
 /**
  * Device licensing: how many phones and kiosks may run against this company,
@@ -13,11 +13,11 @@ export function DevicesPage() {
   const { t, num } = useI18n();
   const can = useHasPermission();
   const canRead = can("devices:read");
+  // Revoking a device is legitimate self-service; the licence itself is not.
   const canManage = can("devices:manage");
 
   const license = useLicense(canRead);
   const devices = useDevices(canRead);
-  const saveLicense = useSaveLicense();
   const setStatus = useSetDeviceStatus();
 
   const [draft, setDraft] = useState<License | null>(null);
@@ -40,16 +40,6 @@ export function DevicesPage() {
   const inUse = rows.filter((d) => d.status === "ACTIVE").length;
   const limit = license.data?.deviceLimit ?? 0;
   const full = limit > 0 && inUse >= limit;
-
-  async function onSave() {
-    if (!draft) return;
-    try {
-      await saveLicense.mutateAsync(draft);
-      flash(t("dev_saved"));
-    } catch {
-      flash(t("common_error"));
-    }
-  }
 
   async function onToggleDevice(device: LicensedDevice) {
     try {
@@ -82,87 +72,34 @@ export function DevicesPage() {
           <ErrorState message={t("common_error")} onRetry={() => void license.refetch()} />
         ) : (
           <>
-            <div className="form-row">
-              <label className="field">
-                <span className="label">{t("dev_plan")}</span>
-                <select
-                  value={draft.plan}
-                  disabled={!canManage}
-                  onChange={(e) => setDraft({ ...draft, plan: e.target.value as License["plan"] })}
-                >
-                  <option value="FREE">{t("dev_plan_free")}</option>
-                  <option value="STANDARD">{t("dev_plan_standard")}</option>
-                  <option value="ENTERPRISE">{t("dev_plan_enterprise")}</option>
-                </select>
-              </label>
+            <dl className="license-facts">
+              <div>
+                <dt>{t("dev_plan")}</dt>
+                <dd>{t(`dev_plan_${draft.plan.toLowerCase()}`)}</dd>
+              </div>
+              <div>
+                <dt>{t("dev_limit")}</dt>
+                <dd dir="ltr">{num(draft.deviceLimit)}</dd>
+              </div>
+              <div>
+                <dt>{t("dev_status")}</dt>
+                <dd>{t(`dev_status_${draft.status.toLowerCase()}`)}</dd>
+              </div>
+              <div>
+                <dt>{t("dev_expires")}</dt>
+                <dd dir={draft.expiresAt ? "ltr" : undefined}>
+                  {draft.expiresAt ?? t("dev_expires_never")}
+                </dd>
+              </div>
+              <div>
+                <dt>{t("dev_enforce")}</dt>
+                <dd>{draft.enforceDevices ? t("common_yes") : t("common_no")}</dd>
+              </div>
+            </dl>
 
-              <label className="field">
-                <span className="label">{t("dev_limit")}</span>
-                <input
-                  type="number"
-                  min={1}
-                  dir="ltr"
-                  value={draft.deviceLimit}
-                  disabled={!canManage}
-                  onChange={(e) =>
-                    setDraft({ ...draft, deviceLimit: Math.max(1, Number(e.target.value) || 1) })
-                  }
-                />
-              </label>
-
-              <label className="field">
-                <span className="label">{t("dev_status")}</span>
-                <select
-                  value={draft.status}
-                  disabled={!canManage}
-                  onChange={(e) =>
-                    setDraft({ ...draft, status: e.target.value as License["status"] })
-                  }
-                >
-                  <option value="ACTIVE">{t("dev_status_active")}</option>
-                  <option value="SUSPENDED">{t("dev_status_suspended")}</option>
-                  <option value="EXPIRED">{t("dev_status_expired")}</option>
-                </select>
-              </label>
-
-              <label className="field">
-                <span className="label">{t("dev_expires")}</span>
-                <input
-                  type="date"
-                  dir="ltr"
-                  value={draft.expiresAt ?? ""}
-                  disabled={!canManage}
-                  onChange={(e) => setDraft({ ...draft, expiresAt: e.target.value || null })}
-                />
-                <span className="hint">{t("dev_expires_hint")}</span>
-              </label>
-            </div>
-
-            <div style={{ marginTop: 12 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Switch
-                  checked={draft.enforceDevices}
-                  disabled={!canManage}
-                  onChange={(v) => setDraft({ ...draft, enforceDevices: v })}
-                  label={t("dev_enforce")}
-                />
-                <span>{t("dev_enforce")}</span>
-              </label>
-              <p className="hint" style={{ marginTop: 6 }}>
-                {t("dev_enforce_hint")}
-              </p>
-            </div>
-
-            {canManage && (
-              <button
-                className="btn btn-primary"
-                style={{ marginTop: 16 }}
-                disabled={saveLicense.isPending}
-                onClick={() => void onSave()}
-              >
-                {saveLicense.isPending ? t("common_saving") : t("common_save")}
-              </button>
-            )}
+            <p className="hint" style={{ marginTop: 12 }}>
+              {t("dev_license_vendor_hint")}
+            </p>
           </>
         )}
       </div>

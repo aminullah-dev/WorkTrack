@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { tenant } from "../lib/firestore";
-import { getLicense, isDeviceActive, licenseUsable } from "../services/license";
+import { activateDevice, getLicense, isDeviceActive, licenseUsable } from "../services/license";
 import { localDateOf } from "../services/attendance";
 import { getSettings } from "../services/settings";
 import { authOf } from "./auth";
@@ -11,12 +11,19 @@ import { authOf } from "./auth";
  *
  * Two deliberate limits on the blast radius:
  *
- *  - It only applies to companies that have turned `license.enforceDevices` on.
- *    The app builds already on employees' phones send no device id, so enabling
- *    this unconditionally would lock every existing user out on deploy. Roll the
- *    app update out first, then switch it on per company.
+ *  - It only applies to companies that have turned `license.enforceDevices` on,
+ *    which only the vendor can do.
  *  - It only applies to EMPLOYEE and KIOSK callers. Managers work in a browser,
  *    which is not a licensed device.
+ *
+ * It enrols rather than refuses. The app in the field already sends its device
+ * id on every request (AuthInterceptor) but has no way to enrol it, so a guard
+ * that demanded a pre-existing registration would lock out every phone of every
+ * paying company the instant enforcement went on. Instead an unknown phone
+ * claims a seat here, transactionally, and is refused only when the licence is
+ * genuinely full. That is the limit the vendor sells; being unenrolled is not.
+ * A kiosk is different: its login IS its device record, so an unknown kiosk was
+ * revoked on purpose and stays refused.
  *
  * Lookups are cached in-process for a minute, so the hot path costs roughly one
  * read per device per minute per instance rather than one per request. The cost
@@ -77,7 +84,13 @@ export async function enforceDeviceLicense(
       );
     }
 
-    const deviceId = req.header("X-Device-Id");
+    // A kiosk IS its device: createKioskAccount mints the login with
+    // uid === kioskId === the device document id, so the seat is found from the
+    // token alone. The kiosk runs in a browser and sends no X-Device-Id header,
+    // so keying it off the header would refuse every kiosk on this planet.
+    const isKiosk = auth.roles.includes("KIOSK");
+    const deviceId = isKiosk ? auth.employeeId : req.header("X-Device-Id");
+
     if (!deviceId) {
       throw new ApiError(
         403,
@@ -91,13 +104,42 @@ export async function enforceDeviceLicense(
       return snap.exists && isDeviceActive(snap.data() as Record<string, unknown>);
     });
 
-    if (!active) {
+    if (active) {
+      next();
+      return;
+    }
+
+    // Not registered. A kiosk that reaches here was revoked deliberately, so it
+    // stays refused. A phone, though, has simply never been seen: the app in the
+    // field sends its id on every request but has no way to enrol it. Refusing
+    // would lock out a company that is inside its seat count and has paid —
+    // so claim the seat now, and refuse only when there is genuinely none left.
+    if (isKiosk) {
       throw new ApiError(
         403,
         ErrorCodes.DEVICE_REVOKED,
         "This device is not activated for this company",
       );
     }
+
+    // activateDevice does the seat count and the write in one transaction, so
+    // two phones enrolling at once cannot both take the last seat. It throws
+    // LICENSE_LIMIT_REACHED when the licence is full — which is the refusal the
+    // customer should see, and the one the vendor is actually selling.
+    await activateDevice(
+      auth.companyId,
+      auth.employeeId,
+      {
+        deviceId,
+        platform: "ANDROID",
+        model: req.header("X-Device-Model") ?? null,
+        appVersion: req.header("X-App-Version") ?? null,
+      },
+      today,
+    );
+    // The negative answer above is now stale; without this the device stays
+    // refused for up to a minute on this instance despite holding a seat.
+    cache.delete(`dev:${auth.companyId}:${deviceId}`);
 
     next();
   } catch (err) {

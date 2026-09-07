@@ -483,16 +483,9 @@ export function useLicense(enabled: boolean) {
   });
 }
 
-export function useSaveLicense() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: License) => api.put<License>("/devices/license", body).then((e) => e.data),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["license"] });
-      void qc.invalidateQueries({ queryKey: ["devices"] });
-    },
-  });
-}
+// There is no useSaveLicence: the licence is what the customer buys, so the
+// server has no endpoint to write it. The vendor issues licences with
+// backend/functions/src/scripts/set-license.ts.
 
 export function useDevices(enabled: boolean) {
   return useQuery({

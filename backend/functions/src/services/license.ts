@@ -24,9 +24,9 @@ export const DEFAULT_LICENSE: License = {
   deviceLimit: 5,
   status: "ACTIVE",
   expiresAt: null,
-  // Enforcement is off until a company opts in, so shipping this cannot lock
-  // out the app builds already installed on employees' phones — they send no
-  // device id at all. Roll the app update out first, then turn it on.
+  // Off until the vendor issues a licence that turns it on. A company with no
+  // licence on file is a trial or a pre-sale tenant, and gets a working product
+  // with a generous seat count rather than a locked one.
   enforceDevices: false,
 };
 

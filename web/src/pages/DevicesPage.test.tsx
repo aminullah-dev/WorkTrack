@@ -103,11 +103,21 @@ describe("devices & licence", () => {
     expect(screen.queryByText("Revoke")).not.toBeInTheDocument();
   });
 
-  it("warns that enforcement will lock out app builds already in the field", () => {
+  it("shows the licence but offers no way to edit it", () => {
+    // The licence is what the customer buys. A company administrator holds "*",
+    // so an editor here would have let them grant themselves seats.
+    state.permissions = new Set(["devices:read", "devices:manage"]);
     renderPage();
-    expect(
-      screen.getByText(/builds already installed send no device id/i),
-    ).toBeInTheDocument();
+
+    expect(screen.getByText("3")).toBeInTheDocument(); // the seat count, read-only
+    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByText("Save")).not.toBeInTheDocument();
+  });
+
+  it("tells the customer who does issue their licence", () => {
+    renderPage();
+    expect(screen.getByText(/issued by Linumic/i)).toBeInTheDocument();
   });
 
   it("says so when every seat is taken", () => {

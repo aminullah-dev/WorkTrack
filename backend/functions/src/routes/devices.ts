@@ -8,10 +8,8 @@ import {
   activateDevice,
   deviceActivateSchema,
   getLicense,
-  licenseWriteSchema,
   listDevices,
   setDeviceStatus,
-  setLicense,
 } from "../services/license";
 import { getSettings } from "../services/settings";
 import { localDateOf } from "../services/attendance";
@@ -60,28 +58,16 @@ devicesRouter.get(
   }),
 );
 
-devicesRouter.put(
-  "/license",
-  requirePermission("devices:manage"),
-  asyncHandler(async (req, res) => {
-    const auth = authOf(req);
-    const payload = parseBody(req, licenseWriteSchema);
-    const before = await getLicense(auth.companyId);
-    const license = await setLicense(auth.companyId, payload);
-
-    await audit(auth.companyId, {
-      actorId: auth.employeeId,
-      actorRole: auth.roles.join(","),
-      action: "license.update",
-      resourceType: "companies",
-      resourceId: auth.companyId,
-      before,
-      after: license,
-    });
-
-    res.json({ data: license });
-  }),
-);
+/*
+ * There is deliberately no PUT /license.
+ *
+ * The licence is what the customer buys; it must not be something they can
+ * grant themselves. COMPANY_ADMIN holds "*" and HR_ADMIN holds devices:manage,
+ * so any endpoint here would have let a customer set their own seat count,
+ * clear their own expiry, or switch enforcement off. The vendor writes licences
+ * with backend/functions/src/scripts/set-license.ts, run against the project
+ * with credentials no tenant has.
+ */
 
 devicesRouter.get(
   "/",
