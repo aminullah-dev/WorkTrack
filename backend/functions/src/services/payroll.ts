@@ -47,6 +47,8 @@ export interface PayrollRunResult {
   totalGross: number;
   totalTax: number;
   totalEmployerCost: number;
+  /** Active employees left out because they have no salary configured. */
+  skippedNoSalary: Array<{ employeeId: string; name: string }>;
   /**
    * False when the period had not ended yet at the time of the run, so the
    * figures cover only the days elapsed so far and will change if it is run
@@ -127,6 +129,9 @@ export async function computePayrollRun(
   const elapsedWorkingDays = workingDays.filter((d) => d <= todayIso);
   const periodComplete = toIso <= todayIso;
 
+  /** Active employees with no salary on file; they earn nothing and are named. */
+  const skipped: Array<{ employeeId: string; name: string }> = [];
+
   const components = componentsSnap.docs.map((d) => d.data() as SalaryComponentDoc);
   const earnings = components.filter((c) => c.type === "EARNING");
   const deductions = components.filter((c) => c.type === "DEDUCTION");
@@ -152,7 +157,17 @@ export async function computePayrollRun(
         .where("date", "<=", toIso)
         .get(),
     ]);
-    if (!salarySnap.exists) continue; // no salary on file → skip
+    if (!salarySnap.exists) {
+      // Silently omitting people is how a first payroll run comes out looking
+      // right and paying half the company nothing. Name them on the run so the
+      // administrator sees who needs a salary before they pay anyone.
+      const e = empDoc.data() as { firstName?: string; lastName?: string };
+      skipped.push({
+        employeeId,
+        name: `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim() || employeeId,
+      });
+      continue;
+    }
     const basic = (salarySnap.data()?.basicAmount as number | undefined) ?? 0;
 
     // Day counts, driven by the working calendar rather than by whichever
@@ -296,6 +311,7 @@ export async function computePayrollRun(
     status: "APPROVED",
     // A run for a month still in progress is a preview, not the final word.
     periodComplete,
+    skippedNoSalary: skipped,
     startedBy,
     approvedBy: startedBy,
     currency,
@@ -378,5 +394,6 @@ export async function computePayrollRun(
     totalTax: round2(totalTax),
     totalEmployerCost: round2(totalEmployerCost),
     periodComplete,
+    skippedNoSalary: skipped,
   };
 }

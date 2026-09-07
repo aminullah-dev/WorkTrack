@@ -35,4 +35,8 @@
     <string name="prof_biometric">Fingerprint unlock</string>
     <string name="prof_biometric_desc">Require your fingerprint to open the app</string>
     <string name="prof_biometric_unavailable">No fingerprint is set up on this device</string>
+    <string name="prof_about">About</string>
+    <string name="prof_about_vendor">WorkTrack is a Linumic product — Kabul, Afghanistan.</string>
+    <string name="prof_version">Version %1$s</string>
+    <string name="prof_call_support">Call support</string>
 </resources>

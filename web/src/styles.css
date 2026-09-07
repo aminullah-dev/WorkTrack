@@ -1505,3 +1505,24 @@ table.data tbody tr:hover {
   font-size: 15px;
   font-weight: 600;
 }
+
+/* Something the operator must act on before trusting the result. */
+.notice-warning {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--amber-bg);
+  color: var(--amber);
+  font-size: 13.5px;
+}
+.notice-warning p { margin: 4px 0 6px; }
+.notice-warning ul { margin: 0; padding-inline-start: 20px; }
+
+.company-id {
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: var(--slate-95, #eef1f5);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  user-select: all;
+}

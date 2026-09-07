@@ -16,6 +16,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -57,6 +60,8 @@ fun ProfileRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val session = state.session
+    val context = LocalContext.current
+
     if (session == null) {
         FullScreenLoading()
         return
@@ -75,8 +80,23 @@ fun ProfileRoute(
         },
         onSyncNow = viewModel::onSyncNow,
         onSignOut = viewModel::onSignOut,
+        onCallSupport = {
+            // ACTION_DIAL opens the dialler with the number filled in rather
+            // than placing the call, so it needs no permission and the employee
+            // still decides.
+            context.startActivity(
+                Intent(Intent.ACTION_DIAL, Uri.parse("tel:$SUPPORT_PHONE")),
+            )
+        },
     )
 }
+
+private fun Context.installedVersionName(): String =
+    runCatching { packageManager.getPackageInfo(packageName, 0).versionName }
+        .getOrNull() ?: "—"
+
+/** Linumic support, as printed on linumic.com and in the handover pack. */
+private const val SUPPORT_PHONE = "+93793817977"
 
 @Composable
 internal fun ProfileScreen(
@@ -89,7 +109,12 @@ internal fun ProfileScreen(
     onLanguageSelect: (String) -> Unit,
     onSyncNow: () -> Unit,
     onSignOut: () -> Unit,
+    onCallSupport: () -> Unit,
 ) {
+    // A library module has no BuildConfig.VERSION_NAME; the installed package
+    // is the honest source anyway — it is the build the employee is running.
+    val appVersion = LocalContext.current.installedVersionName()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -150,6 +175,34 @@ internal fun ProfileScreen(
                 WtSecondaryButton(
                     text = stringResource(R.string.prof_sync_now),
                     onClick = onSyncNow,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SectionHeader(stringResource(R.string.prof_about))
+        Card(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.prof_about_vendor),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.prof_version, appVersion),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                // Support is a phone call here far more often than an email, so
+                // the number is the one that dials rather than the one to read.
+                WtSecondaryButton(
+                    text = stringResource(R.string.prof_call_support),
+                    onClick = onCallSupport,
                 )
             }
         }

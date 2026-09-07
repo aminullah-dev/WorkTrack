@@ -64,6 +64,15 @@ export const DEFAULT_SETTINGS: CompanySettings = {
 };
 
 /** PATCH body: every field optional so the client can send just what changed. */
+function isUsableTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const settingsUpdateSchema = z.object({
   features: z
     .object({
@@ -91,7 +100,14 @@ export const settingsUpdateSchema = z.object({
   profile: z
     .object({
       currency: z.string().length(3),
-      timezone: z.string().min(1).max(64),
+      // Every enforced request formats a date in this zone. An unusable value
+      // makes Intl throw, which would 500 the whole tenant — including the
+      // licence check — until somebody fixed the document by hand.
+      timezone: z
+        .string()
+        .min(1)
+        .max(64)
+        .refine(isUsableTimezone, "Not a timezone this server recognises"),
     })
     .partial()
     .optional(),

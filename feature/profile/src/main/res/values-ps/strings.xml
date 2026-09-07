@@ -35,4 +35,8 @@
     <string name="prof_biometric">د ګوتې له لارې ننوتل</string>
     <string name="prof_biometric_desc">د اپ خلاصولو لپاره ستاسو ګوته اړینه ده</string>
     <string name="prof_biometric_unavailable">پدې وسیله کې کوم ګوته نه ده ثبت شوې</string>
+    <string name="prof_about">په اړه</string>
+    <string name="prof_about_vendor">ورک‌ټرک د لینومیک محصول دی — کابل، افغانستان.</string>
+    <string name="prof_version">بڼه %1$s</string>
+    <string name="prof_call_support">له ملاتړ سره اړیکه</string>
 </resources>

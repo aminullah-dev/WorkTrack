@@ -397,6 +397,23 @@ describe.skipIf(!EMULATOR)("payroll — the working calendar", () => {
     expect(run.totalNet).toBe(0);
   });
 
+  it("names the employees it could not pay instead of dropping them", async () => {
+    // The first run a new company does is the one most likely to have people
+    // with no salary yet. Omitting them silently makes the run look complete.
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e2"); // hired, no salary configured
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e2", d);
+    }
+
+    const run = await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(run.payslipCount).toBe(1);
+    expect(run.skippedNoSalary.map((s) => s.employeeId)).toEqual(["e2"]);
+  });
+
   it("does not dock days that have not happened yet", async () => {
     // Payroll walks the month's expected working days, so running the month
     // that is still in progress used to charge every day from today to the end

@@ -370,6 +370,9 @@ export interface PayrollRunResult {
   totalGross: number;
   totalTax: number;
   totalEmployerCost: number;
+  periodComplete?: boolean;
+  /** Active employees left out of the run because they have no salary on file. */
+  skippedNoSalary?: Array<{ employeeId: string; name: string }>;
 }
 
 export interface RunPayslipRow {

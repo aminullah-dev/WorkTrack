@@ -36,4 +36,8 @@
     <string name="prof_biometric">ورود با اثر انگشت</string>
     <string name="prof_biometric_desc">برای باز کردن برنامه اثر انگشت لازم است</string>
     <string name="prof_biometric_unavailable">این دستگاه اثر انگشت ثبت‌شده ندارد</string>
+    <string name="prof_about">درباره</string>
+    <string name="prof_about_vendor">ورک‌ترک محصول لینومیک است — کابل، افغانستان.</string>
+    <string name="prof_version">نسخهٔ %1$s</string>
+    <string name="prof_call_support">تماس با پشتیبانی</string>
 </resources>

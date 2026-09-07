@@ -11,6 +11,7 @@ import { useAuth, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { DangerZoneCard } from "./DangerZoneCard";
 import { HolidaysCard } from "./HolidaysCard";
+import { SupportCard } from "./SupportCard";
 import { Chip, ErrorState, LoadingState, Switch, Toast } from "../ui/components";
 
 const FEATURE_KEYS: (keyof CompanyFeatures)[] = [
@@ -243,6 +244,7 @@ export function SettingsPage() {
 
       {toast && <Toast message={toast} />}
       <HolidaysCard />
+      <SupportCard />
       <DangerZoneCard />
     </>
   );
