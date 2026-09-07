@@ -1,5 +1,13 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { useCreateEmployee, useEmployees } from "../api/hooks";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  useCreateEmployee,
+  useEmployeeSalary,
+  useSetEmployeeSalary,
+  useEmployees,
+  useResetEmployeeFace,
+  useResetEmployeePassword,
+  useUpdateEmployee,
+} from "../api/hooks";
 import { ApiError } from "../api/client";
 import type {
   AssignableRole,
@@ -8,11 +16,12 @@ import type {
   EmployeeStatus,
   EmploymentType,
 } from "../api/types";
-import { useAuth, useHasPermission } from "../auth/AuthProvider";
+import { useAuth, useFeatures, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
-import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
+import { Chip, EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
 const EMPLOYMENT_TYPES: EmploymentType[] = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN"];
+const STATUSES: EmployeeStatus[] = ["ACTIVE", "ON_LEAVE", "SUSPENDED", "EXITED"];
 const ROLES: AssignableRole[] = [
   "EMPLOYEE",
   "TEAM_LEAD",
@@ -27,10 +36,25 @@ export function EmployeesPage() {
   const can = useHasPermission();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Employee | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
 
+  const features = useFeatures();
+  const resetFace = useResetEmployeeFace();
+  const showFace = features.faceRecognition;
+
   const employees = useEmployees({});
+
+  async function onResetFace(id: string) {
+    try {
+      await resetFace.mutateAsync(id);
+      setToast(t("emp_face_reset_done"));
+    } catch {
+      setToast(t("common_error"));
+    }
+    window.setTimeout(() => setToast(null), 2500);
+  }
 
   const filtered = useMemo(() => {
     const rows = employees.data?.data ?? [];
@@ -81,6 +105,8 @@ export function EmployeesPage() {
                 <th>{t("emp_type")}</th>
                 <th>{t("emp_join_date")}</th>
                 <th>{t("emp_status")}</th>
+                {showFace && <th>{t("emp_face")}</th>}
+                {can("employees:write") && <th />}
               </tr>
             </thead>
             <tbody>
@@ -96,6 +122,31 @@ export function EmployeesPage() {
                   <td>
                     <StatusChip status={e.status} />
                   </td>
+                  {showFace && (
+                    <td>
+                      <div className="row-actions" style={{ alignItems: "center" }}>
+                        <Chip tone={e.faceEnrolled ? "positive" : "neutral"}>
+                          {e.faceEnrolled ? t("emp_face_enrolled") : t("emp_face_not_enrolled")}
+                        </Chip>
+                        {e.faceEnrolled && can("employees:write") && (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            disabled={resetFace.isPending}
+                            onClick={() => void onResetFace(e.id)}
+                          >
+                            {t("emp_face_reset")}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  {can("employees:write") && (
+                    <td>
+                      <button className="btn btn-outline btn-sm" onClick={() => setEditing(e)}>
+                        {t("emp_edit")}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -103,17 +154,26 @@ export function EmployeesPage() {
         </div>
       )}
 
-      {showForm && (
+      {(showForm || editing) && (
         <EmployeeForm
-          onClose={() => setShowForm(false)}
-          onCreated={(created) => {
+          employee={editing ?? undefined}
+          onClose={() => {
             setShowForm(false);
-            if (created.tempPassword) {
+            setEditing(null);
+          }}
+          onSaved={(created) => {
+            setShowForm(false);
+            setEditing(null);
+            if (created?.tempPassword) {
               setCredentials({ email: created.email, password: created.tempPassword });
             } else {
-              setToast(t("emp_created"));
+              setToast(t(created ? "emp_created" : "emp_updated"));
               window.setTimeout(() => setToast(null), 2500);
             }
+          }}
+          onPasswordReset={(email, password) => {
+            setEditing(null);
+            setCredentials({ email, password });
           }}
         />
       )}
@@ -174,55 +234,118 @@ function CredentialsDialog({
 
 function EmployeeForm({
   onClose,
-  onCreated,
+  onSaved,
+  onPasswordReset,
+  employee,
 }: {
   onClose: () => void;
-  onCreated: (created: EmployeeCreated) => void;
+  onSaved: (created: EmployeeCreated | null) => void;
+  onPasswordReset: (email: string, password: string) => void;
+  employee?: Employee;
 }) {
   const { t } = useI18n();
   const { me } = useAuth();
+  const can = useHasPermission();
+  const isEdit = !!employee;
   const create = useCreateEmployee();
+  const update = useUpdateEmployee();
+  // Compensation belongs to whoever runs payroll, so the field only appears
+  // for them — anyone else would get a 403 on save.
+  const canSetPay = can("payroll:run");
+  const existingSalary = useEmployeeSalary(canSetPay && employee ? employee.id : null);
+  const setSalary = useSetEmployeeSalary();
+  const resetPassword = useResetEmployeePassword();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  async function onResetPassword() {
+    if (!employee) return;
+    setFormError(null);
+    setFieldErrors({});
+    try {
+      const { tempPassword } = await resetPassword.mutateAsync({
+        id: employee.id,
+        password: form.initialPassword || undefined,
+      });
+      onPasswordReset(employee.email, tempPassword);
+    } catch (err) {
+      if (err instanceof ApiError && err.fieldErrors.password) {
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setFormError(t("common_error"));
+      }
+    }
+  }
   const [form, setForm] = useState({
-    employeeCode: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    branchId: me?.branchIds[0] ?? "",
-    employmentType: "FULL_TIME" as EmploymentType,
-    joinDate: isoToday(),
-    status: "ACTIVE" as EmployeeStatus,
+    employeeCode: employee?.employeeCode ?? "",
+    firstName: employee?.firstName ?? "",
+    lastName: employee?.lastName ?? "",
+    email: employee?.email ?? "",
+    phone: employee?.phone ?? "",
+    branchId: employee?.branchId ?? me?.branchIds[0] ?? "",
+    employmentType: employee?.employmentType ?? ("FULL_TIME" as EmploymentType),
+    joinDate: employee?.joinDate ?? isoToday(),
+    status: employee?.status ?? ("ACTIVE" as EmployeeStatus),
     role: "EMPLOYEE" as AssignableRole,
-    createLogin: true,
+    createLogin: !isEdit,
     initialPassword: "",
+    basicAmount: "",
   });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // The salary lives in its own document, so it arrives after the form mounts.
+  // Only seed the field while it is untouched, or typing would be overwritten.
+  useEffect(() => {
+    const amount = existingSalary.data?.basicAmount;
+    if (amount !== undefined) {
+      setForm((f) => (f.basicAmount === "" ? { ...f, basicAmount: String(amount) } : f));
+    }
+  }, [existingSalary.data]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFieldErrors({});
     setFormError(null);
+    const body = {
+      employeeCode: form.employeeCode,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone || null,
+      branchId: form.branchId || null,
+      employmentType: form.employmentType,
+      joinDate: form.joinDate,
+      status: form.status,
+      role: form.role,
+      createLogin: form.createLogin,
+      initialPassword: form.initialPassword || undefined,
+    };
     try {
-      const created = await create.mutateAsync({
-        employeeCode: form.employeeCode,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phone: form.phone || null,
-        branchId: form.branchId || null,
-        employmentType: form.employmentType,
-        joinDate: form.joinDate,
-        status: form.status,
-        role: form.role,
-        createLogin: form.createLogin,
-        initialPassword: form.initialPassword || undefined,
-      });
-      onCreated(created);
+      // The employee record is saved first: the salary hangs off its id, and a
+      // new employee has none until the create returns.
+      const savedId = isEdit && employee ? employee.id : null;
+      let created: EmployeeCreated | null = null;
+      if (savedId) {
+        await update.mutateAsync({ id: savedId, body });
+      } else {
+        created = await create.mutateAsync(body);
+      }
+
+      const targetId = savedId ?? created?.id;
+      const amount = form.basicAmount.trim();
+      if (canSetPay && targetId && amount !== "") {
+        const basicAmount = Number(amount);
+        if (Number.isFinite(basicAmount) && basicAmount >= 0) {
+          await setSalary.mutateAsync({
+            id: targetId,
+            body: { basicAmount, effectiveFrom: form.joinDate },
+          });
+        }
+      }
+      onSaved(created);
     } catch (err) {
       if (err instanceof ApiError) {
         setFieldErrors(err.fieldErrors);
@@ -239,7 +362,7 @@ function EmployeeForm({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
-        <h2>{t("emp_add")}</h2>
+        <h2>{isEdit ? t("emp_edit_title") : t("emp_add")}</h2>
         <div className="form-grid">
           <Text label={t("emp_code")} value={form.employeeCode} onChange={(v) => set("employeeCode", v)} error={fieldErrors.employeeCode} />
           <Text label={t("emp_phone")} value={form.phone} onChange={(v) => set("phone", v)} dir="ltr" />
@@ -264,34 +387,99 @@ function EmployeeForm({
           </div>
         </div>
 
-        <div className="field">
-          <label>{t("emp_role")}</label>
-          <select className="select" value={form.role} onChange={(e) => set("role", e.target.value as AssignableRole)}>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {t(`role_${r.toLowerCase()}`)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {canSetPay && (
+          <div className="field">
+            <label>
+              {t("emp_basic_salary", me?.currency ?? "AFN")}
+            </label>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              step="100"
+              dir="ltr"
+              value={form.basicAmount}
+              onChange={(e) => set("basicAmount", e.target.value)}
+              placeholder={t("emp_basic_salary_ph")}
+            />
+            <small style={{ color: "var(--text-subtle)" }}>{t("emp_basic_salary_hint")}</small>
+          </div>
+        )}
 
-        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 14 }}>
-          <input
-            type="checkbox"
-            checked={form.createLogin}
-            onChange={(e) => set("createLogin", e.target.checked)}
-          />
-          {t("emp_create_login")}
-        </label>
+        {isEdit ? (
+          <>
+            <div className="field">
+              <label>{t("emp_status")}</label>
+              <select
+                className="select"
+                value={form.status}
+                onChange={(e) => set("status", e.target.value as EmployeeStatus)}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {t(`status_${s.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>{t("emp_login")}</label>
+              <input
+                className="input"
+                type="text"
+                dir="ltr"
+                placeholder={t("emp_set_password_ph")}
+                value={form.initialPassword}
+                onChange={(e) => set("initialPassword", e.target.value)}
+              />
+              {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                style={{ marginTop: 8, alignSelf: "flex-start" }}
+                onClick={() => void onResetPassword()}
+                disabled={resetPassword.isPending}
+              >
+                {t("emp_set_password")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="field">
+              <label>{t("emp_role")}</label>
+              <select
+                className="select"
+                value={form.role}
+                onChange={(e) => set("role", e.target.value as AssignableRole)}
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {t(`role_${r.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {form.createLogin && (
-          <Text
-            label={t("emp_password_optional")}
-            value={form.initialPassword}
-            onChange={(v) => set("initialPassword", v)}
-            dir="ltr"
-            error={fieldErrors.initialPassword}
-          />
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={form.createLogin}
+                onChange={(e) => set("createLogin", e.target.checked)}
+              />
+              {t("emp_create_login")}
+            </label>
+
+            {form.createLogin && (
+              <Text
+                label={t("emp_password_optional")}
+                value={form.initialPassword}
+                onChange={(v) => set("initialPassword", v)}
+                dir="ltr"
+                error={fieldErrors.initialPassword}
+              />
+            )}
+          </>
         )}
 
         {formError && <div className="field-error">{formError}</div>}
@@ -300,7 +488,11 @@ function EmployeeForm({
           <button type="button" className="btn btn-outline" onClick={onClose}>
             {t("emp_cancel")}
           </button>
-          <button type="submit" className="btn btn-primary" disabled={create.isPending}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={create.isPending || update.isPending}
+          >
             {t("emp_save")}
           </button>
         </div>

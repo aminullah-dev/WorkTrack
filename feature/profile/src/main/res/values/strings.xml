@@ -32,4 +32,8 @@
     <string name="prof_lang_dari">دری</string>
     <string name="prof_lang_pashto">پښتو</string>
     <string name="prof_lang_english">English</string>
+    <string name="prof_security">امنیت</string>
+    <string name="prof_biometric">ورود با اثر انگشت</string>
+    <string name="prof_biometric_desc">برای باز کردن برنامه اثر انگشت لازم است</string>
+    <string name="prof_biometric_unavailable">این دستگاه اثر انگشت ثبت‌شده ندارد</string>
 </resources>

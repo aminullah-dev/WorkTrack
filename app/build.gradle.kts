@@ -1,7 +1,59 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.worktrack.android.application)
     alias(libs.plugins.worktrack.android.hilt)
 }
+
+// ---------------------------------------------------------------- signing
+//
+// The release signing key is the one artefact in this project that cannot be
+// replaced: lose it and this app can never be updated again; leak it and
+// someone else can sign a build as us. So nothing about it lives in the repo.
+//
+// Values come from keystore.properties at the repo root (gitignored), or from
+// Gradle properties so CI can inject them without a file. Create the key once:
+//
+//   keytool -genkeypair -v -keystore worktrack-release.jks \
+//     -alias worktrack -keyalg RSA -keysize 4096 -validity 10000
+//
+// then copy keystore.properties.example to keystore.properties and fill it in.
+// Back the .jks up somewhere you will still have in five years.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingValue(fileKey: String, gradleProperty: String): String? =
+    keystoreProperties.getProperty(fileKey) ?: project.findProperty(gradleProperty) as String?
+
+val releaseStorePath = signingValue("storeFile", "worktrack.storeFile")
+val releaseStoreFile = releaseStorePath?.let(rootProject::file)
+val hasReleaseKey = releaseStoreFile?.exists() == true
+
+// Signing a release with the DEBUG key, on purpose, to smoke-test that R8 has
+// not stripped something the app needs at runtime. An APK signed this way must
+// never reach a user, so it takes an explicit flag:
+//   ./gradlew :app:assembleRelease -Pworktrack.debugSignRelease
+val debugSignRelease = project.hasProperty("worktrack.debugSignRelease")
+
+// API endpoints per environment, kept together so it is obvious at a glance
+// which build talks to which backend.
+val productionApiBaseUrl = "https://worktrack-prod.web.app/v1/"
+
+// 10.0.2.2 is the host machine's loopback as seen from an Android emulator.
+val emulatorApiBaseUrl = "http://10.0.2.2:5001/demo-worktrack/us-central1/api/v1/"
+
+// A debug build talks to the LOCAL emulator unless told otherwise, so everyday
+// development cannot read or write a real company's data by accident. To point
+// a debug build somewhere else on purpose:
+//   ./gradlew :app:assembleDebug -Pworktrack.apiBaseUrl=https://worktrack-prod.web.app/v1/
+// or persist it in gradle.properties (project or ~/.gradle/):
+//   worktrack.apiBaseUrl=https://worktrack-prod.web.app/v1/
+val debugApiBaseUrl =
+    (project.findProperty("worktrack.apiBaseUrl") as String?) ?: emulatorApiBaseUrl
 
 android {
     namespace = "app.worktrack"
@@ -11,37 +63,100 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        // Per-environment API endpoints are configured through build types below.
-        // Release goes through Firebase Hosting, which rewrites /v1/** to the
-        // `api` Cloud Function (see backend/firebase.json) — a stable URL that
-        // matches the web portal. Swap for a custom domain (e.g. worktrack.af)
-        // once you connect one in Hosting.
-        buildConfigField(
-            "String",
-            "API_BASE_URL",
-            "\"https://worktrack-prod.web.app/v1/\"",
-        )
-        // Production builds use real Firebase; debug overrides to the emulator.
+        // Inherited by the release build: Firebase Hosting rewrites /v1/** to
+        // the `api` Cloud Function (see backend/firebase.json), a stable URL
+        // that matches the web portal. Swap for a custom domain (e.g.
+        // worktrack.af) once you connect one in Hosting. The debug build type
+        // overrides both of these below.
+        buildConfigField("String", "API_BASE_URL", "\"$productionApiBaseUrl\"")
         buildConfigField("boolean", "USE_EMULATORS", "false")
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = signingValue("storePassword", "worktrack.storePassword")
+                keyAlias = signingValue("keyAlias", "worktrack.keyAlias")
+                keyPassword = signingValue("keyPassword", "worktrack.keyPassword")
+
+                // v1 (JAR signing) is for Android 6 and older; minSdk is 26, so
+                // it only adds size and build time. v3 carries the proof needed
+                // to rotate to a new signing key later without every user having
+                // to reinstall — cheap now, impossible to add retroactively.
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
-        debug {
-            // Debug points at the LIVE worktrack-prod backend so it can be Run
-            // straight onto a device/emulator — no signing, no local emulators.
-            // The applicationId stays "app.worktrack" (no suffix) to match the
-            // client in google-services.json.
-            //
-            // To test against the LOCAL Firebase Emulator Suite instead, restore:
-            //   applicationIdSuffix = ".debug"   // and register that package in Firebase
-            //   API_BASE_URL = "http://10.0.2.2:5001/demo-worktrack/us-central1/api/v1/"
-            //   USE_EMULATORS = true
-            buildConfigField(
-                "String",
-                "API_BASE_URL",
-                "\"https://worktrack-prod.web.app/v1/\"",
-            )
+        /*
+         * The public demo build.
+         *
+         * A separate applicationId is the whole point: without it, installing
+         * the demo would REPLACE the real app on the phone of anyone who
+         * already runs WorkTrack, taking their queued offline punches with it.
+         * With the suffix the two sit side by side.
+         *
+         * It is a build type rather than a product flavor deliberately — a
+         * flavor renames every existing variant task (compileDebugKotlin
+         * becomes compileProductionDebugKotlin), which would break CI and every
+         * command in the docs. A build type only adds `assembleDemo`.
+         *
+         * Firebase config comes from app/src/demo/google-services.json, which
+         * points at worktrack-demo-af, so Auth and the API agree about which
+         * backend they are talking to.
+         */
+        create("demo") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".demo"
+            versionNameSuffix = "-demo"
+            // Library modules only define debug/release; without this the demo
+            // build type has nothing to resolve against in them.
+            matchingFallbacks += listOf("release")
+
+            buildConfigField("String", "API_BASE_URL", "\"https://demo.linumic.com/v1/\"")
             buildConfigField("boolean", "USE_EMULATORS", "false")
+
+            signingConfig = when {
+                hasReleaseKey -> signingConfigs.getByName("release")
+                debugSignRelease -> signingConfigs.getByName("debug")
+                else -> null
+            }
+        }
+
+        release {
+            // R8 and resource shrinking are already on from the convention
+            // plugin; this only decides what the output gets signed with.
+            signingConfig = when {
+                hasReleaseKey -> signingConfigs.getByName("release")
+                debugSignRelease -> signingConfigs.getByName("debug")
+                else -> null
+            }
+        }
+
+        debug {
+            // Debug used to point at the LIVE worktrack-prod backend, so anyone
+            // who installed a development build was writing to a real company's
+            // attendance and payroll. It now defaults to the local emulator;
+            // see debugApiBaseUrl above for the deliberate override.
+            //
+            // The applicationId stays "app.worktrack" (no suffix) so it keeps
+            // matching the client in google-services.json. Cleartext to the
+            // emulator is already permitted by the debug source set — see
+            // app/src/debug/res/xml/network_security_config.xml.
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+
+            // Firebase Auth has to follow the API: authenticating against
+            // production while calling the emulator (or the reverse) issues
+            // tokens the other side cannot verify.
+            buildConfigField(
+                "boolean",
+                "USE_EMULATORS",
+                (debugApiBaseUrl == emulatorApiBaseUrl).toString(),
+            )
         }
     }
 

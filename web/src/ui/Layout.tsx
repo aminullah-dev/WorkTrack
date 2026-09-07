@@ -34,10 +34,22 @@ export function Layout() {
       show: can("payroll:read") && features.payroll,
     },
     {
+      to: "/finance",
+      icon: <IconChart />,
+      label: t("nav_finance"),
+      show: can("finance:read") && features.finance,
+    },
+    {
       to: "/kiosk",
       icon: <IconQr />,
       label: t("nav_kiosk"),
       show: can("kiosk:issue") && features.qrKiosk,
+    },
+    {
+      to: "/devices",
+      icon: <IconGear />,
+      label: t("nav_devices"),
+      show: can("devices:read"),
     },
     { to: "/settings", icon: <IconGear />, label: t("nav_settings"), show: can("settings:write") },
   ];
@@ -153,6 +165,9 @@ const IconGear = () => (
 );
 const IconQr = () => (
   <Svg><rect x="3.5" y="3.5" width="6" height="6" rx="1" /><rect x="14.5" y="3.5" width="6" height="6" rx="1" /><rect x="3.5" y="14.5" width="6" height="6" rx="1" /><path d="M14.5 14.5h3v3M20.5 14.5v6M14.5 20.5h3" /></Svg>
+);
+const IconChart = () => (
+  <Svg><path d="M4 4v16h16" /><path d="M8 15l3-4 3 2 4-6" /></Svg>
 );
 const IconLogout = () => (
   <Svg><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8" /><path d="M17 15l4-3-4-3" /><path d="M21 12H10" /></Svg>

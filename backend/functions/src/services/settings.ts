@@ -16,6 +16,8 @@ export interface CompanyFeatures {
   geofencing: boolean;
   qrKiosk: boolean;
   faceRecognition: boolean;
+  /** Advanced finance & accounting module (expenses, ledger, reports). */
+  finance: boolean;
 }
 
 export interface CompanyPolicies {
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: CompanySettings = {
     geofencing: true,
     qrKiosk: true,
     faceRecognition: false,
+    finance: true,
   },
   policies: {
     standardDailyMinutes: 480,
@@ -72,6 +75,7 @@ export const settingsUpdateSchema = z.object({
       geofencing: z.boolean(),
       qrKiosk: z.boolean(),
       faceRecognition: z.boolean(),
+      finance: z.boolean(),
     })
     .partial()
     .optional(),

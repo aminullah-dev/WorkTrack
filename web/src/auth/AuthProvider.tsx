@@ -22,6 +22,9 @@ interface AuthContextValue {
   me: Me | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Re-fetch /me so feature flags / roles reflect server-side changes (e.g.
+   *  after saving company settings) without a full page reload. */
+  refreshMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,6 +35,7 @@ const MANAGER_ROLES = new Set([
   "COMPANY_ADMIN",
   "HR_ADMIN",
   "PAYROLL_ADMIN",
+  "FINANCE_ADMIN",
   "BRANCH_MANAGER",
   "TEAM_LEAD",
   "AUDITOR",
@@ -109,6 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMe(null);
         setStatus("signedOut");
       },
+      refreshMe: async () => {
+        // Best-effort refresh; keep the current session on failure. Only applies
+        // to an already-signed-in manager, so the role gate is a safety no-op.
+        const { data } = await api.get<Me>("/me");
+        if (data.roles.some((r) => MANAGER_ROLES.has(r))) setMe(data);
+      },
     }),
     [status, me],
   );
@@ -141,8 +151,15 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   "attendance:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
   "attendance:approve": ["HR_ADMIN", "BRANCH_MANAGER"],
   "leave:approve": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
-  "payroll:read": ["HR_ADMIN", "PAYROLL_ADMIN", "AUDITOR"],
-  "payroll:run": ["PAYROLL_ADMIN"],
+  "payroll:read": ["HR_ADMIN", "PAYROLL_ADMIN", "FINANCE_ADMIN", "AUDITOR"],
+  "payroll:run": ["PAYROLL_ADMIN", "FINANCE_ADMIN"],
+  "payroll:approve": ["PAYROLL_ADMIN", "FINANCE_ADMIN"],
+  "finance:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "expenses:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "expenses:write": ["FINANCE_ADMIN"],
+  "expenses:approve": ["FINANCE_ADMIN"],
+  "ledger:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "ledger:write": ["FINANCE_ADMIN"],
   "rosters:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
   "rosters:write": ["HR_ADMIN", "BRANCH_MANAGER"],
   "kiosk:issue": ["HR_ADMIN", "BRANCH_MANAGER"],
@@ -160,6 +177,7 @@ const DEFAULT_FEATURES: CompanyFeatures = {
   geofencing: true,
   qrKiosk: true,
   faceRecognition: true,
+  finance: true,
 };
 
 /** Company feature flags (module toggles). Unknown → enabled, so nothing hides

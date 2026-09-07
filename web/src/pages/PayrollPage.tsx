@@ -85,6 +85,7 @@ export function PayrollPage() {
                 <th>{t("pay_status")}</th>
                 <th>{t("pay_employees")}</th>
                 <th>{t("pay_total_gross")}</th>
+                <th>{t("pay_total_tax")}</th>
                 <th>{t("pay_total_net")}</th>
                 <th />
               </tr>
@@ -100,6 +101,7 @@ export function PayrollPage() {
                   </td>
                   <td>{num(run.payslipCount)}</td>
                   <td>{num(money(run.totalGross))} {run.currency}</td>
+                  <td>{num(money(run.totalTax))} {run.currency}</td>
                   <td>{num(money(run.totalNet))} {run.currency}</td>
                   <td>
                     <button className="btn btn-outline btn-sm" onClick={() => setOpenRun(run.id)}>
@@ -141,8 +143,10 @@ function RunDetail({ runId, onBack }: { runId: string; onBack: () => void }) {
               <tr>
                 <th>{t("pay_employee")}</th>
                 <th>{t("pay_gross")}</th>
+                <th>{t("pay_tax")}</th>
                 <th>{t("pay_deductions")}</th>
                 <th>{t("pay_net")}</th>
+                <th>{t("pay_ctc")}</th>
                 <th>{t("pay_worked_days")}</th>
               </tr>
             </thead>
@@ -151,8 +155,10 @@ function RunDetail({ runId, onBack }: { runId: string; onBack: () => void }) {
                 <tr key={p.id}>
                   <td>{p.employeeName}</td>
                   <td>{num(money(p.gross))} {p.currency}</td>
+                  <td>{num(money(p.incomeTax))} {p.currency}</td>
                   <td>{num(money(p.totalDeductions))} {p.currency}</td>
                   <td style={{ fontWeight: 600 }}>{num(money(p.net))} {p.currency}</td>
+                  <td>{num(money(p.costToCompany))} {p.currency}</td>
                   <td>{num(p.workedDays)}</td>
                 </tr>
               ))}

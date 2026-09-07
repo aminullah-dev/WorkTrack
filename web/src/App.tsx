@@ -9,8 +9,10 @@ import { AttendancePage } from "./pages/AttendancePage";
 import { ShiftsPage } from "./pages/ShiftsPage";
 import { LeavePage } from "./pages/LeavePage";
 import { PayrollPage } from "./pages/PayrollPage";
+import { FinancePage } from "./pages/FinancePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KioskPage } from "./pages/KioskPage";
+import { DevicesPage } from "./pages/DevicesPage";
 
 export function App() {
   const { status } = useAuth();
@@ -37,6 +39,8 @@ export function App() {
         <Route path="shifts" element={<ShiftsPage />} />
         <Route path="leave" element={<LeavePage />} />
         <Route path="payroll" element={<PayrollPage />} />
+        <Route path="finance" element={<FinancePage />} />
+        <Route path="devices" element={<DevicesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

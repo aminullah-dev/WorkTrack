@@ -5,7 +5,7 @@ import { ApiError, ErrorCodes, asyncHandler } from "../lib/errors";
 import { audit, db, nowTimestamp, tenant, toIso } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
-import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
+import { withIdempotency } from "../middleware/idempotency";
 import { parseBody } from "../middleware/validate";
 import { ulid } from "../lib/ids";
 import { computePayrollRun } from "../services/payroll";
@@ -32,6 +32,8 @@ payrollRouter.get(
           payslipCount: (d.payslipCount as number) ?? 0,
           totalGross: (d.totalGross as number) ?? 0,
           totalNet: (d.totalNet as number) ?? 0,
+          totalTax: (d.totalTax as number) ?? 0,
+          totalEmployerCost: (d.totalEmployerCost as number) ?? 0,
           lockedAt: toIso((d.lockedAt as Timestamp | null | undefined) ?? null),
           createdAt: toIso((d.createdAt as Timestamp | null | undefined) ?? null),
         };
@@ -54,30 +56,24 @@ payrollRouter.post(
     const auth = authOf(req);
     const { periodYear, periodMonth } = parseBody(req, runCreateSchema);
 
-    const idempotencyKey = req.header("Idempotency-Key");
-    if (idempotencyKey) {
-      const replay = await checkIdempotency(auth.companyId, idempotencyKey);
-      if (replay !== null) {
-        res.json({ data: replay });
-        return;
-      }
-    }
-
-    const companySnap = await db.collection("companies").doc(auth.companyId).get();
-    const currency = (companySnap.data()?.currency as string | undefined) ?? "AFN";
-
-    const result = await computePayrollRun(
+    const { result, replayed } = await withIdempotency(
       auth.companyId,
-      periodYear,
-      periodMonth,
-      auth.employeeId,
-      currency,
+      req.header("Idempotency-Key"),
+      async () => {
+        const companySnap = await db.collection("companies").doc(auth.companyId).get();
+        const currency = (companySnap.data()?.currency as string | undefined) ?? "AFN";
+
+        return computePayrollRun(
+          auth.companyId,
+          periodYear,
+          periodMonth,
+          auth.employeeId,
+          currency,
+        );
+      },
     );
 
-    if (idempotencyKey) {
-      await recordIdempotency(auth.companyId, idempotencyKey, result);
-    }
-    res.status(201).json({ data: result });
+    res.status(replayed ? 200 : 201).json({ data: result });
   }),
 );
 
@@ -111,6 +107,9 @@ payrollRouter.get(
           gross: d.gross,
           totalDeductions: d.totalDeductions,
           net: d.net,
+          incomeTax: d.incomeTax ?? 0,
+          employerCost: d.employerCost ?? 0,
+          costToCompany: d.costToCompany ?? d.gross,
           workedDays: d.workedDays,
           lopDays: d.lopDays,
           status: d.status,
@@ -221,7 +220,9 @@ const componentSchema = z.object({
   type: z.enum(["EARNING", "DEDUCTION", "EMPLOYER_COST"]),
   calc: z.enum(["FIXED", "PERCENT_OF_BASIC", "PERCENT_OF_GROSS"]),
   value: z.number().min(0).max(100_000_000),
-  taxable: z.boolean().optional().default(false),
+  // Defaults to taxable: Afghan income tax treats salary and most allowances
+  // as part of the base, and defaulting the other way silently under-withholds.
+  taxable: z.boolean().optional().default(true),
   active: z.boolean().optional().default(true),
 });
 
@@ -242,7 +243,7 @@ payrollRouter.get(
           type: d.type,
           calc: d.calc,
           value: d.value,
-          taxable: d.taxable ?? false,
+          taxable: d.taxable ?? true,
           active: d.active ?? true,
         };
       }),

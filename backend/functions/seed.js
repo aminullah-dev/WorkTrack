@@ -14,21 +14,83 @@
  *   ahmad@worktrack.af   — EMPLOYEE       (use this in the Android app)
  */
 
-const { initializeApp } = require("firebase-admin/app");
+const { getApps, initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
-// Point the Admin SDK at the local emulators unless already configured.
-process.env.FIRESTORE_EMULATOR_HOST =
-  process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
-process.env.FIREBASE_AUTH_EMULATOR_HOST =
-  process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
+// ------------------------------------------------------------------ target
+//
+// By default this writes to the local emulators. A hosted demo — the public
+// "try it" tenant on the website — needs the same data in a real Firebase
+// project, so `--target <projectId>` points the Admin SDK at one.
+//
+// Two guards stand in front of that, because this script creates logins whose
+// password is published on the website and writes several hundred documents:
+//
+//   1. A project id that looks like production is refused outright. No flag
+//      overrides it. Seeding a published password into a tenant that holds real
+//      employees' attendance and pay is not a mistake worth leaving available.
+//   2. Any real project additionally needs --yes-write-real-data, so it cannot
+//      happen from a half-remembered command.
+// True only when this file is run as a script. When the reset scheduler
+// imports it inside a Cloud Function, none of the CLI bootstrap below applies:
+// the environment is already the demo project and the app is already
+// initialised, so touching either would be wrong.
+const IS_CLI = require.main === module;
 
-const PROJECT_ID = process.env.GCLOUD_PROJECT || "demo-worktrack";
-const PASSWORD = "Passw0rd!";
+const argv = IS_CLI ? process.argv.slice(2) : [];
+function flagValue(name) {
+  const i = argv.indexOf(name);
+  return i === -1 ? null : argv[i + 1] ?? null;
+}
+
+const target = flagValue("--target");
+const PASSWORD = flagValue("--password") || "Passw0rd!";
 const CID = "comp_kabul";
 
-initializeApp({ projectId: PROJECT_ID });
+/** Anything that reads as a live tenant. Matched case-insensitively. */
+const LOOKS_LIVE = /prod|production|live/i;
+
+if (target && LOOKS_LIVE.test(target)) {
+  console.error(
+    `\nRefusing to seed "${target}".\n\n` +
+      "This script creates accounts with a password that is published on the\n" +
+      "website, and that must never exist in a tenant with real people in it.\n" +
+      "Point it at a separate demo project instead.\n",
+  );
+  process.exit(1);
+}
+
+if (target && !argv.includes("--yes-write-real-data")) {
+  console.error(
+    `\nAbout to write demo data into the real project "${target}".\n\n` +
+      "This creates a company, its people, several months of attendance, and\n" +
+      "logins with a well-known password. Re-run with --yes-write-real-data if\n" +
+      "that is what you want.\n",
+  );
+  process.exit(1);
+}
+
+if (IS_CLI) {
+  if (target) {
+    // The Admin SDK talks to the real backend only when these are absent.
+    delete process.env.FIRESTORE_EMULATOR_HOST;
+    delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  } else {
+    process.env.FIRESTORE_EMULATOR_HOST =
+      process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
+    process.env.FIREBASE_AUTH_EMULATOR_HOST =
+      process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
+  }
+}
+
+const PROJECT_ID = target || process.env.GCLOUD_PROJECT || "demo-worktrack";
+
+// Guarded so importing this alongside an already-initialised app (the Cloud
+// Function case) does not throw or create a second one.
+if (!getApps().length) {
+  initializeApp({ projectId: PROJECT_ID });
+}
 const db = getFirestore();
 const auth = getAuth();
 
@@ -72,6 +134,14 @@ function gregToShamsi(date) {
 const TODAY = isoDaysAgo(0);
 const YEAR = Number(TODAY.slice(0, 4));
 
+/** Afghan progressive monthly wage tax — mirrors services/payroll.ts. */
+function afghanTax(taxable) {
+  if (taxable <= 5000) return 0;
+  if (taxable <= 12500) return Math.round((taxable - 5000) * 0.02);
+  if (taxable <= 100000) return Math.round(150 + (taxable - 12500) * 0.1);
+  return Math.round(8900 + (taxable - 100000) * 0.2);
+}
+
 /** Placeholder check-in "selfie" avatars (SVG data URLs) for the demo overview.
  *  Real captures come from the employee app's camera; these just demo the UI. */
 const SELFIE_AVATARS = ["#0a8394", "#2e7d32", "#8a5a00"].map(
@@ -102,6 +172,7 @@ const company = {
       geofencing: true,
       qrKiosk: true,
       faceRecognition: true,
+      finance: true,
     },
     policies: {
       standardDailyMinutes: 480,
@@ -161,6 +232,7 @@ const positions = [
 const employees = [
   { id: "emp_admin", employeeCode: "E-001", firstName: "احمد", lastName: "رحیمی", email: "admin@worktrack.af", dept: "dep_hr", pos: "pos_mgr", manager: null },
   { id: "emp_hr", employeeCode: "E-002", firstName: "زهرا", lastName: "نوری", email: "hr@worktrack.af", dept: "dep_hr", pos: "pos_mgr", manager: "emp_admin" },
+  { id: "emp_finance", employeeCode: "E-008", firstName: "نجیب", lastName: "امینی", email: "finance@worktrack.af", dept: "dep_hr", pos: "pos_mgr", manager: "emp_admin" },
   { id: "emp_ahmad", employeeCode: "E-003", firstName: "احمد", lastName: "کریمی", email: "ahmad@worktrack.af", dept: "dep_eng", pos: "pos_eng", manager: "emp_admin" },
   { id: "emp_fatima", employeeCode: "E-004", firstName: "فاطمه", lastName: "احمدی", email: "fatima@worktrack.af", dept: "dep_eng", pos: "pos_eng", manager: "emp_admin" },
   { id: "emp_omar", employeeCode: "E-005", firstName: "عمر", lastName: "صدیقی", email: "omar@worktrack.af", dept: "dep_eng", pos: "pos_eng", manager: "emp_admin" },
@@ -173,6 +245,7 @@ const employees = [
 const authUsers = [
   { uid: "emp_admin", email: "admin@worktrack.af", name: "احمد رحیمی", roles: ["COMPANY_ADMIN"] },
   { uid: "emp_hr", email: "hr@worktrack.af", name: "زهرا نوری", roles: ["HR_ADMIN"] },
+  { uid: "emp_finance", email: "finance@worktrack.af", name: "نجیب امینی", roles: ["FINANCE_ADMIN"] },
   { uid: "emp_ahmad", email: "ahmad@worktrack.af", name: "احمد کریمی", roles: ["EMPLOYEE"] },
 ];
 
@@ -185,16 +258,19 @@ const leaveTypes = [
 
 // BASIC comes from each employee's EmployeeSalary; these are the shared
 // earning/deduction components layered on top.
+// Income tax is now computed automatically (progressive, per Afghan law) by
+// services/payroll.ts, so it is no longer a manual component here.
 const salaryComponents = [
   { id: "sc_transport", name: "کمک‌هزینه ترانسپورت", code: "TRANSPORT", type: "EARNING", calc: "FIXED", value: 3000, taxable: false, active: true },
   { id: "sc_food", name: "کمک‌هزینه غذا", code: "FOOD", type: "EARNING", calc: "FIXED", value: 2000, taxable: false, active: true },
-  { id: "sc_tax", name: "مالیه معاش", code: "TAX", type: "DEDUCTION", calc: "PERCENT_OF_BASIC", value: 5, taxable: false, active: true },
+  { id: "sc_pension", name: "سهم کارفرما (تقاعد)", code: "PENSION_ER", type: "EMPLOYER_COST", calc: "PERCENT_OF_BASIC", value: 5, taxable: false, active: true },
 ];
 
 // Per-employee monthly basic salary (AFN). The manager (emp_admin) earns more.
 const employeeSalaries = {
   emp_admin: 45000,
   emp_hr: 35000,
+  emp_finance: 40000,
   emp_ahmad: 28000,
   emp_fatima: 26000,
   emp_omar: 25000,
@@ -455,18 +531,22 @@ async function seedPayroll() {
   const runId = `${sh.year}_${String(sh.month).padStart(2, "0")}`;
   let totalGross = 0;
   let totalNet = 0;
+  let totalTax = 0;
+  let totalEmployerCost = 0;
   let count = 0;
   for (const e of employees) {
     const basic = employeeSalaries[e.id];
     if (!basic) continue;
-    const tax = Math.round(basic * 0.05);
+    const gross = basic + 3000 + 2000;
+    const tax = afghanTax(gross);
+    const employerCost = Math.round(basic * 0.05); // 5% employer pension
     const lines = [
       { componentCode: "BASIC", componentName: "معاش اساسی", type: "EARNING", amount: basic },
       { componentCode: "TRANSPORT", componentName: "کمک‌هزینه ترانسپورت", type: "EARNING", amount: 3000 },
       { componentCode: "FOOD", componentName: "کمک‌هزینه غذا", type: "EARNING", amount: 2000 },
-      { componentCode: "TAX", componentName: "مالیه معاش", type: "DEDUCTION", amount: tax },
+      { componentCode: "TAX", componentName: "مالیهٔ معاش", type: "DEDUCTION", amount: tax },
+      { componentCode: "PENSION_ER", componentName: "سهم کارفرما (تقاعد)", type: "EMPLOYER_COST", amount: employerCost },
     ];
-    const gross = basic + 3000 + 2000;
     const net = gross - tax;
     await col("payslips").doc(`${e.id}_${runId}`).set({
       companyId: CID,
@@ -478,6 +558,9 @@ async function seedPayroll() {
       gross,
       totalDeductions: tax,
       net,
+      incomeTax: tax,
+      employerCost,
+      costToCompany: gross + employerCost,
       workedDays: 22,
       paidLeaveDays: 0,
       lopDays: 0,
@@ -489,6 +572,8 @@ async function seedPayroll() {
     });
     totalGross += gross;
     totalNet += net;
+    totalTax += tax;
+    totalEmployerCost += employerCost;
     count += 1;
   }
   await col("payrollRuns").doc(runId).set({
@@ -502,9 +587,29 @@ async function seedPayroll() {
     payslipCount: count,
     totalGross,
     totalNet,
+    totalTax,
+    totalEmployerCost,
     lockedAt: now,
     createdAt: now,
     updatedAt: now,
+  });
+
+  // Accrue this run to the general ledger so the finance module shows salary
+  // cost immediately (Dr Salaries & Wages; Cr Salaries Payable + Taxes Payable).
+  const payGross = totalGross + totalEmployerCost;
+  await col("journalEntries").doc(`je_payroll_${runId}`).set({
+    date: TODAY,
+    memo: `Payroll ${sh.year}/${String(sh.month).padStart(2, "0")}`,
+    reference: runId,
+    source: "PAYROLL",
+    lines: [
+      { accountCode: "5000", accountName: "Salaries & Wages", debit: payGross, credit: 0 },
+      { accountCode: "2100", accountName: "Salaries Payable", debit: 0, credit: payGross - totalTax },
+      { accountCode: "2200", accountName: "Taxes Payable", debit: 0, credit: totalTax },
+    ],
+    totalDebit: payGross,
+    createdBy: "emp_admin",
+    createdAt: now,
   });
 }
 
@@ -535,23 +640,113 @@ async function seedExtras() {
   });
 }
 
+async function seedFinance() {
+  // Chart of accounts (mirrors DEFAULT_ACCOUNTS in services/accounting.ts).
+  const accounts = [
+    ["1000", "Cash", "ASSET"], ["1010", "Bank", "ASSET"], ["1200", "Accounts Receivable", "ASSET"],
+    ["2000", "Accounts Payable", "LIABILITY"], ["2100", "Salaries Payable", "LIABILITY"], ["2200", "Taxes Payable", "LIABILITY"],
+    ["3000", "Owner's Equity", "EQUITY"],
+    ["4000", "Service Revenue", "INCOME"], ["4100", "Other Income", "INCOME"],
+    ["5000", "Salaries & Wages", "EXPENSE"], ["5100", "Rent", "EXPENSE"], ["5200", "Utilities", "EXPENSE"],
+    ["5300", "Office Supplies", "EXPENSE"], ["5400", "Travel & Transport", "EXPENSE"], ["5900", "Other Expenses", "EXPENSE"],
+  ];
+  for (const [code, name, type] of accounts) {
+    await col("accounts").doc(code).set({ code, name, type, active: true, createdAt: now });
+  }
+
+  // 3 months of revenue + rent for a populated income-vs-expense trend.
+  const monthIso = (m) => { const d = new Date(); d.setUTCMonth(d.getUTCMonth() - m, 15); return d.toISOString().slice(0, 10); };
+  for (const [m, amount] of [[0, 320000], [1, 280000], [2, 350000]]) {
+    const date = monthIso(m);
+    await col("journalEntries").doc(`je_rev_${m}`).set({
+      date, memo: "Project invoice", reference: null, source: "MANUAL",
+      lines: [
+        { accountCode: "1010", accountName: "Bank", debit: amount, credit: 0 },
+        { accountCode: "4000", accountName: "Service Revenue", debit: 0, credit: amount },
+      ],
+      totalDebit: amount, createdBy: "emp_finance", createdAt: now,
+    });
+    await col("journalEntries").doc(`je_rent_${m}`).set({
+      date, memo: "Monthly office rent", reference: null, source: "MANUAL",
+      lines: [
+        { accountCode: "5100", accountName: "Rent", debit: 40000, credit: 0 },
+        { accountCode: "1010", accountName: "Bank", debit: 0, credit: 40000 },
+      ],
+      totalDebit: 40000, createdBy: "emp_finance", createdAt: now,
+    });
+  }
+
+  // Expenses across the lifecycle, with matching ledger postings.
+  const expenses = [
+    { id: "exp_1", category: "utilities", vendor: "برشنا شرکت", description: "قبض برق حمل", amount: 8500, status: "PAID", accountCode: "5200" },
+    { id: "exp_2", category: "supplies", vendor: "قرطاسیه نور", description: "لوازم دفتری", amount: 4200, status: "APPROVED", accountCode: "5300" },
+    { id: "exp_3", category: "travel", vendor: "ترانسپورت کابل", description: "سفر پروژه هرات", amount: 12000, status: "DRAFT", accountCode: "5400" },
+    { id: "exp_4", category: "services", vendor: "خدمات انترنت", description: "انترنت ماهانه", amount: 6000, status: "DRAFT", accountCode: "5900" },
+  ];
+  for (const e of expenses) {
+    await col("expenses").doc(e.id).set({
+      companyId: CID, category: e.category, vendor: e.vendor, description: e.description,
+      amount: e.amount, currency: "AFN", date: TODAY, status: e.status, accountCode: e.accountCode,
+      createdBy: "emp_finance",
+      createdAt: now,
+      decidedBy: e.status === "DRAFT" ? null : "emp_finance",
+      decidedAt: e.status === "DRAFT" ? null : now,
+    });
+    if (e.status === "APPROVED" || e.status === "PAID") {
+      await col("journalEntries").doc(`je_exp_${e.id}`).set({
+        date: TODAY, memo: `Expense: ${e.vendor}`, reference: e.id, source: "EXPENSE",
+        lines: [
+          { accountCode: e.accountCode, accountName: e.category, debit: e.amount, credit: 0 },
+          { accountCode: "2000", accountName: "Accounts Payable", debit: 0, credit: e.amount },
+        ],
+        totalDebit: e.amount, createdBy: "emp_finance", createdAt: now,
+      });
+    }
+    if (e.status === "PAID") {
+      await col("journalEntries").doc(`je_exppay_${e.id}`).set({
+        date: TODAY, memo: `Payment: ${e.vendor}`, reference: e.id, source: "EXPENSE",
+        lines: [
+          { accountCode: "2000", accountName: "Accounts Payable", debit: e.amount, credit: 0 },
+          { accountCode: "1010", accountName: "Bank", debit: 0, credit: e.amount },
+        ],
+        totalDebit: e.amount, createdBy: "emp_finance", createdAt: now,
+      });
+    }
+  }
+}
+
 async function main() {
-  console.log(`Seeding demo tenant into emulators (project=${PROJECT_ID})…`);
+  // Report where the writes are actually going, not which flag was passed —
+  // when the reset scheduler imports this there is no --target, and saying
+  // "emulators" while writing to a real project would mislead anyone reading
+  // the logs afterwards.
+  const usingEmulators = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+  console.log(
+    usingEmulators
+      ? `Seeding demo tenant into emulators (project=${PROJECT_ID})…`
+      : `Seeding demo tenant into the REAL project ${PROJECT_ID}…`,
+  );
   await seedOrg();
   await seedAuth();
   await seedAttendance();
   await seedLeave();
   await seedExtras();
   await seedPayroll();
-  console.log("\n✅ Done. Sample logins (password: Passw0rd!):");
-  console.log("   admin@worktrack.af  — COMPANY_ADMIN (web portal)");
-  console.log("   hr@worktrack.af     — HR_ADMIN");
-  console.log("   ahmad@worktrack.af  — EMPLOYEE (Android app)");
+  await seedFinance();
+  console.log(`\n✅ Done. Sample logins (password: ${PASSWORD}):`);
+  console.log("   admin@worktrack.af    — COMPANY_ADMIN (web portal)");
+  console.log("   hr@worktrack.af       — HR_ADMIN");
+  console.log("   finance@worktrack.af  — FINANCE_ADMIN (finance & accounting)");
+  console.log("   ahmad@worktrack.af    — EMPLOYEE (Android app)");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error("Seed failed:", err);
-    process.exit(1);
-  });
+module.exports = { seedDemoTenant: main, CID, PASSWORD, DEMO_UIDS: authUsers.map((u) => u.uid) };
+
+if (IS_CLI) {
+  main()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Seed failed:", err);
+      process.exit(1);
+    });
+}

@@ -2,6 +2,7 @@ package app.worktrack.core.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.worktrack.core.model.CompanyFeatures
@@ -75,6 +76,15 @@ class SessionStore @Inject constructor(
         dataStore.edit { prefs -> prefs.remove(KEY_SESSION) }
     }
 
+    /** Whether the user has turned on the biometric app lock (fingerprint/face). */
+    val biometricLockEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_BIOMETRIC_LOCK] ?: false
+    }
+
+    suspend fun setBiometricLock(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_BIOMETRIC_LOCK] = enabled }
+    }
+
     private fun StoredSession.toModel() = UserSession(
         uid = uid,
         companyId = companyId,
@@ -121,5 +131,6 @@ class SessionStore @Inject constructor(
 
     private companion object {
         val KEY_SESSION = stringPreferencesKey("user_session_v1")
+        val KEY_BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock_enabled")
     }
 }

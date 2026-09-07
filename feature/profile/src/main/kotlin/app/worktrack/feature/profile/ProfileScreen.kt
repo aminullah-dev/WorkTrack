@@ -1,6 +1,9 @@
 package app.worktrack.feature.profile
 
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,11 +17,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
@@ -59,6 +65,8 @@ fun ProfileRoute(
         session = session,
         syncState = state.syncState,
         isSigningOut = state.isSigningOut,
+        biometricEnabled = state.biometricEnabled,
+        onBiometricToggle = viewModel::onBiometricToggle,
         onPayslipsClick = onPayslipsClick,
         onLanguageSelect = { language ->
             AppCompatDelegate.setApplicationLocales(
@@ -75,6 +83,8 @@ internal fun ProfileScreen(
     session: UserSession,
     syncState: SyncState?,
     isSigningOut: Boolean,
+    biometricEnabled: Boolean,
+    onBiometricToggle: (Boolean) -> Unit,
     onPayslipsClick: () -> Unit,
     onLanguageSelect: (String) -> Unit,
     onSyncNow: () -> Unit,
@@ -115,6 +125,9 @@ internal fun ProfileScreen(
         SectionHeader(stringResource(R.string.prof_language))
         LanguageRow(onLanguageSelect = onLanguageSelect)
 
+        SectionHeader(stringResource(R.string.prof_security))
+        BiometricRow(enabled = biometricEnabled, onToggle = onBiometricToggle)
+
         SectionHeader(stringResource(R.string.prof_payroll))
         WtSecondaryButton(
             text = stringResource(R.string.prof_my_payslips),
@@ -150,6 +163,46 @@ internal fun ProfileScreen(
                 .padding(horizontal = 16.dp),
             loading = isSigningOut,
         )
+    }
+}
+
+@Composable
+private fun BiometricRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    val available = remember {
+        BiometricManager.from(context).canAuthenticate(BIOMETRIC_STRONG or BIOMETRIC_WEAK) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    }
+    Card(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.prof_biometric),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = stringResource(
+                        if (available) R.string.prof_biometric_desc else R.string.prof_biometric_unavailable,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = enabled && available,
+                onCheckedChange = { if (available) onToggle(it) },
+                enabled = available,
+            )
+        }
     }
 }
 

@@ -9,6 +9,11 @@ interface AuthRepository {
     /** Emits the current session, or null when signed out. Backed by DataStore. */
     val session: Flow<UserSession?>
 
+    /** Whether the biometric app lock (fingerprint/face) is turned on. */
+    val biometricLockEnabled: Flow<Boolean>
+
+    suspend fun setBiometricLock(enabled: Boolean)
+
     /**
      * Authenticates against Firebase Auth, then resolves tenant context via
      * GET /me and persists the session locally.

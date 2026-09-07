@@ -4,7 +4,7 @@ import { ApiError, asyncHandler } from "../lib/errors";
 import { tenant, toIso } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
 import { isApprover } from "../middleware/rbac";
-import { checkIdempotency, recordIdempotency } from "../middleware/idempotency";
+import { withIdempotency } from "../middleware/idempotency";
 import { parseBody } from "../middleware/validate";
 import {
   cancelLeaveRequest,
@@ -100,26 +100,20 @@ leaveRouter.post(
     }
     const payload = parseBody(req, leaveDecisionSchema);
 
-    const idempotencyKey = req.header("Idempotency-Key");
-    if (idempotencyKey) {
-      const replay = await checkIdempotency(auth.companyId, idempotencyKey);
-      if (replay !== null) {
-        res.json({ data: replay });
-        return;
-      }
-    }
-
-    const dto = await decideLeaveRequest(
+    const { result: dto } = await withIdempotency(
       auth.companyId,
-      req.params.id,
-      auth.employeeId,
-      auth.roles,
-      payload.decision,
-      payload.note ?? null,
+      req.header("Idempotency-Key"),
+      () =>
+        decideLeaveRequest(
+          auth.companyId,
+          req.params.id,
+          auth.employeeId,
+          auth.roles,
+          payload.decision,
+          payload.note ?? null,
+        ),
     );
-    if (idempotencyKey) {
-      await recordIdempotency(auth.companyId, idempotencyKey, dto);
-    }
+
     res.json({ data: dto });
   }),
 );

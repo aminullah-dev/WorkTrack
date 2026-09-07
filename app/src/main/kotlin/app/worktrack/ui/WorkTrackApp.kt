@@ -30,7 +30,13 @@ fun WorkTrackApp(viewModel: MainViewModel = hiltViewModel()) {
             }
         }
 
-        is RootUiState.SignedIn ->
-            MainScaffold((state as RootUiState.SignedIn).session.features)
+        is RootUiState.SignedIn -> {
+            val locked by viewModel.locked.collectAsStateWithLifecycle()
+            if (locked) {
+                BiometricLockScreen(onUnlock = viewModel::onUnlocked)
+            } else {
+                MainScaffold((state as RootUiState.SignedIn).session.features)
+            }
+        }
     }
 }

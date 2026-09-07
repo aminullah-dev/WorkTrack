@@ -14,12 +14,15 @@ captures/
 
 # Secrets / environment-specific configuration (never commit)
 app/google-services.json
+app/src/demo/google-services.json
 backend/.firebaserc
 backend/functions/.env*
 backend/functions/.secret.local
 web/.env.local
 *.keystore
 *.jks
+# Holds the release signing password.
+keystore.properties
 
 # Node
 node_modules/
@@ -35,3 +38,10 @@ npm-debug.log*
 firestore-debug.log
 firebase-debug.log
 ui-debug.log
+
+# Release build output — APKs and baseline profiles. Large, regenerated
+# by every build, and never worth keeping in history.
+app/release/
+
+# Kotlin compiler scratch and error logs.
+.kotlin/

@@ -2,7 +2,9 @@ package app.worktrack.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.worktrack.core.domain.usecase.auth.ObserveBiometricLockUseCase
 import app.worktrack.core.domain.usecase.auth.ObserveSessionUseCase
+import app.worktrack.core.domain.usecase.auth.SetBiometricLockUseCase
 import app.worktrack.core.domain.usecase.auth.SignOutUseCase
 import app.worktrack.core.domain.usecase.sync.ObserveSyncStateUseCase
 import app.worktrack.core.domain.usecase.sync.TriggerSyncUseCase
@@ -20,12 +22,15 @@ data class ProfileUiState(
     val session: UserSession? = null,
     val syncState: SyncState? = null,
     val isSigningOut: Boolean = false,
+    val biometricEnabled: Boolean = false,
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     observeSession: ObserveSessionUseCase,
     observeSyncState: ObserveSyncStateUseCase,
+    observeBiometricLock: ObserveBiometricLockUseCase,
+    private val setBiometricLock: SetBiometricLockUseCase,
     private val signOut: SignOutUseCase,
     private val triggerSync: TriggerSyncUseCase,
 ) : ViewModel() {
@@ -36,13 +41,23 @@ class ProfileViewModel @Inject constructor(
         observeSession(),
         observeSyncState(),
         signingOut,
-    ) { session, syncState, isSigningOut ->
-        ProfileUiState(session = session, syncState = syncState, isSigningOut = isSigningOut)
+        observeBiometricLock(),
+    ) { session, syncState, isSigningOut, biometricEnabled ->
+        ProfileUiState(
+            session = session,
+            syncState = syncState,
+            isSigningOut = isSigningOut,
+            biometricEnabled = biometricEnabled,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ProfileUiState(),
     )
+
+    fun onBiometricToggle(enabled: Boolean) {
+        viewModelScope.launch { setBiometricLock(enabled) }
+    }
 
     fun onSyncNow() = triggerSync()
 

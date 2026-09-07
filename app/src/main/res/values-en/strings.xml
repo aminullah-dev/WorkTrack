@@ -5,4 +5,8 @@
     <string name="nav_attendance">Attendance</string>
     <string name="nav_leave">Leave</string>
     <string name="nav_profile">Profile</string>
+    <string name="biometric_lock_title">Locked</string>
+    <string name="biometric_lock_subtitle">Verify your fingerprint to open the app</string>
+    <string name="biometric_lock_unlock">Unlock</string>
+    <string name="biometric_lock_cancel">Cancel</string>
 </resources>

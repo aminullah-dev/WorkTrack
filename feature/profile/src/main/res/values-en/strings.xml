@@ -31,4 +31,8 @@
     <string name="prof_lang_dari">دری</string>
     <string name="prof_lang_pashto">پښتو</string>
     <string name="prof_lang_english">English</string>
+    <string name="prof_security">Security</string>
+    <string name="prof_biometric">Fingerprint unlock</string>
+    <string name="prof_biometric_desc">Require your fingerprint to open the app</string>
+    <string name="prof_biometric_unavailable">No fingerprint is set up on this device</string>
 </resources>

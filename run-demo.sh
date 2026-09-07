@@ -49,7 +49,7 @@ cd "$ROOT/web"
 echo "==> Starting emulators, seeding data, and launching the portal…"
 echo "    (first start takes ~20s; the portal URL will be printed below)"
 echo ""
-cd "$ROOT/backend"
+cd "$ROOT"
 firebase emulators:exec \
   --project demo-worktrack \
   --only functions,firestore,auth \

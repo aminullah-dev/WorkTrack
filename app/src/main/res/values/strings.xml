@@ -6,4 +6,8 @@
     <string name="nav_attendance">حاضری</string>
     <string name="nav_leave">رخصتی</string>
     <string name="nav_profile">پروفایل</string>
+    <string name="biometric_lock_title">قفل امنیتی</string>
+    <string name="biometric_lock_subtitle">برای ورود به برنامه اثر انگشت خود را تأیید کنید</string>
+    <string name="biometric_lock_unlock">باز کردن قفل</string>
+    <string name="biometric_lock_cancel">لغو</string>
 </resources>

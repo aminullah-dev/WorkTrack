@@ -14,7 +14,7 @@
     "seed": "node seed.js",
     "deploy": "firebase deploy --only functions",
     "typecheck": "tsc --noEmit",
-    "test:integration": "firebase emulators:exec --only firestore --project demo-worktrack \"vitest run\"",
+    "test:integration": "firebase emulators:exec --only firestore,auth --project demo-worktrack \"vitest run\"",
     "test": "vitest run"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { getAuth } from "firebase-admin/auth";
-import { ApiError } from "../lib/errors";
+import { ApiError, ErrorCodes } from "../lib/errors";
 
 /** Tenant/identity context resolved from verified Firebase custom claims. */
 export interface AuthContext {
@@ -45,6 +45,19 @@ export async function requireAuth(
     if (!cid || !eid) {
       // An account without tenant claims is not provisioned as an employee.
       throw ApiError.permissionDenied("Account is not provisioned for any company");
+    }
+
+    // Self-signup company admins stay gated until they prove they own the
+    // address they signed up with — otherwise anyone could stand up a workspace
+    // under someone else's email. Accounts an admin creates for staff carry no
+    // `sv` claim, and neither does any account that existed before this shipped,
+    // so nobody in the field is affected.
+    if (decoded.sv === true && decoded.email_verified !== true) {
+      throw new ApiError(
+        403,
+        ErrorCodes.EMAIL_NOT_VERIFIED,
+        "Verify your email address to finish setting up your company",
+      );
     }
 
     req.auth = {

@@ -19,7 +19,9 @@ import app.worktrack.core.domain.repository.FaceRepository
 import app.worktrack.core.domain.repository.LeaveRepository
 import app.worktrack.core.domain.repository.PayslipRepository
 import app.worktrack.core.domain.repository.SyncRepository
+import app.worktrack.core.data.device.StoredDeviceIdProvider
 import app.worktrack.core.network.auth.AuthTokenProvider
+import app.worktrack.core.network.device.DeviceIdProvider
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Binds
 import dagger.Module
@@ -40,6 +42,8 @@ interface DataModule {
     @Binds fun bindAnnouncementRepository(impl: AnnouncementRepositoryImpl): AnnouncementRepository
     @Binds fun bindSyncRepository(impl: SyncRepositoryImpl): SyncRepository
     @Binds fun bindAuthTokenProvider(impl: FirebaseAuthTokenProvider): AuthTokenProvider
+
+    @Binds fun bindDeviceIdProvider(impl: StoredDeviceIdProvider): DeviceIdProvider
     @Binds fun bindTimeProvider(impl: SystemTimeProvider): TimeProvider
     @Binds fun bindDispatcherProvider(impl: DefaultDispatcherProvider): DispatcherProvider
 

@@ -4,3 +4,6 @@ dist/
 .env.local
 *.local
 *.tsbuildinfo
+
+# The demo build, produced by `npm run build -- --mode demo`.
+dist-demo

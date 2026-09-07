@@ -4,6 +4,7 @@ import app.worktrack.core.common.id.Ulid
 import app.worktrack.core.common.time.TimeProvider
 import app.worktrack.core.database.dao.OutboxDao
 import app.worktrack.core.database.entity.OutboxEntryEntity
+import app.worktrack.core.domain.repository.SyncScheduler
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 class OutboxWriter @Inject constructor(
     private val outboxDao: OutboxDao,
     private val timeProvider: TimeProvider,
+    private val syncScheduler: SyncScheduler,
 ) {
 
     suspend fun enqueue(
@@ -37,5 +39,9 @@ class OutboxWriter @Inject constructor(
                 queuedAt = timeProvider.now(),
             ),
         )
+        // Push immediately so a punch (or any mutation) reaches the server right
+        // away instead of waiting for the ~15-min periodic sync window. The
+        // scheduler de-dupes concurrent requests (APPEND_OR_REPLACE).
+        syncScheduler.requestImmediateSync()
     }
 }

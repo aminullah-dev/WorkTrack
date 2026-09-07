@@ -9,4 +9,6 @@ android {
 dependencies {
     // AppCompatDelegate drives the in-app language switch (Dari/Pashto/English).
     implementation(libs.androidx.appcompat)
+    // BiometricManager.canAuthenticate() to gate the fingerprint-lock toggle.
+    implementation(libs.androidx.biometric)
 }

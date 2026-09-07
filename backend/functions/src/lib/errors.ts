@@ -16,6 +16,11 @@ export const ErrorCodes = {
   UNSUPPORTED_RESOURCE: "UNSUPPORTED_RESOURCE",
   CONFLICT: "CONFLICT",
   RATE_LIMITED: "RATE_LIMITED",
+  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
+  LICENSE_INACTIVE: "LICENSE_INACTIVE",
+  LICENSE_LIMIT_REACHED: "LICENSE_LIMIT_REACHED",
+  DEVICE_REVOKED: "DEVICE_REVOKED",
+  DEVICE_NOT_ACTIVATED: "DEVICE_NOT_ACTIVATED",
   INTERNAL: "INTERNAL",
 } as const;
 
@@ -28,6 +33,8 @@ export class ApiError extends Error {
     readonly code: ErrorCode,
     readonly detail: string,
     readonly fieldErrors: Record<string, string> = {},
+    /** Seconds until the caller may retry; emitted as the Retry-After header. */
+    readonly retryAfterSeconds?: number,
   ) {
     super(detail);
   }
@@ -51,10 +58,18 @@ export class ApiError extends Error {
   static business(code: ErrorCode, detail: string): ApiError {
     return new ApiError(422, code, detail);
   }
+
+  static rateLimited(detail: string, retryAfterSeconds: number): ApiError {
+    return new ApiError(429, ErrorCodes.RATE_LIMITED, detail, {}, retryAfterSeconds);
+  }
 }
 
 /** RFC 7807 problem+json responder. */
 export function sendProblem(res: Response, error: ApiError): void {
+  // Tells a well-behaved client how long to wait instead of retrying at once.
+  if (error.retryAfterSeconds !== undefined) {
+    res.set("Retry-After", String(error.retryAfterSeconds));
+  }
   res
     .status(error.status)
     .type("application/problem+json")

@@ -14,6 +14,7 @@ data class MeDto(
     val roles: List<String> = emptyList(),
     val branchIds: List<String> = emptyList(),
     val features: MeFeaturesDto = MeFeaturesDto(),
+    val faceEnrolled: Boolean = false,
 )
 
 /** Company module toggles (defaults on so older servers don't hide anything). */
