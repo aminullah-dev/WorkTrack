@@ -373,6 +373,8 @@ export interface PayrollRunResult {
   periodComplete?: boolean;
   /** Active employees left out of the run because they have no salary on file. */
   skippedNoSalary?: Array<{ employeeId: string; name: string }>;
+  /** People marked as having left who nonetheless worked in this period. */
+  skippedExited?: Array<{ employeeId: string; name: string }>;
 }
 
 export interface RunPayslipRow {

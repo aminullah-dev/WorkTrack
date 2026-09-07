@@ -12,7 +12,7 @@ import {
   decideLeaveRequest,
   leaveCreateSchema,
   leaveDecisionSchema,
-  leaveRequestToDto,
+  listLeaveRequests,
 } from "../services/leave";
 
 export const leaveRouter = Router();
@@ -59,24 +59,12 @@ leaveRouter.get(
     const auth = authOf(req);
     const scope = String(req.query.scope ?? "mine");
 
-    const query =
-      scope === "approvals"
-        ? tenant(auth.companyId, "leaveRequests")
-            .where("currentApproverId", "==", auth.employeeId)
-            .limit(200)
-        : tenant(auth.companyId, "leaveRequests")
-            .where("employeeId", "==", auth.employeeId)
-            .limit(200);
-
     if (scope === "approvals" && !isApprover(auth.roles)) {
       throw ApiError.permissionDenied("Requires leave:approve");
     }
 
-    const snapshot = await query.get();
     res.json({
-      data: snapshot.docs.map((doc) =>
-        leaveRequestToDto(doc.id, doc.data() as Parameters<typeof leaveRequestToDto>[1]),
-      ),
+      data: await listLeaveRequests(auth.companyId, auth.employeeId, auth.roles, scope),
     });
   }),
 );

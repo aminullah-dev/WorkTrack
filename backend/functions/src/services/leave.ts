@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
+import { canDecideAnyRequest } from "../middleware/rbac";
 import { isValidUlid } from "../lib/ids";
 import { audit, db, nowTimestamp, tenant, toIso } from "../lib/firestore";
 
@@ -85,6 +86,34 @@ export function calculateDays(payload: LeaveCreate): number {
  * reserves pendingDays, and routes to the employee's manager for approval.
  * Idempotent on the client-generated ULID.
  */
+/**
+ * The requests a person may act on.
+ *
+ * "mine" is the caller's own history. "approvals" is the queue, and it must
+ * agree with decideLeaveRequest about who may act: an administrator may decide
+ * any pending request, so an administrator sees every pending request. Anyone
+ * else sees only what was routed to them, which happens only when the employee
+ * has a manager — a field the portal has no input for, so in most companies
+ * nothing is routed anywhere and only the administrator view is populated.
+ */
+export async function listLeaveRequests(
+  cid: string,
+  employeeId: string,
+  roles: string[],
+  scope: string,
+): Promise<Array<Record<string, unknown>>> {
+  const col = tenant(cid, "leaveRequests");
+  const query =
+    scope !== "approvals"
+      ? col.where("employeeId", "==", employeeId).limit(200)
+      : canDecideAnyRequest(roles)
+        ? col.where("status", "==", "PENDING").limit(200)
+        : col.where("currentApproverId", "==", employeeId).limit(200);
+
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) => leaveRequestToDto(doc.id, doc.data() as LeaveRequestDoc));
+}
+
 export async function createLeaveRequest(
   cid: string,
   employeeId: string,

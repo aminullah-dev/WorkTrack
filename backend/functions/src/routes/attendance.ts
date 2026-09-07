@@ -17,7 +17,7 @@ import {
   decideRegularization,
   regularizationCreateSchema,
   regularizationDecisionSchema,
-  regularizationToDto,
+  listRegularizations,
 } from "../services/regularization";
 import { kioskSecret } from "../config";
 
@@ -117,19 +117,8 @@ attendanceRouter.get(
     if (scope === "approvals" && !hasPermission(auth.roles, "attendance:approve")) {
       throw ApiError.permissionDenied("Requires attendance:approve");
     }
-    const query =
-      scope === "approvals"
-        ? tenant(auth.companyId, "regularizations")
-            .where("currentApproverId", "==", auth.employeeId)
-            .limit(200)
-        : tenant(auth.companyId, "regularizations")
-            .where("employeeId", "==", auth.employeeId)
-            .limit(200);
-    const snapshot = await query.get();
     res.json({
-      data: snapshot.docs.map((doc) =>
-        regularizationToDto(doc.id, doc.data() as Parameters<typeof regularizationToDto>[1]),
-      ),
+      data: await listRegularizations(auth.companyId, auth.employeeId, auth.roles, scope),
     });
   }),
 );

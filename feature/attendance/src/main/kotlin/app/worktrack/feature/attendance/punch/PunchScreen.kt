@@ -42,6 +42,11 @@ import app.worktrack.core.designsystem.l10n.localizedMessage
 import app.worktrack.core.model.PunchType
 import app.worktrack.feature.attendance.R
 
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
+
 @Composable
 fun PunchRoute(
     onBack: () -> Unit,
@@ -56,21 +61,29 @@ fun PunchRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
+    // FINE and COARSE must be asked for together. An app targeting SDK 31 or
+    // later that requests FINE on its own has the request dropped outright:
+    // no dialog appears and nothing is granted, so check-in would simply never
+    // get a location on Android 12 and every version since. targetSdk is 35.
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { grants ->
+        // Coarse alone is enough to punch — the geofence radius is far wider
+        // than its error. Refusing a check-in because the employee granted
+        // "approximate" would be a worse outcome than a slightly vaguer point.
+        val granted = grants[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) viewModel.onLocationPermissionGranted() else viewModel.onLocationPermissionDenied()
     }
 
     LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
+        val granted = LOCATION_PERMISSIONS.any {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
         if (granted) {
             viewModel.onLocationPermissionGranted()
         } else {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            permissionLauncher.launch(LOCATION_PERMISSIONS)
         }
     }
 
@@ -108,7 +121,7 @@ fun PunchRoute(
             // optional action so a finicky match never blocks attendance.
             onPunch = viewModel::onPunch,
             onRetryLocation = {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                permissionLauncher.launch(LOCATION_PERMISSIONS)
             },
             onScanQr = onScanQr,
             faceRequired = faceRequired,

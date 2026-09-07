@@ -24,12 +24,14 @@ export function PayrollPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const [skipped, setSkipped] = useState<Array<{ employeeId: string; name: string }>>([]);
+  const [exited, setExited] = useState<Array<{ employeeId: string; name: string }>>([]);
 
   async function onRun() {
     const result = await runPayroll.mutateAsync({ periodYear: year, periodMonth: month });
     // People with no salary configured earn nothing and produce no payslip.
     // A run that quietly leaves them out looks complete and is not.
     setSkipped(result.skippedNoSalary ?? []);
+    setExited(result.skippedExited ?? []);
     setToast(t("pay_run_done", num(result.payslipCount)));
     window.setTimeout(() => setToast(null), 2800);
   }
@@ -74,6 +76,18 @@ export function PayrollPage() {
           </div>
         )}
       </div>
+
+      {exited.length > 0 && (
+        <div className="notice-warning">
+          <strong>{t("pay_exited_title", num(exited.length))}</strong>
+          <p>{t("pay_exited_body")}</p>
+          <ul>
+            {exited.map((e) => (
+              <li key={e.employeeId}>{e.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {skipped.length > 0 && (
         <div className="notice-warning">

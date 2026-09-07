@@ -414,6 +414,36 @@ describe.skipIf(!EMULATOR)("payroll — the working calendar", () => {
     expect(run.skippedNoSalary.map((s) => s.employeeId)).toEqual(["e2"]);
   });
 
+  it("flags someone who worked this month and was then marked as having left", async () => {
+    // Payroll only pays ACTIVE employees. Marking a leaver EXITED before the
+    // final run therefore erases their last month's pay in silence.
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e_gone");
+    await salary("e_gone", 20000);
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e_gone", d);
+    }
+    await tenant(cid, "employees").doc("e_gone").set({ status: "EXITED" }, { merge: true });
+
+    const run = await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(run.payslipCount).toBe(1);
+    expect(run.skippedExited.map((s) => s.employeeId)).toEqual(["e_gone"]);
+  });
+
+  it("does not flag a leaver who did not work in the period", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    for (const d of eachWorkingDay()) await present("e1", d);
+    await employee("e_old");
+    await tenant(cid, "employees").doc("e_old").set({ status: "EXITED" }, { merge: true });
+
+    const run = await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+    expect(run.skippedExited).toEqual([]);
+  });
+
   it("does not dock days that have not happened yet", async () => {
     // Payroll walks the month's expected working days, so running the month
     // that is still in progress used to charge every day from today to the end

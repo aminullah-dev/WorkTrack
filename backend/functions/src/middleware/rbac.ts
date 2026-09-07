@@ -91,6 +91,17 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
   KIOSK: new Set(["kiosk:issue"]),
 };
 
+/**
+ * Whether these roles may decide any pending request, not only the ones routed
+ * to them. Mirrors the check inside decideLeaveRequest and decideRegularization
+ * — the approvals queue and the decision must agree on who may act, or the
+ * queue shows an empty list to somebody the server would happily let approve.
+ */
+export function canDecideAnyRequest(roles: string[]): boolean {
+  return roles.includes("HR_ADMIN") || roles.includes("COMPANY_ADMIN") ||
+    roles.includes("SUPER_ADMIN");
+}
+
 export function hasPermission(roles: string[], permission: string): boolean {
   return roles.some((role) => {
     const granted = ROLE_PERMISSIONS[role];

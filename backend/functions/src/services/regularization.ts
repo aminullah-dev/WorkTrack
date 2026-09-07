@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { canDecideAnyRequest } from "../middleware/rbac";
 import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { isValidUlid } from "../lib/ids";
@@ -56,6 +57,32 @@ export function regularizationToDto(id: string, d: RegularizationDoc): Record<st
 }
 
 /** Employee-filed request to correct a day's attendance. Idempotent on the ULID. */
+/**
+ * Corrections a person may act on. Mirrors listLeaveRequests, and for the same
+ * reason: decideRegularization lets an administrator decide any correction, so
+ * the queue must show an administrator every pending correction. Otherwise the
+ * card never appears and the uncorrected days are paid as absence.
+ */
+export async function listRegularizations(
+  cid: string,
+  employeeId: string,
+  roles: string[],
+  scope: string,
+): Promise<Array<Record<string, unknown>>> {
+  const col = tenant(cid, "regularizations");
+  const query =
+    scope !== "approvals"
+      ? col.where("employeeId", "==", employeeId).limit(200)
+      : canDecideAnyRequest(roles)
+        ? col.where("status", "==", "PENDING").limit(200)
+        : col.where("currentApproverId", "==", employeeId).limit(200);
+
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) =>
+    regularizationToDto(doc.id, doc.data() as RegularizationDoc),
+  );
+}
+
 export async function createRegularization(
   cid: string,
   employeeId: string,

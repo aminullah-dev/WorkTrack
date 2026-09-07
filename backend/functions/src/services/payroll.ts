@@ -49,6 +49,8 @@ export interface PayrollRunResult {
   totalEmployerCost: number;
   /** Active employees left out because they have no salary configured. */
   skippedNoSalary: Array<{ employeeId: string; name: string }>;
+  /** People marked EXITED who nonetheless worked in this period and were paid nothing. */
+  skippedExited: Array<{ employeeId: string; name: string }>;
   /**
    * False when the period had not ended yet at the time of the run, so the
    * figures cover only the days elapsed so far and will change if it is run
@@ -102,8 +104,10 @@ export async function computePayrollRun(
   const toIso = shamsiMonthEndIso(periodYear, periodMonth);
   const runId = `${periodYear}_${String(periodMonth).padStart(2, "0")}`;
 
-  const [employeesSnap, componentsSnap, settings, holidays] = await Promise.all([
+  const [employeesSnap, formerSnap, componentsSnap, settings, holidays] = await Promise.all([
     tenant(cid, "employees").where("status", "==", "ACTIVE").get(),
+    // Only to warn about, never to pay: see the check after the run.
+    tenant(cid, "employees").where("status", "==", "EXITED").get(),
     tenant(cid, "salaryComponents").where("active", "==", true).get(),
     getSettings(cid),
     holidaySet(cid, fromIso, toIso),
@@ -304,6 +308,26 @@ export async function computePayrollRun(
     payslipCount += 1;
   }
 
+  // Someone marked EXITED is not paid — but if they worked in this period, the
+  // run has just left a person who turned up with nothing at all, and says so
+  // nowhere. This does not pay them; it makes them impossible to miss. The way
+  // out is to set them ACTIVE, run the month again, then mark them EXITED.
+  const workedThenLeft: Array<{ employeeId: string; name: string }> = [];
+  for (const doc of formerSnap.docs) {
+    const worked = await tenant(cid, "attendanceDays")
+      .where("employeeId", "==", doc.id)
+      .where("date", ">=", fromIso)
+      .where("date", "<=", toIso)
+      .limit(1)
+      .get();
+    if (worked.empty) continue;
+    const e = doc.data() as { firstName?: string; lastName?: string };
+    workedThenLeft.push({
+      employeeId: doc.id,
+      name: `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim() || doc.id,
+    });
+  }
+
   await tenant(cid, "payrollRuns").doc(runId).set({
     companyId: cid,
     periodYear,
@@ -312,6 +336,7 @@ export async function computePayrollRun(
     // A run for a month still in progress is a preview, not the final word.
     periodComplete,
     skippedNoSalary: skipped,
+    skippedExited: workedThenLeft,
     startedBy,
     approvedBy: startedBy,
     currency,
@@ -395,5 +420,6 @@ export async function computePayrollRun(
     totalEmployerCost: round2(totalEmployerCost),
     periodComplete,
     skippedNoSalary: skipped,
+    skippedExited: workedThenLeft,
   };
 }
