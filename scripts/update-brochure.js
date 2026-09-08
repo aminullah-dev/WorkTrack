@@ -17,26 +17,28 @@
  * failure mode to avoid is a page that is neither the old version nor the new.
  *
  * ---------------------------------------------------------------------------
- * CURRENT EDIT SET (2026-09-08): work assignment.
+ * APPLIED 2026-09-08, in two passes.
  *
- * The claims here are deliberately PORTAL-ONLY. The employee half of this
- * feature is built and the server is live, but it reaches a worker's phone only
- * in a signed APK, and none has been released yet. Saying "staff open the app
- * and see what they are on" today would be false on the day it was published.
+ * Pass 1 (the set below) added the work-assignment feature card and a portal
+ * bullet, in all three languages. Its claims stopped at the portal on purpose:
+ * the employee half was built and the server live, but it only reaches a
+ * worker's phone in a signed APK, and none had shipped. Saying "staff open the
+ * app" that morning would have been false that morning.
  *
- * WHEN THE SIGNED APK SHIPS, a second small edit makes the page whole:
- *
- *   1. add to each app list, after the payslips line —
+ * Pass 2 ran once WorkTrack 1.1.0 was published and verified on the download
+ * page. It added the app bullet to each list —
  *      EN  <li><span>Today&rsquo;s work, and the next working day</span></li>
  *      FA  <li><span>کار امروز، و روز کاری بعد</span></li>
  *      PS  <li><span>د نن کار، او راتلونکې کاري ورځ</span></li>
+ * and put the phone into the card body, replacing the clause that began "The
+ * portal shows" so it now reads "Staff open the app and see what they are on;
+ * the portal shows …". Both passes are live.
  *
- *   2. in the feature card body, replace "The portal shows" with wording that
- *      puts it on the phone too. Until then it says what is true.
+ * The sets are kept here as a record of the published wording. Re-running them
+ * reports "wording drifted", which is the assertion doing its job, not a fault.
  *
- * A previous set (per-person allowances, the licence sentence, the download
- * button) was applied on 2026-09-07 and has been removed from this file; its
- * assertions would now report as drifted, which is correct but noisy.
+ * An earlier set (per-person allowances, the licence sentence, the download
+ * button) was applied on 2026-09-07 and is not reproduced here.
  * ---------------------------------------------------------------------------
  */
 
