@@ -24,7 +24,7 @@ pod.)
 
 ## What works
 
-Sign in, and "your work" — today and the next working day, with the project,
+Three tabs — work, leave, pay. Sign in, and "your work" — today and the next working day, with the project,
 the place, who else is on the job, and reporting progress on your own task. It
 talks to the live demo backend (`Backend.current` in `Core/Environment.swift`).
 
@@ -77,4 +77,4 @@ every Simulator — rather than falling back to the photo library, because
 choosing an existing image would let one worker check another in by
 photographing a photograph.
 
-After that: regularisation requests, and payslips.
+After that: regularisation requests (asking a manager to correct a day).

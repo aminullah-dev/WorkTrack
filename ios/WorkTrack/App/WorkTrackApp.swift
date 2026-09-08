@@ -32,9 +32,26 @@ struct RootView: View {
             case .signedOut:
                 SignInView()
             case .signedIn:
-                MyWorkView(client: auth.client)
+                SignedInTabs(client: auth.client)
             }
         }
         .task { await auth.start() }
+    }
+}
+
+/// The three things an employee comes here for: what they are doing, time off,
+/// and what they were paid. Nothing a manager does is in this app.
+struct SignedInTabs: View {
+    let client: ApiClient
+
+    var body: some View {
+        TabView {
+            MyWorkView(client: client)
+                .tabItem { Label(L.t("tab_work"), systemImage: "hammer.fill") }
+            LeaveView(client: client)
+                .tabItem { Label(L.t("tab_leave"), systemImage: "airplane") }
+            PayslipsView(client: client)
+                .tabItem { Label(L.t("tab_pay"), systemImage: "banknote.fill") }
+        }
     }
 }
