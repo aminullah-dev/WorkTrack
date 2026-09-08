@@ -85,15 +85,18 @@ struct SignedInTabs: View {
     var body: some View {
         TabView {
             MyWorkView(client: client, attendance: attendance, cache: cache)
-                .tabItem { Label(L.t("tab_work"), systemImage: "hammer.fill") }
+                // A checklist, not a hammer. This is an office product that
+                // happens to be used on sites; a tool icon narrows it to
+                // manual trades and reads wrong to every other customer.
+                .tabItem { Label(L.t("tab_work"), systemImage: "checklist") }
             AttendanceHistoryView(client: client)
                 .tabItem { Label(L.t("tab_history"), systemImage: "clock.fill") }
             LeaveView(client: client)
-                .tabItem { Label(L.t("tab_leave"), systemImage: "airplane") }
+                .tabItem { Label(L.t("tab_leave"), systemImage: "calendar") }
             PayslipsView(client: client)
-                .tabItem { Label(L.t("tab_pay"), systemImage: "banknote.fill") }
+                .tabItem { Label(L.t("tab_pay"), systemImage: "doc.text.fill") }
             ProfileView(attendance: attendance, lock: lock)
-                .tabItem { Label(L.t("tab_profile"), systemImage: "person.fill") }
+                .tabItem { Label(L.t("tab_profile"), systemImage: "person.crop.circle.fill") }
         }
     }
 }

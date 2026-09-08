@@ -60,6 +60,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.worktrack
         GENERATE_INFOPLIST_FILE: NO
+        # The clock mark from the Android launcher, same colour — one product,
+        # recognisable on a desk with both phones on it. See make-appicon.py.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   WorkTrackTests:
     type: bundle.unit-test

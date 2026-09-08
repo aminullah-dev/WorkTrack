@@ -41,6 +41,10 @@ Core ML conversion, would land in a different vector space, and the server
 compares against whatever the *enrolling* phone produced. Core TFLite for iOS
 is still CocoaPods-first, so that is why a Podfile exists at all.
 
+**The icon is generated, not drawn.** `make-appicon.py` renders the same clock
+mark the Android launcher uses, on the same #006874, so the two apps are one
+product on a desk with both phones on it. Regenerate rather than editing a PNG.
+
 **No Firebase SDK.** Sign-in and token refresh are two POSTs
 (`Auth/FirebaseAuthREST.swift`), so the project stays buildable from a
 checked-in spec with no package resolution. The SDK arrives if push
