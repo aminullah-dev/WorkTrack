@@ -48,6 +48,8 @@ struct SignedInTabs: View {
         TabView {
             MyWorkView(client: client)
                 .tabItem { Label(L.t("tab_work"), systemImage: "hammer.fill") }
+            AttendanceHistoryView(client: client)
+                .tabItem { Label(L.t("tab_history"), systemImage: "clock.fill") }
             LeaveView(client: client)
                 .tabItem { Label(L.t("tab_leave"), systemImage: "airplane") }
             PayslipsView(client: client)

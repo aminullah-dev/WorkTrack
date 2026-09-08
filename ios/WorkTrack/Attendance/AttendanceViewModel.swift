@@ -194,7 +194,7 @@ final class AttendanceViewModel: ObservableObject {
         iso.formatOptions = [.withInternetDateTime]
         today = AttendanceDay(
             date: today?.date ?? "",
-            status: "PRESENT",
+            status: .present,
             firstInAt: today?.firstInAt ?? iso.string(from: punch.punchedAt),
             lastOutAt: nil,
             workedMinutes: today?.workedMinutes ?? 0
