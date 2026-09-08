@@ -1580,3 +1580,31 @@ table.data tbody tr:hover {
   font-weight: 600;
   color: var(--text-muted);
 }
+
+/* One employee's components. Lives in a ~340px dialog, so the row wraps rather
+   than scrolling sideways — the amount field must always be reachable. */
+.empc-list { list-style: none; margin: 0; padding: 0; }
+
+.empc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.empc-row:last-child { border-bottom: none; }
+
+.empc-name { min-width: 150px; flex: 1 1 150px; }
+
+.empc-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.empc-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+.empc-amount { width: 110px; }

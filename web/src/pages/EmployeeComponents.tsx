@@ -118,62 +118,53 @@ export function EmployeeComponents({ employeeId }: { employeeId: string | null }
       <h3 className="comp-group">{t("empc_title")}</h3>
       <p className="section-hint">{t("empc_hint")}</p>
 
-      <div className="table-wrap" style={{ boxShadow: "none", border: "none" }}>
-        <table className="data">
-          <thead>
-            <tr>
-              <th>{t("comp_name")}</th>
-              <th>{t("empc_applies")}</th>
-              <th>{t("empc_amount")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {all.map((c) => {
-              const a = byId.get(c.id);
-              const on = applies(c, a);
-              const shown = draft[c.id] ?? (a?.value != null ? String(a.value) : "");
-              return (
-                <tr key={c.id}>
-                  <td>
-                    <div>{c.name}</div>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      {t(`comp_type_${c.type.toLowerCase()}`)} ·{" "}
-                      {appliesByDefault(c) ? t("empc_all_note") : t("empc_individual_note")} ·{" "}
-                      {c.calc === "FIXED"
-                        ? `${num(c.value)} ${t("comp_afn")}`
-                        : `${num(c.value)}٪`}
-                    </div>
-                  </td>
-                  <td>
-                    <Switch
-                      checked={on}
-                      onChange={(v) => void toggle(c, v)}
-                      label={`${t("empc_applies")} — ${c.name}`}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="input"
-                      type="number"
-                      min={0}
-                      dir="ltr"
-                      style={{ maxWidth: 130 }}
-                      disabled={!on}
-                      placeholder={
-                        c.calc === "FIXED" ? String(c.value) : `${c.value}٪`
-                      }
-                      value={shown}
-                      onChange={(e) => setDraft({ ...draft, [c.id]: e.target.value })}
-                      onBlur={() => void commitAmount(c)}
-                      aria-label={`${t("empc_amount")} — ${c.name}`}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Not a table. This sits inside the employee dialog, which is ~340px
+          wide whatever the viewport is, and a three-column table there pushed
+          the amount field — the point of the whole section — out of view at
+          44px. A wrapping row survives any container width. */}
+      <ul className="empc-list">
+        {all.map((c) => {
+          const a = byId.get(c.id);
+          const on = applies(c, a);
+          const shown = draft[c.id] ?? (a?.value != null ? String(a.value) : "");
+          return (
+            <li key={c.id} className="empc-row">
+              <div className="empc-name">
+                <div>{c.name}</div>
+                <div className="muted" style={{ fontSize: 12 }}>
+                  {t(`comp_type_${c.type.toLowerCase()}`)} ·{" "}
+                  {appliesByDefault(c) ? t("empc_all_note") : t("empc_individual_note")} ·{" "}
+                  {c.calc === "FIXED" ? `${num(c.value)} ${t("comp_afn")}` : `${num(c.value)}٪`}
+                </div>
+              </div>
+
+              <div className="empc-controls">
+                <label className="empc-toggle">
+                  <Switch
+                    checked={on}
+                    onChange={(v) => void toggle(c, v)}
+                    label={`${t("empc_applies")} — ${c.name}`}
+                  />
+                  <span>{t("empc_applies")}</span>
+                </label>
+
+                <input
+                  className="input empc-amount"
+                  type="number"
+                  min={0}
+                  dir="ltr"
+                  disabled={!on}
+                  placeholder={c.calc === "FIXED" ? String(c.value) : `${c.value}٪`}
+                  value={shown}
+                  onChange={(e) => setDraft({ ...draft, [c.id]: e.target.value })}
+                  onBlur={() => void commitAmount(c)}
+                  aria-label={`${t("empc_amount")} — ${c.name}`}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
       <p className="hint" style={{ marginTop: 10 }}>
         {t("empc_default_hint")} · {t("comp_rerun_hint")}
