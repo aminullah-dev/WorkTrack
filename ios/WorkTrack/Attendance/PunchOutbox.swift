@@ -19,6 +19,11 @@ struct QueuedPunch: Codable, Equatable, Identifiable {
     /// Failed attempts, kept only so a permanently rejected punch can be given
     /// up on rather than retried until the end of time.
     var attempts: Int = 0
+    /// Present when the punch was face-verified. The server re-checks the
+    /// signature and derives `faceVerified` itself; a client claim is ignored.
+    var faceToken: String?
+
+    var method: String { faceToken == nil ? "GPS" : "FACE" }
 }
 
 /// The queue of punches that have not reached the server yet.

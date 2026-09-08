@@ -29,7 +29,17 @@ enum Keychain {
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let status = SecItemAdd(query as CFDictionary, nil)
         if status != errSecSuccess {
-            assertionFailure("Keychain write failed for \(key): OSStatus \(status)")
+            // Logged, not fatal. assertionFailure was wrong twice over: it
+            // kills the app on a real phone where the Keychain can genuinely
+            // be unavailable — locked before first unlock, or storage full —
+            // and it compiles out of a release build, so the silent failure
+            // this exists to prevent would come straight back in the build
+            // customers actually run.
+            //
+            // The caller decides what a failed write means. For a refresh
+            // token it means "this session will not survive a relaunch",
+            // which is survivable; being unable to open the app is not.
+            print("[WorkTrack] Keychain write failed for \(key): OSStatus \(status)")
             return false
         }
         return true

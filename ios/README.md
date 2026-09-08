@@ -5,8 +5,12 @@ The employee app. Early — one screen works end to end.
 ```
 cd ios
 xcodegen generate          # the .xcodeproj is generated, not committed
-open WorkTrack.xcodeproj
+pod install                # TensorFlow Lite, for the face model
+open WorkTrack.xcworkspace # the WORKSPACE, not the project
 ```
+
+`brew install cocoapods` if you do not have it — the system Ruby is too old for
+the gem.
 
 Or from the command line:
 
@@ -14,6 +18,9 @@ Or from the command line:
 xcodebuild -project WorkTrack.xcodeproj -scheme WorkTrack \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
+
+(`-workspace WorkTrack.xcworkspace` rather than `-project`, now that there is a
+pod.)
 
 ## What works
 
@@ -26,6 +33,13 @@ talks to the live demo backend (`Backend.current` in `Core/Environment.swift`).
 **No signing.** There is no Apple Developer ID, so this runs in the Simulator
 only. That is not a blocker for building it — see `docs/15-ios-app.md` for why
 distribution, not the code, is the hard part for this app.
+
+**TensorFlow Lite is the one pod.** Face embedding has to use the SAME model
+and the SAME interpreter as Android — `mobilefacenet.tflite` is copied from
+`feature/attendance/src/main/assets/`. Vision's own face descriptors, or a
+Core ML conversion, would land in a different vector space, and the server
+compares against whatever the *enrolling* phone produced. Core TFLite for iOS
+is still CocoaPods-first, so that is why a Podfile exists at all.
 
 **No Firebase SDK.** Sign-in and token refresh are two POSTs
 (`Auth/FirebaseAuthREST.swift`), so the project stays buildable from a
@@ -43,7 +57,17 @@ says فروردین, and a test holds that line.
 
 ## Next
 
-Attendance (GPS punch), then offline, then face — in that order, and face last
-because it has to reproduce the Android embedding pipeline exactly or people
-who enrolled on Android stop being recognised. `docs/15-ios-app.md` has the
-numbers.
+**The cross-platform face test, on real devices.** Everything about the face
+pipeline is verified on this side — the preprocessing contract, the crop, the
+model loading, determinism — but the one test that actually matters cannot be
+run in a Simulator, which has no camera:
+
+> Enrol on an Android phone. Verify the same person on an iPhone. The
+> similarity the server reports must be well above the 0.6 threshold — aim for
+> 0.8+. Anything near the line means the preprocessing differs somewhere.
+
+Until that has been done with a real face on two real handsets, treat face
+check-in on iOS as unverified. It will not error if it is wrong; it will just
+stop recognising people.
+
+After that: the check-in camera screen, and regularisation requests.

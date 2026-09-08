@@ -34,6 +34,10 @@ targets:
     platform: iOS
     sources:
       - path: WorkTrack
+      # The model is a bundle RESOURCE, not source. Same file as the Android
+      # app's asset — see Face/FaceEmbedder.swift for why that matters.
+      - path: WorkTrack/Face/mobilefacenet.tflite
+        buildPhase: resources
     info:
       path: WorkTrack/Info.plist
       properties:
@@ -50,6 +54,7 @@ targets:
         # Asked for at the moment somebody punches, and only then. There is no
         # background tracking in this app and no plan for any, so "when in use"
         # is the whole claim.
+        NSCameraUsageDescription: "برای تایید حاضری با چهره، دوربین فقط در همان لحظه استفاده می‌شود. عکس شما جایی ذخیره یا ارسال نمی‌شود."
         NSLocationWhenInUseUsageDescription: "برای ثبت حاضری، موقعیت شما یک بار در همان لحظه خوانده می‌شود تا معلوم شود در ساحهٔ کاری هستید."
     settings:
       base:

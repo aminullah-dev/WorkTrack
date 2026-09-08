@@ -79,7 +79,8 @@ final class AttendanceViewModel: ObservableObject {
     /// Punch. The type comes from the day the SERVER computed where possible,
     /// so a manager's correction or a second device cannot leave the app
     /// offering "check in" to somebody already in.
-    func punch(todayISO: String) async {
+    /// Punch, optionally carrying proof that a face was verified first.
+    func punch(todayISO: String, faceToken: String? = nil) async {
         isPunching = true
         outcome = nil
         defer { isPunching = false }
@@ -114,7 +115,8 @@ final class AttendanceViewModel: ObservableObject {
             latitude: fix.coordinate.latitude,
             longitude: fix.coordinate.longitude,
             accuracyMeters: accuracy,
-            insideFence: local.insideFence
+            insideFence: local.insideFence,
+            faceToken: faceToken
         )
 
         do {
@@ -167,12 +169,12 @@ final class AttendanceViewModel: ObservableObject {
                 "id": punch.id,
                 "punchedAt": iso.string(from: punch.punchedAt),
                 "type": punch.type,
-                "method": "GPS",
+                "method": punch.method,
                 "latitude": punch.latitude,
                 "longitude": punch.longitude,
                 "accuracyMeters": punch.accuracyMeters,
                 "insideFence": punch.insideFence,
-            ]
+            ].merging(punch.faceToken.map { ["faceToken": $0] } ?? [:]) { current, _ in current }
         )
     }
 

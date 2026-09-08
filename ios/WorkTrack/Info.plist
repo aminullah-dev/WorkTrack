@@ -28,6 +28,8 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>برای تایید حاضری با چهره، دوربین فقط در همان لحظه استفاده می‌شود. عکس شما جایی ذخیره یا ارسال نمی‌شود.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>برای ثبت حاضری، موقعیت شما یک بار در همان لحظه خوانده می‌شود تا معلوم شود در ساحهٔ کاری هستید.</string>
 	<key>UILaunchScreen</key>

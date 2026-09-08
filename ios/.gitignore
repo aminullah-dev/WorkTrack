@@ -4,3 +4,8 @@
 xcuserdata/
 DerivedData/
 .DS_Store
+
+# CocoaPods: the resolved pods are build inputs, like the APKs. Podfile and
+# Podfile.lock ARE committed so the version is pinned.
+Pods/
+*.xcworkspace
