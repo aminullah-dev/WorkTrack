@@ -1647,3 +1647,88 @@ table.data tbody tr:hover {
   max-height: 90vh;
   overflow: auto;
 }
+
+/* Vendor console: tabs, cards, pipeline board. */
+.vendor-tabs { display: flex; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+.vendor-tab {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.vendor-tab:hover { color: var(--text); }
+.vendor-tab.is-active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.vendor-cards { display: grid; gap: 14px; }
+.vendor-card { padding: 16px; }
+
+.vendor-list { list-style: none; margin: 0; padding: 0; }
+.vendor-list-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.vendor-list-row:last-child { border-bottom: none; }
+.vendor-list-main {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.vendor-list-row.is-clickable { cursor: pointer; }
+.vendor-list-row.is-clickable:hover { background: var(--surface-2); }
+
+.vendor-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.vendor-column h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.vendor-chip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.vendor-chip-card:hover { border-color: var(--accent, var(--border-strong)); }
+
+.vendor-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.vendor-stat { padding: 14px 18px; min-width: 150px; }
+.vendor-stat strong { display: block; font-size: 20px; margin-top: 4px; }
+.vendor-stat-warn { color: var(--amber); }
+
+.vendor-dialog-wide { width: min(880px, 100%); }
+.vendor-section {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+.vendor-section h3 { margin: 0 0 10px; font-size: 14px; }

@@ -1,10 +1,20 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { asyncHandler, ApiError } from "../lib/errors";
 import { audit, db, nowTimestamp } from "../lib/firestore";
 import { parseBody } from "../middleware/validate";
 import { requireVendor, vendorOf } from "../middleware/vendor";
 import { licenseWriteSchema, setLicense, getLicense } from "../services/license";
 import { getCompany, listCompanies } from "../services/vendor";
+import * as crm from "../services/crm";
+import {
+  accountWriteSchema,
+  activityWriteSchema,
+  contactWriteSchema,
+  dealWriteSchema,
+  invoiceWriteSchema,
+  ticketWriteSchema,
+} from "../services/crm";
 import { localDateOf } from "../services/attendance";
 
 /**
@@ -145,5 +155,110 @@ vendorRouter.get(
   asyncHandler(async (req, res) => {
     const v = vendorOf(req);
     res.json({ data: { uid: v.uid, email: v.email, vendor: true } });
+  }),
+);
+
+/* ---------------------------------------------------------------------- CRM */
+
+/**
+ * The vendor's own customer records.
+ *
+ * All six entities are the same shape of thing — a document with an owner, a
+ * schema and an optional account — so they are mounted from one table rather
+ * than written out six times. Divergence between them would be a bug, not a
+ * feature.
+ */
+const CRM_ENTITIES = [
+  { path: "accounts", collection: "crmAccounts", schema: accountWriteSchema },
+  { path: "contacts", collection: "crmContacts", schema: contactWriteSchema },
+  { path: "activities", collection: "crmActivities", schema: activityWriteSchema },
+  { path: "deals", collection: "crmDeals", schema: dealWriteSchema },
+  { path: "invoices", collection: "crmInvoices", schema: invoiceWriteSchema },
+  { path: "tickets", collection: "crmTickets", schema: ticketWriteSchema },
+] as const;
+
+/** What the vendor did, so a disputed figure can be traced to a person. */
+async function crmAudit(
+  req: Request,
+  action: string,
+  id: string,
+  before?: unknown,
+  after?: unknown,
+): Promise<void> {
+  const v = vendorOf(req);
+  await vendorAudit({
+    actorUid: v.uid,
+    actorEmail: v.email,
+    action,
+    companyId: String((after as Record<string, unknown>)?.companyId ?? id),
+    before,
+    after,
+  });
+}
+
+for (const entity of CRM_ENTITIES) {
+  const base = `/crm/${entity.path}`;
+
+  vendorRouter.get(
+    base,
+    asyncHandler(async (req, res) => {
+      const accountId = req.query.accountId ? String(req.query.accountId) : undefined;
+      res.json({ data: await crm.list(entity.collection, accountId) });
+    }),
+  );
+
+  vendorRouter.get(
+    `${base}/:id`,
+    asyncHandler(async (req, res) => {
+      const row = await crm.get(entity.collection, req.params.id);
+      if (!row) throw ApiError.notFound("Not found");
+      res.json({ data: row });
+    }),
+  );
+
+  vendorRouter.post(
+    base,
+    asyncHandler(async (req, res) => {
+      const payload = parseBody(req, entity.schema);
+      const row = await crm.create(entity.collection, payload, vendorOf(req).uid);
+      await crmAudit(req, `crm.${entity.path}.create`, String(row.id), null, row);
+      res.status(201).json({ data: row });
+    }),
+  );
+
+  vendorRouter.put(
+    `${base}/:id`,
+    asyncHandler(async (req, res) => {
+      const payload = parseBody(req, entity.schema);
+      const before = await crm.get(entity.collection, req.params.id);
+      const row = await crm.update(entity.collection, req.params.id, payload, vendorOf(req).uid);
+      if (!row) throw ApiError.notFound("Not found");
+      await crmAudit(req, `crm.${entity.path}.update`, req.params.id, before, row);
+      res.json({ data: row });
+    }),
+  );
+
+  vendorRouter.delete(
+    `${base}/:id`,
+    asyncHandler(async (req, res) => {
+      const before = await crm.get(entity.collection, req.params.id);
+      // Deleting an account takes its children with it; anything else is a
+      // plain delete.
+      const gone =
+        entity.path === "accounts"
+          ? ((await crm.deleteAccountCascade(req.params.id)), true)
+          : await crm.remove(entity.collection, req.params.id);
+      if (!gone) throw ApiError.notFound("Not found");
+      await crmAudit(req, `crm.${entity.path}.delete`, req.params.id, before, null);
+      res.status(204).send();
+    }),
+  );
+}
+
+/** Everything that needs the vendor's attention today, in one call. */
+vendorRouter.get(
+  "/crm/dashboard",
+  asyncHandler(async (_req, res) => {
+    res.json({ data: await crm.dashboard(today()) });
   }),
 );
