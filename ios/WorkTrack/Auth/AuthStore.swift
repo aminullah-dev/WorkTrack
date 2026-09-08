@@ -125,4 +125,17 @@ struct Me: Codable, Equatable {
     let displayName: String
     let companyName: String
     let roles: [String]
+    /// Whether this employee has already enrolled a face.
+    let faceEnrolled: Bool?
+    /// The company's module switches. Face check-in is off by default
+    /// (DEFAULT_SETTINGS in backend/functions/src/services/settings.ts), so it
+    /// must not appear for a company that has not asked for it.
+    let features: Features?
+
+    struct Features: Codable, Equatable {
+        let faceRecognition: Bool?
+    }
+
+    var faceEnabled: Bool { features?.faceRecognition == true }
+    var hasFace: Bool { faceEnrolled == true }
 }

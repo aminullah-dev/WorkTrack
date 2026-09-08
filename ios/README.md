@@ -70,4 +70,11 @@ Until that has been done with a real face on two real handsets, treat face
 check-in on iOS as unverified. It will not error if it is wrong; it will just
 stop recognising people.
 
-After that: the check-in camera screen, and regularisation requests.
+The camera screen itself is built: live front-camera preview, a face guide,
+enrol-or-verify from the same screen, and the server's two-step handshake
+carried into the punch. It refuses to run where there is no camera — including
+every Simulator — rather than falling back to the photo library, because
+choosing an existing image would let one worker check another in by
+photographing a photograph.
+
+After that: regularisation requests, and payslips.

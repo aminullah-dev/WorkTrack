@@ -4,6 +4,12 @@ import SwiftUI
 struct PunchCard: View {
     @ObservedObject var model: AttendanceViewModel
     let todayISO: String
+    /// Nil when the company has face check-in switched off, which is the
+    /// default — then this card behaves exactly as it did before.
+    var faceService: FaceService?
+    var hasEnrolledFace: Bool = false
+
+    @State private var capturing: FaceCaptureView.Purpose?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -46,6 +52,40 @@ struct PunchCard: View {
             .foregroundStyle(.white)
             .disabled(model.isPunching)
             .opacity(model.isPunching ? 0.6 : 1)
+
+            if let faceService {
+                Button {
+                    // Enrol first if there is nothing to compare against;
+                    // otherwise verify. Same screen either way.
+                    capturing = hasEnrolledFace ? .verify : .enrol
+                } label: {
+                    Label(
+                        L.t(hasEnrolledFace ? "face_check_in" : "face_enrol"),
+                        systemImage: "faceid"
+                    )
+                    .font(.subheadline).fontWeight(.medium)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                }
+                .foregroundStyle(Palette.deep)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Palette.deep.opacity(0.35), lineWidth: 1)
+                )
+                .disabled(model.isPunching)
+                .sheet(item: $capturing) { purpose in
+                    FaceCaptureView(
+                        purpose: purpose,
+                        service: faceService,
+                        onVerified: { token in
+                            // The token is proof for THIS punch and nothing
+                            // else; it is short-lived and the server re-checks
+                            // its signature.
+                            Task { await model.punch(todayISO: todayISO, faceToken: token) }
+                        },
+                        onEnrolled: {}
+                    )
+                }
+            }
 
             if let outcome = model.outcome {
                 outcomeLine(outcome)

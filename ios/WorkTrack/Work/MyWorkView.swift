@@ -57,7 +57,12 @@ struct MyWorkView: View {
                             ) }
                         }
                         Section {
-                            PunchCard(model: attendance, todayISO: todayISO)
+                            PunchCard(
+                                model: attendance,
+                                todayISO: todayISO,
+                                faceService: faceService,
+                                hasEnrolledFace: me?.hasFace ?? false
+                            )
                         }
                         daySection(L.t("work_today"), work.today, isToday: true)
                         if let next = work.next {
@@ -129,6 +134,18 @@ struct MyWorkView: View {
             }
             .font(.subheadline).textCase(nil)
         }
+    }
+
+    private var me: Me? {
+        if case .signedIn(let me) = auth.state { return me }
+        return nil
+    }
+
+    /// Built once, and only for a company that has face check-in switched on —
+    /// loading the model costs memory no other company should pay.
+    private var faceService: FaceService? {
+        guard me?.faceEnabled == true, let embedder = try? FaceEmbedder() else { return nil }
+        return FaceService(client: auth.client, embedder: embedder)
     }
 
     private var loadedWork: MyWork? {
