@@ -102,8 +102,25 @@ function col(collection) {
 }
 
 /** ISO date (YYYY-MM-DD, UTC) N days before today; 0 = today. */
+/**
+ * A day key in the company's own timezone.
+ *
+ * Not UTC. The nightly reset fires at 03:30 Asia/Kabul, which is 23:00 UTC the
+ * previous day, so a UTC day key is one behind what payroll calls today — and
+ * payroll charges a working day with no attendance record as unexcused
+ * absence. Seeding in UTC put a phantom absence on every demo payslip for the
+ * four and a half hours a day the two calendars disagree.
+ */
+const SEED_TZ = "Asia/Kabul";
+const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: SEED_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 function isoDaysAgo(n) {
-  return new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+  return dayFormatter.format(new Date(Date.now() - n * 86_400_000));
 }
 
 /** Timestamp at HH:mm UTC on an ISO date. */
@@ -133,14 +150,6 @@ function gregToShamsi(date) {
 
 const TODAY = isoDaysAgo(0);
 const YEAR = Number(TODAY.slice(0, 4));
-
-/** Afghan progressive monthly wage tax — mirrors services/payroll.ts. */
-function afghanTax(taxable) {
-  if (taxable <= 5000) return 0;
-  if (taxable <= 12500) return Math.round((taxable - 5000) * 0.02);
-  if (taxable <= 100000) return Math.round(150 + (taxable - 12500) * 0.1);
-  return Math.round(8900 + (taxable - 100000) * 0.2);
-}
 
 /** Placeholder check-in "selfie" avatars (SVG data URLs) for the demo overview.
  *  Real captures come from the employee app's camera; these just demo the UI. */
@@ -413,6 +422,10 @@ async function seedAttendance() {
   for (let d = ATTENDANCE_DAYS - 1; d >= 0; d--) {
     const iso = isoDaysAgo(d);
     const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay(); // 5 = Friday
+    // Collected and awaited below: payroll reads this collection immediately
+    // after, so firing these off unawaited raced the run — and a rejected write
+    // would have surfaced as an unhandled rejection rather than failing here.
+    const writes = [];
     employees.forEach((e, idx) => {
       let status = "PRESENT";
       let lateMinutes = 0;
@@ -450,7 +463,7 @@ async function seedAttendance() {
       // days, so the manager's overview visibly shows photo-verified attendance.
       const hasSelfie = d === 0 && firstInAt && idx < 3;
 
-      col("attendanceDays").doc(`${e.id}_${iso}`).set({
+      writes.push(col("attendanceDays").doc(`${e.id}_${iso}`).set({
         employeeId: e.id,
         date: iso,
         shiftId: null,
@@ -464,8 +477,10 @@ async function seedAttendance() {
         checkInSelfie: hasSelfie ? SELFIE_AVATARS[idx % SELFIE_AVATARS.length] : null,
         computedAt: now,
         updatedAt: now,
-      });
+      }));
     });
+
+    await Promise.all(writes);
   }
 }
 
@@ -556,93 +571,42 @@ async function seedPayroll() {
     });
   }
 
-  // Pre-generate a finalized payroll run for the current Solar Hijri month so
-  // payslips are visible immediately in the portal and the employee app. The
-  // shape matches services/payroll.ts so a re-run from the portal overwrites it.
+  // The finished payroll run the demo advertises is produced by the real
+  // engine, not written by hand here.
+  //
+  // It used to be hand-written, and the two drifted: the seeded payslips knew
+  // nothing about per-employee allowances, and pressing "Run payroll" in the
+  // demo replaced them with different numbers. Calling computePayrollRun means
+  // what a visitor first sees is exactly what the product produces — including
+  // the ledger accrual, which this function posts itself, so the hand-written
+  // journal entry is gone with it.
+  const { computePayrollRun } = requirePayroll();
   const sh = gregToShamsi(new Date());
-  const runId = `${sh.year}_${String(sh.month).padStart(2, "0")}`;
-  let totalGross = 0;
-  let totalNet = 0;
-  let totalTax = 0;
-  let totalEmployerCost = 0;
-  let count = 0;
-  for (const e of employees) {
-    const basic = employeeSalaries[e.id];
-    if (!basic) continue;
-    const gross = basic + 3000 + 2000;
-    const tax = afghanTax(gross);
-    const employerCost = Math.round(basic * 0.05); // 5% employer pension
-    const lines = [
-      { componentCode: "BASIC", componentName: "معاش اساسی", type: "EARNING", amount: basic },
-      { componentCode: "TRANSPORT", componentName: "کمک‌هزینه ترانسپورت", type: "EARNING", amount: 3000 },
-      { componentCode: "FOOD", componentName: "کمک‌هزینه غذا", type: "EARNING", amount: 2000 },
-      { componentCode: "TAX", componentName: "مالیهٔ معاش", type: "DEDUCTION", amount: tax },
-      { componentCode: "PENSION_ER", componentName: "سهم کارفرما (تقاعد)", type: "EMPLOYER_COST", amount: employerCost },
-    ];
-    const net = gross - tax;
-    await col("payslips").doc(`${e.id}_${runId}`).set({
-      companyId: CID,
-      runId,
-      employeeId: e.id,
-      periodYear: sh.year,
-      periodMonth: sh.month,
-      currency: "AFN",
-      gross,
-      totalDeductions: tax,
-      net,
-      incomeTax: tax,
-      employerCost,
-      costToCompany: gross + employerCost,
-      workedDays: 22,
-      paidLeaveDays: 0,
-      lopDays: 0,
-      overtimeMinutes: 0,
-      status: "FINALIZED",
-      pdfUrl: null,
-      lines,
-      updatedAt: now,
-    });
-    totalGross += gross;
-    totalNet += net;
-    totalTax += tax;
-    totalEmployerCost += employerCost;
-    count += 1;
-  }
-  await col("payrollRuns").doc(runId).set({
-    companyId: CID,
-    periodYear: sh.year,
-    periodMonth: sh.month,
-    status: "APPROVED",
-    startedBy: "emp_admin",
-    approvedBy: "emp_admin",
-    currency: "AFN",
-    payslipCount: count,
-    totalGross,
-    totalNet,
-    totalTax,
-    totalEmployerCost,
-    lockedAt: now,
-    createdAt: now,
-    updatedAt: now,
-  });
+  await computePayrollRun(CID, sh.year, sh.month, "emp_admin", "AFN");
+}
 
-  // Accrue this run to the general ledger so the finance module shows salary
-  // cost immediately (Dr Salaries & Wages; Cr Salaries Payable + Taxes Payable).
-  const payGross = totalGross + totalEmployerCost;
-  await col("journalEntries").doc(`je_payroll_${runId}`).set({
-    date: TODAY,
-    memo: `Payroll ${sh.year}/${String(sh.month).padStart(2, "0")}`,
-    reference: runId,
-    source: "PAYROLL",
-    lines: [
-      { accountCode: "5000", accountName: "Salaries & Wages", debit: payGross, credit: 0 },
-      { accountCode: "2100", accountName: "Salaries Payable", debit: 0, credit: payGross - totalTax },
-      { accountCode: "2200", accountName: "Taxes Payable", debit: 0, credit: totalTax },
-    ],
-    totalDebit: payGross,
-    createdBy: "emp_admin",
-    createdAt: now,
-  });
+/**
+ * The compiled payroll service.
+ *
+ * seed.js is plain CommonJS and the service is TypeScript, so this reaches for
+ * the build output. Failing here with an explanation beats a bare MODULE_NOT_FOUND
+ * from inside a nightly reset.
+ */
+function requirePayroll() {
+  try {
+    return require("./lib/services/payroll");
+  } catch (err) {
+    // Only a resolution failure means "not built". Anything else — a throw from
+    // inside the module itself — must reach the log with its own stack rather
+    // than wearing a misleading explanation.
+    if (err.code === "MODULE_NOT_FOUND" && /services[\\/]payroll/.test(err.message)) {
+      throw new Error(
+        "Cannot load lib/services/payroll — build the functions first:\n" +
+          "  npm --prefix backend/functions run build",
+      );
+    }
+    throw err;
+  }
 }
 
 async function seedExtras() {
@@ -683,6 +647,9 @@ async function seedFinance() {
   const accounts = [
     ["1000", "Cash", "ASSET"], ["1010", "Bank", "ASSET"], ["1200", "Accounts Receivable", "ASSET"],
     ["2000", "Accounts Payable", "LIABILITY"], ["2100", "Salaries Payable", "LIABILITY"], ["2200", "Taxes Payable", "LIABILITY"],
+    // Credited by the payroll engine; without them the run would create the
+    // codes itself and this list would stop mirroring the product's chart.
+    ["2300", "Employee Withholdings", "LIABILITY"], ["2400", "Employer Contributions Payable", "LIABILITY"],
     ["3000", "Owner's Equity", "EQUITY"],
     ["4000", "Service Revenue", "INCOME"], ["4100", "Other Income", "INCOME"],
     ["5000", "Salaries & Wages", "EXPENSE"], ["5100", "Rent", "EXPENSE"], ["5200", "Utilities", "EXPENSE"],
@@ -769,8 +736,11 @@ async function main() {
   await seedAttendance();
   await seedLeave();
   await seedExtras();
-  await seedPayroll();
+  // Finance before payroll: the run posts its accrual to the chart of accounts,
+  // so the chart has to exist first. computePayrollRun would create the codes it
+  // needs on its own, but then seedFinance would write over them afterwards.
   await seedFinance();
+  await seedPayroll();
   console.log(`\n✅ Done. Sample logins (password: ${PASSWORD}):`);
   console.log("   admin@worktrack.af    — COMPANY_ADMIN (web portal)");
   console.log("   hr@worktrack.af       — HR_ADMIN");

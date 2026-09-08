@@ -611,6 +611,33 @@ describe.skipIf(!EMULATOR)("payroll — the working calendar", () => {
     expect(run.totalTax).toBe(1900); // the tax on 30000 alone
   });
 
+  it("does not accrue a still-running month on a date that has not arrived", async () => {
+    // Dating an in-progress run at the period end puts the whole salary cost
+    // in the future, and every trend built on the ledger follows it there.
+    await employee("e1");
+    await salary("e1", 30000);
+
+    const { year, month } = currentShamsiMonth();
+    await computePayrollRun(cid, year, month, "admin", "AFN");
+
+    const entry = (
+      await tenant(cid, "journalEntries").doc(`PAYROLL_${year}_${String(month).padStart(2, "0")}`).get()
+    ).data()!;
+    const today = localDateOf(new Date(), "Asia/Kabul");
+    expect(entry.date as string <= today).toBe(true);
+  });
+
+  it("accrues a finished month on its last day", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    for (const d of eachWorkingDay()) await present("e1", d);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const entry = (await tenant(cid, "journalEntries").doc("PAYROLL_1405_05").get()).data()!;
+    expect(entry.date).toBe("2026-08-22"); // last day of Shamsi 1405/05
+  });
+
   it("does not dock days that have not happened yet", async () => {
     // Payroll walks the month's expected working days, so running the month
     // that is still in progress used to charge every day from today to the end

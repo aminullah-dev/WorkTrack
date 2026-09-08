@@ -11,7 +11,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --config ../../firebase.json --project demo-worktrack --only functions,firestore,auth",
-    "seed": "node seed.js",
+    "seed": "npm run build && node seed.js",
     "deploy": "firebase deploy --only functions",
     "typecheck": "tsc --noEmit",
     "test:integration": "firebase emulators:exec --only firestore,auth --project demo-worktrack \"vitest run\"",

@@ -425,7 +425,12 @@ export async function computePayrollRun(
       );
 
       await postJournalEntry(cid, {
-        date: toIso,
+        // A completed month accrues on its last day, which is what the books
+        // expect. A run of a month still in progress must not: dating it at the
+        // period end puts the whole salary cost on a date that has not arrived,
+        // so the ledger and every trend built on it show an expense in the
+        // future. Such a run is recognised on the day it was made.
+        date: periodComplete ? toIso : todayIso,
         memo: `Payroll ${periodYear}/${String(periodMonth).padStart(2, "0")}`,
         reference: runId,
         source: "PAYROLL",
