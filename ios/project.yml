@@ -28,13 +28,16 @@ settings:
     CODE_SIGNING_ALLOWED: "YES"
 
     # Building for a real iPhone, and TestFlight, need the Apple Developer
-    # team. Put the Team ID here — developer.apple.com/account, Membership
-    # details, "Team ID", ten characters like A1B2C3D4E5:
-    DEVELOPMENT_TEAM: ""
+    # team — this is the WorkTrack membership's Team ID.
+    DEVELOPMENT_TEAM: "27RXPRW77S"
     CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Development"
     CODE_SIGN_STYLE[sdk=iphoneos*]: Automatic
-    # ...then, because automatic signing has to ask Apple for the certificate
-    # and profile the first time:
+    #
+    # Automatic signing gets the certificate and profile from Apple, so the
+    # machine has to be signed in first: Xcode -> Settings -> Accounts -> "+".
+    # Without it the build stops with "No Accounts: Add a new account in
+    # Accounts settings", which is about THIS Mac, not about the Team ID being
+    # wrong. Then:
     #   xcodebuild -workspace WorkTrack.xcworkspace -scheme WorkTrack \
     #     -destination 'generic/platform=iOS' -allowProvisioningUpdates
     #
