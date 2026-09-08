@@ -6,8 +6,10 @@
  * invite or employee route writes custom claims at all, and this script needs
  * credentials for the Firebase project itself.
  *
- * The account must already exist. Create it in the Firebase console — Claude
- * does not create accounts or handle passwords — then run this against it.
+ * The account must already exist. Create it in the Firebase console
+ * (Authentication → Users → Add user) — Claude does not create accounts or
+ * handle passwords — then run this against it. The console leaves the address
+ * unverified and offers no way to change that, so this script marks it.
  *
  * Usage (from backend/functions, after `npm run build`):
  *
@@ -103,19 +105,27 @@ async function main(): Promise<void> {
     );
   }
 
-  if (!revoking && !user.emailVerified) {
-    console.log(
-      `  ! ${email} has not verified its address. The claim can be set now, but\n` +
-        "    the console will refuse the token until it is verified.\n",
-    );
-  }
+  // Adding a user in the Firebase console leaves emailVerified false and gives
+  // no way to change it, so requiring the address be verified beforehand asked
+  // for something that cannot be done. Mark it here instead.
+  //
+  // That is legitimate for this account and only this account: it is created by
+  // whoever owns the project, using credentials only they have, for an address
+  // they chose. There is no stranger's self-asserted address to guard against —
+  // which is what the check in middleware/vendor.ts exists for, and why that
+  // check stays.
+  const needsVerifying = !revoking && !user.emailVerified;
 
   const has = claims.vendor === true;
   console.log(`  account: ${email}`);
   console.log(`  now:     vendor access ${has ? "GRANTED" : "not granted"}`);
   console.log(`  next:    vendor access ${revoking ? "not granted" : "GRANTED"}`);
 
-  if (has === !revoking) {
+  if (needsVerifying) {
+    console.log("  also:    mark the address verified");
+  }
+
+  if (has === !revoking && !needsVerifying) {
     console.log("\n  Nothing would change.\n");
     return;
   }
@@ -129,6 +139,10 @@ async function main(): Promise<void> {
   if (revoking) delete next.vendor;
   else next.vendor = true;
   await auth.setCustomUserClaims(user.uid, next);
+  if (needsVerifying) {
+    await auth.updateUser(user.uid, { emailVerified: true });
+    console.log("\n  ✓ Address marked verified (the console cannot do this).");
+  }
 
   // Existing ID tokens keep working for up to an hour; revoking must bite now.
   if (revoking) {
