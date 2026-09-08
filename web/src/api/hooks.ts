@@ -8,6 +8,7 @@ import type {
   CompanySettings,
   CalendarDay,
   CompanyDeletion,
+  ComponentAssignment,
   DayKind,
   Employee,
   EmployeeSalary,
@@ -250,6 +251,54 @@ export function useSaveSalaryComponent() {
         : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["salary-components"] });
+    },
+  });
+}
+
+/** Which components one employee gets, and at what amount. */
+export function useEmployeeComponents(employeeId: string | null) {
+  return useQuery({
+    enabled: Boolean(employeeId),
+    queryKey: ["employee-components", employeeId],
+    queryFn: () =>
+      api
+        .get<ComponentAssignment[]>(`/payroll/employees/${employeeId}/components`)
+        .then((e) => e.data),
+  });
+}
+
+export function useSetEmployeeComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      employeeId,
+      componentId,
+      body,
+    }: {
+      employeeId: string;
+      componentId: string;
+      body: { value: number | null; active: boolean };
+    }) =>
+      api
+        .put<ComponentAssignment>(
+          `/payroll/employees/${employeeId}/components/${componentId}`,
+          body,
+        )
+        .then((e) => e.data),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-components", v.employeeId] });
+    },
+  });
+}
+
+/** Returns the employee to whatever the component itself does. */
+export function useClearEmployeeComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeId, componentId }: { employeeId: string; componentId: string }) =>
+      api.del<void>(`/payroll/employees/${employeeId}/components/${componentId}`),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-components", v.employeeId] });
     },
   });
 }

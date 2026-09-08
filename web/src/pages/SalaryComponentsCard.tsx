@@ -40,6 +40,7 @@ const BLANK: SalaryComponentWrite = {
   calc: "FIXED",
   value: 0,
   taxable: true,
+  scope: "ALL",
   active: true,
 };
 
@@ -200,6 +201,27 @@ export function SalaryComponentsCard() {
                 ))}
               </select>
             </label>
+
+            <div className="field" style={{ minWidth: 190 }}>
+              <label className="label" htmlFor="comp-scope">
+                {t("comp_scope")}
+              </label>
+              <select
+                id="comp-scope"
+                aria-describedby="comp-scope-hint"
+                className="select"
+                value={form.scope}
+                onChange={(e) =>
+                  setForm({ ...form, scope: e.target.value as SalaryComponent["scope"] })
+                }
+              >
+                <option value="ALL">{t("comp_scope_all")}</option>
+                <option value="INDIVIDUAL">{t("comp_scope_individual")}</option>
+              </select>
+              <span className="hint" id="comp-scope-hint">
+                {t("comp_scope_hint")}
+              </span>
+            </div>
           </div>
 
           <div className="form-row">
@@ -292,6 +314,7 @@ export function SalaryComponentsCard() {
                   <tr>
                     <th>{t("comp_name")}</th>
                     <th>{t("comp_amount")}</th>
+                    <th>{t("comp_scope")}</th>
                     {ty === "EARNING" && <th>{t("comp_taxable")}</th>}
                     <th>{t("comp_status")}</th>
                     {canManage && <th />}
@@ -310,6 +333,13 @@ export function SalaryComponentsCard() {
                           then unit — and forcing LTR here reordered it on
                           screen to "افغانی 500". */}
                       <td style={{ whiteSpace: "nowrap" }}>{amountOf(c)}</td>
+                      <td>
+                        <Chip tone={c.scope === "INDIVIDUAL" ? "warning" : "neutral"}>
+                          {c.scope === "INDIVIDUAL"
+                            ? t("comp_scope_individual")
+                            : t("comp_scope_all")}
+                        </Chip>
+                      </td>
                       {ty === "EARNING" && (
                         <td>
                           <Chip tone={c.taxable ? "neutral" : "positive"}>

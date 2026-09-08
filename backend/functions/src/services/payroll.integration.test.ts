@@ -52,6 +52,23 @@ async function component(
   });
 }
 
+async function assign(
+  employeeId: string,
+  componentId: string,
+  fields: Record<string, unknown> = {},
+): Promise<void> {
+  await tenant(cid, "employeeComponents").doc(`${employeeId}__${componentId}`).set({
+    companyId: cid,
+    employeeId,
+    componentId,
+    value: null,
+    active: true,
+    ...fields,
+  });
+}
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
 /** Unpaid-absence days inside Shamsi 1405/05 (2026-07-23 .. 2026-08-22). */
 async function unpaidDays(employeeId: string, count: number): Promise<void> {
   const start = new Date("2026-07-23T00:00:00Z").getTime();
@@ -442,6 +459,156 @@ describe.skipIf(!EMULATOR)("payroll — the working calendar", () => {
 
     const run = await computePayrollRun(cid, 1405, 5, "admin", "AFN");
     expect(run.skippedExited).toEqual([]);
+  });
+
+  it("pays an individual allowance only to the employee it is assigned to", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e2");
+    await salary("e2", 30000);
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e2", d);
+    }
+    await component("bonus", {
+      name: "Site bonus",
+      code: "SITE",
+      type: "EARNING",
+      value: 5000,
+      scope: "INDIVIDUAL",
+      taxable: true,
+    });
+    await assign("e1", "bonus");
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const one = (await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!;
+    const two = (await tenant(cid, "payslips").doc("e2_1405_05").get()).data()!;
+    expect(one.gross).toBe(35000);
+    expect(two.gross).toBe(30000);
+    expect((one.lines as Array<{ componentCode: string }>).map((l) => l.componentCode)).toContain(
+      "SITE",
+    );
+    expect((two.lines as Array<{ componentCode: string }>).map((l) => l.componentCode)).not.toContain(
+      "SITE",
+    );
+  });
+
+  it("pays one employee a different amount for the same allowance", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e2");
+    await salary("e2", 30000);
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e2", d);
+    }
+    await component("transport", {
+      name: "Transport",
+      code: "TRANSPORT",
+      type: "EARNING",
+      value: 2000,
+      scope: "ALL",
+      taxable: true,
+    });
+    await assign("e1", "transport", { value: 3500 });
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect((await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!.gross).toBe(33500);
+    expect((await tenant(cid, "payslips").doc("e2_1405_05").get()).data()!.gross).toBe(32000);
+  });
+
+  it("withholds a company-wide allowance from one employee", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e2");
+    await salary("e2", 30000);
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e2", d);
+    }
+    await component("transport", {
+      name: "Transport",
+      code: "TRANSPORT",
+      type: "EARNING",
+      value: 2000,
+      scope: "ALL",
+      taxable: true,
+    });
+    await assign("e1", "transport", { active: false });
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect((await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!.gross).toBe(30000);
+    expect((await tenant(cid, "payslips").doc("e2_1405_05").get()).data()!.gross).toBe(32000);
+  });
+
+  it("keeps paying a component written before scope existed to everyone", async () => {
+    // The migration case: nobody's pay may change because the field was added.
+    await employee("e1");
+    await salary("e1", 30000);
+    for (const d of eachWorkingDay()) await present("e1", d);
+    await component("old", {
+      name: "Old allowance",
+      code: "OLD",
+      type: "EARNING",
+      value: 1000,
+      taxable: true,
+      // deliberately no scope
+    });
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect((await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!.gross).toBe(31000);
+  });
+
+  it("applies an individual deduction to one person only", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await employee("e2");
+    await salary("e2", 30000);
+    for (const d of eachWorkingDay()) {
+      await present("e1", d);
+      await present("e2", d);
+    }
+    await component("loan", {
+      name: "Loan repayment",
+      code: "LOAN",
+      type: "DEDUCTION",
+      value: 1500,
+      scope: "INDIVIDUAL",
+    });
+    await assign("e2", "loan");
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const one = (await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!;
+    const two = (await tenant(cid, "payslips").doc("e2_1405_05").get()).data()!;
+    expect(one.totalDeductions).toBe(one.incomeTax);
+    expect(two.totalDeductions).toBe(round(two.incomeTax + 1500));
+  });
+
+  it("keeps an untaxed individual allowance out of the tax base", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    for (const d of eachWorkingDay()) await present("e1", d);
+    await component("relief", {
+      name: "Hardship",
+      code: "RELIEF",
+      type: "EARNING",
+      value: 4000,
+      scope: "INDIVIDUAL",
+      taxable: false,
+    });
+    await assign("e1", "relief");
+
+    const run = await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    // Gross rises by the allowance; the tax does not, because it is exempt.
+    const slip = (await tenant(cid, "payslips").doc("e1_1405_05").get()).data()!;
+    expect(slip.gross).toBe(34000);
+    expect(run.totalTax).toBe(1900); // the tax on 30000 alone
   });
 
   it("does not dock days that have not happened yet", async () => {

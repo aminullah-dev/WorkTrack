@@ -33,6 +33,12 @@ export type TenantCollection =
   // and a second calendar can be added later without moving these documents.
   | "holidays"
   | "salaryComponents"
+  // Which of those components apply to one person, and at what amount. A
+  // component is a definition; this is the exception list against it — an
+  // allowance only some people get, a different figure for one of them, or a
+  // company-wide allowance withheld from one. Keyed `employeeId__componentId`
+  // so assigning twice corrects rather than duplicates.
+  | "employeeComponents"
   | "salaryStructures"
   | "employeeSalaries"
   | "payrollRuns"

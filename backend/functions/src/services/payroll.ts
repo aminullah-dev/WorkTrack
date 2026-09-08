@@ -3,6 +3,8 @@ import { shamsiMonthEndIso, shamsiMonthStartIso } from "../lib/shamsi";
 import { ensureAccounts, postJournalEntry } from "./accounting";
 import { localDateOf } from "./attendance";
 import { expectedWorkingDays, holidaySet } from "./calendar";
+import { componentsForEmployee, listAssignments } from "./salaryAssignments";
+import type { ComponentScope } from "./salaryAssignments";
 import { getSettings } from "./settings";
 
 /**
@@ -20,6 +22,8 @@ import { getSettings } from "./settings";
  */
 
 interface SalaryComponentDoc {
+  /** Needed to match a component against one employee's assignments. */
+  id: string;
   name: string;
   code: string;
   type: "EARNING" | "DEDUCTION" | "EMPLOYER_COST";
@@ -27,6 +31,8 @@ interface SalaryComponentDoc {
   value: number;
   /** EARNING only: whether this allowance forms part of the income-tax base. */
   taxable?: boolean;
+  /** Absent on components written before individual assignment existed. */
+  scope?: ComponentScope;
   active: boolean;
 }
 
@@ -104,11 +110,15 @@ export async function computePayrollRun(
   const toIso = shamsiMonthEndIso(periodYear, periodMonth);
   const runId = `${periodYear}_${String(periodMonth).padStart(2, "0")}`;
 
-  const [employeesSnap, formerSnap, componentsSnap, settings, holidays] = await Promise.all([
+  const [employeesSnap, formerSnap, componentsSnap, assignments, settings, holidays] =
+    await Promise.all([
     tenant(cid, "employees").where("status", "==", "ACTIVE").get(),
     // Only to warn about, never to pay: see the check after the run.
     tenant(cid, "employees").where("status", "==", "EXITED").get(),
     tenant(cid, "salaryComponents").where("active", "==", true).get(),
+    // One query for the whole company rather than one per employee: the
+    // exceptions are few and the run already reads per employee enough.
+    listAssignments(cid),
     getSettings(cid),
     holidaySet(cid, fromIso, toIso),
   ]);
@@ -136,10 +146,19 @@ export async function computePayrollRun(
   /** Active employees with no salary on file; they earn nothing and are named. */
   const skipped: Array<{ employeeId: string; name: string }> = [];
 
-  const components = componentsSnap.docs.map((d) => d.data() as SalaryComponentDoc);
-  const earnings = components.filter((c) => c.type === "EARNING");
-  const deductions = components.filter((c) => c.type === "DEDUCTION");
-  const employerCosts = components.filter((c) => c.type === "EMPLOYER_COST");
+  const components = componentsSnap.docs.map(
+    (d) => ({ id: d.id, ...d.data() }) as SalaryComponentDoc,
+  );
+
+  // Which components each person gets, and at what amount, is resolved per
+  // employee inside the loop below — the same component can apply to one
+  // person at a different figure, or not at all.
+  const assignmentsByEmployee = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const list = assignmentsByEmployee.get(a.employeeId);
+    if (list) list.push(a);
+    else assignmentsByEmployee.set(a.employeeId, [a]);
+  }
 
   let totalNet = 0;
   let totalGross = 0;
@@ -202,6 +221,18 @@ export async function computePayrollRun(
       // means the person never turned up. Both are unpaid.
       else lopDays += 1;
     }
+
+    // This employee's components: the company-wide ones they have not been
+    // excluded from, plus any assigned only to them, each at whichever amount
+    // applies to them. Substituting the resolved amount into `value` keeps the
+    // arithmetic below identical to the company-wide case.
+    const mine = componentsForEmployee(
+      components,
+      assignmentsByEmployee.get(employeeId) ?? [],
+    ).map((r) => ({ ...r.component, value: r.amount }));
+    const earnings = mine.filter((c) => c.type === "EARNING");
+    const deductions = mine.filter((c) => c.type === "DEDUCTION");
+    const employerCosts = mine.filter((c) => c.type === "EMPLOYER_COST");
 
     // Earnings: BASIC + each active earning component.
     const lines: PayslipLine[] = [

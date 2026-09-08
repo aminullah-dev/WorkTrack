@@ -47,6 +47,7 @@ function component(over: Partial<SalaryComponent> = {}): SalaryComponent {
     calc: "FIXED",
     value: 2000,
     taxable: true,
+    scope: "ALL",
     active: true,
     ...over,
   };
@@ -139,6 +140,7 @@ describe("earnings and deductions", () => {
         calc: "FIXED",
         value: 2000,
         taxable: true,
+        scope: "ALL",
         active: true,
       },
     });

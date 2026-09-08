@@ -275,10 +275,22 @@ export interface SalaryComponent {
   calc: "FIXED" | "PERCENT_OF_BASIC" | "PERCENT_OF_GROSS";
   value: number;
   taxable: boolean;
+  /** ALL applies to everyone unless withheld; INDIVIDUAL only where assigned. */
+  scope: "ALL" | "INDIVIDUAL";
   active: boolean;
 }
 
 export type SalaryComponentWrite = Omit<SalaryComponent, "id">;
+
+/** One employee's exception against a component: a different amount, or none. */
+export interface ComponentAssignment {
+  employeeId: string;
+  componentId: string;
+  /** Null means "the component's own amount". */
+  value: number | null;
+  /** False withholds an otherwise company-wide component from this employee. */
+  active: boolean;
+}
 
 /** A company's device licence: how many devices may run the app at once. */
 export interface License {

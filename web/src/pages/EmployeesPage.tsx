@@ -17,6 +17,7 @@ import type {
   EmploymentType,
 } from "../api/types";
 import { useAuth, useFeatures, useHasPermission } from "../auth/AuthProvider";
+import { EmployeeComponents } from "./EmployeeComponents";
 import { useI18n } from "../i18n/LocaleProvider";
 import { Chip, EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
@@ -405,6 +406,10 @@ function EmployeeForm({
             <small style={{ color: "var(--text-subtle)" }}>{t("emp_basic_salary_hint")}</small>
           </div>
         )}
+
+        {/* Allowances and deductions for this person. Only for an employee who
+            already exists — an assignment needs an id to point at. */}
+        {canSetPay && isEdit && <EmployeeComponents employeeId={employee?.id ?? null} />}
 
         {isEdit ? (
           <>
