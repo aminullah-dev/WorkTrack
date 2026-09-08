@@ -3,7 +3,7 @@ import Foundation
 enum PunchType: String { case inbound = "IN", outbound = "OUT" }
 
 /// A fence the company drew around a site.
-struct Geofence: Decodable, Identifiable, Equatable {
+struct Geofence: Codable, Identifiable, Equatable {
     let id: String
     let name: String?
     let latitude: Double
@@ -29,7 +29,7 @@ struct PunchResult: Decodable, Equatable {
 }
 
 /// One day's attendance projection, as the server computes it.
-struct AttendanceDay: Decodable, Equatable {
+struct AttendanceDay: Codable, Equatable {
     let date: String
     let status: String?
     let firstInAt: String?

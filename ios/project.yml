@@ -17,10 +17,16 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
-    DEVELOPMENT_TEAM: ""            # no Developer ID yet — simulator only
-    CODE_SIGN_IDENTITY: ""
-    CODE_SIGNING_REQUIRED: "NO"
-    CODE_SIGNING_ALLOWED: "NO"
+    # No Developer ID yet, so device builds have nothing to sign with. But
+    # simulator builds must still be signed ad-hoc ("-"): the Keychain refuses
+    # an app with no entitlements, and SecItemAdd fails with -34018. Turning
+    # signing off wholesale made every launch ask for the password again,
+    # silently, because nothing checked the status.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_REQUIRED: "YES"
+    CODE_SIGNING_ALLOWED: "YES"
+    CODE_SIGN_STYLE: Manual
 
 targets:
   WorkTrack:
@@ -55,5 +61,11 @@ targets:
     platform: iOS
     sources:
       - path: WorkTrackTests
+    settings:
+      base:
+        # The test bundle is signed too now, so it needs its own Info.plist;
+        # let Xcode generate one rather than hand-keeping a second file.
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.worktrack.tests
     dependencies:
       - target: WorkTrack

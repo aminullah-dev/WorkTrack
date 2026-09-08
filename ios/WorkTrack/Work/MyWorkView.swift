@@ -10,16 +10,20 @@ struct MyWorkView: View {
     @StateObject private var model: WorkViewModel
     @StateObject private var attendance: AttendanceViewModel
     @StateObject private var location = LocationProvider()
+    @StateObject private var reachability = Reachability()
 
     /// The company's today, from the server's own timezone — not the phone's.
     private let todayISO: String
 
     init(client: ApiClient) {
-        _model = StateObject(wrappedValue: WorkViewModel(client: client))
+        // One cache file, shared: the plan and the attendance day belong to the
+        // same day and must not be written over each other.
+        let cache = WorkCache()
+        _model = StateObject(wrappedValue: WorkViewModel(client: client, cache: cache))
         let provider = LocationProvider()
         _location = StateObject(wrappedValue: provider)
         _attendance = StateObject(
-            wrappedValue: AttendanceViewModel(client: client, location: provider)
+            wrappedValue: AttendanceViewModel(client: client, location: provider, cache: cache)
         )
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
@@ -45,6 +49,13 @@ struct MyWorkView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .loaded(let work):
                     List {
+                        if !reachability.isOnline || attendance.pendingCount > 0 || model.isStale {
+                            Section { OfflineBanner(
+                                isOnline: reachability.isOnline,
+                                pending: attendance.pendingCount,
+                                fetchedAt: model.fetchedAt
+                            ) }
+                        }
                         Section {
                             PunchCard(model: attendance, todayISO: todayISO)
                         }
@@ -56,7 +67,8 @@ struct MyWorkView: View {
                     .listStyle(.insetGrouped)
                     .refreshable {
                         await model.load()
-                        await attendance.load(todayISO: todayISO)
+                        await attendance.load(todayISO: todayISO, work: loadedWork)
+                        await attendance.drain(todayISO: todayISO)
                     }
                 }
             }
@@ -77,7 +89,12 @@ struct MyWorkView: View {
         }
         .task {
             await model.load()
-            await attendance.load(todayISO: todayISO)
+            await attendance.load(todayISO: todayISO, work: loadedWork)
+            // Anything the phone was holding goes now.
+            await attendance.drain(todayISO: todayISO)
+            reachability.whenRestored {
+                Task { await attendance.drain(todayISO: todayISO) }
+            }
         }
     }
 
@@ -112,6 +129,11 @@ struct MyWorkView: View {
             }
             .font(.subheadline).textCase(nil)
         }
+    }
+
+    private var loadedWork: MyWork? {
+        if case .loaded(let work) = model.state { return work }
+        return nil
     }
 
     private func emptyMessage(for day: WorkDay, isToday: Bool) -> String {

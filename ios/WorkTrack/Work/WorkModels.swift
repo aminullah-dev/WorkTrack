@@ -1,6 +1,6 @@
 import Foundation
 
-enum TaskStatus: String, Decodable {
+enum TaskStatus: String, Codable {
     case planned = "PLANNED"
     case inProgress = "IN_PROGRESS"
     case done = "DONE"
@@ -23,7 +23,7 @@ enum TaskStatus: String, Decodable {
     }
 }
 
-enum DayKind: String, Decodable {
+enum DayKind: String, Codable {
     case working = "WORKING"
     case weekend = "WEEKEND"
     case holiday = "HOLIDAY"
@@ -34,7 +34,7 @@ enum DayKind: String, Decodable {
     }
 }
 
-struct WorkTask: Decodable, Identifiable, Equatable {
+struct WorkTask: Codable, Identifiable, Equatable {
     let id: String
     let projectName: String
     let title: String
@@ -48,7 +48,7 @@ struct WorkTask: Decodable, Identifiable, Equatable {
     var isTeamWork: Bool { assigneeNames.count > 1 }
 }
 
-struct WorkDay: Decodable, Equatable {
+struct WorkDay: Codable, Equatable {
     /// Plain `yyyy-MM-dd`; the server's calendar date, not a timestamp.
     let date: String
     let kind: DayKind
@@ -58,7 +58,7 @@ struct WorkDay: Decodable, Equatable {
 /// Today, and the next day the employee is actually expected in — which after
 /// a Thursday is Saturday, because Friday is the weekend here. The server works
 /// that out from the company's own calendar; the app just shows what it says.
-struct MyWork: Decodable, Equatable {
+struct MyWork: Codable, Equatable {
     let today: WorkDay
     let next: WorkDay?
 }

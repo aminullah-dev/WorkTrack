@@ -18,7 +18,9 @@ final class AuthStore: ObservableObject {
     @Published private(set) var isSigningIn = false
 
     private var session: FirebaseAuthREST.Session?
+    private let store = OfflineStore()
     private static let refreshKey = "refreshToken"
+    private static let meFile = "me"
 
     /// Refreshed a little early: a token that expires mid-request would
     /// otherwise surface as a spurious sign-out.
@@ -38,14 +40,27 @@ final class AuthStore: ObservableObject {
         do {
             session = try await FirebaseAuthREST.refresh(refresh)
             Keychain.set(session!.refreshToken, for: Self.refreshKey)
-            state = .signedIn(try await api.get("me"))
+            let me: Me = try await api.get("me")
+            store.save(me, to: Self.meFile)
+            state = .signedIn(me)
         } catch ApiError.offline {
-            // Offline at launch is not a sign-out. Without a token there is
-            // nothing to show yet, but the stored refresh token stays put so
-            // the next launch with signal picks it up.
-            state = .signedOut
+            // Offline at launch is NOT a sign-out. Showing the login screen
+            // here would be the worst possible answer: he cannot sign in
+            // without signal either, so the app would lock him out of the
+            // cached plan precisely when he needs it — on a site with no mast.
+            //
+            // The refresh token stays in the Keychain, the last known identity
+            // comes off the disk, and the screens serve what they cached.
+            if let cached = store.load(Me.self, from: Self.meFile) {
+                state = .signedIn(cached)
+            } else {
+                // Never signed in on this device, so there is nothing to show.
+                state = .signedOut
+            }
         } catch {
+            // A real refusal — the token was revoked or the account is gone.
             Keychain.remove(Self.refreshKey)
+            store.remove(Self.meFile)
             state = .signedOut
         }
     }
@@ -61,7 +76,9 @@ final class AuthStore: ObservableObject {
             )
             session = s
             Keychain.set(s.refreshToken, for: Self.refreshKey)
-            state = .signedIn(try await api.get("me"))
+            let me: Me = try await api.get("me")
+            store.save(me, to: Self.meFile)
+            state = .signedIn(me)
         } catch ApiError.offline {
             signInError = L.t("err_offline")
         } catch ApiError.problem(_, let code, _) where code.hasPrefix("EMAIL_")
@@ -75,7 +92,12 @@ final class AuthStore: ObservableObject {
     }
 
     func signOut() {
+        // Signing out is explicit, so everything held for this person goes:
+        // the token, the identity, the cached day and any queued punch. A
+        // shared phone must not hand the next worker the last one's plan.
         Keychain.remove(Self.refreshKey)
+        store.remove(Self.meFile)
+        WorkCache().clear()
         session = nil
         state = .signedOut
     }
@@ -97,7 +119,7 @@ final class AuthStore: ObservableObject {
 }
 
 /// The signed-in person, from GET /v1/me.
-struct Me: Decodable, Equatable {
+struct Me: Codable, Equatable {
     let employeeId: String
     let companyId: String
     let displayName: String

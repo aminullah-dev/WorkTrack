@@ -11,7 +11,15 @@ import Security
 enum Keychain {
     private static let service = "app.worktrack.auth"
 
-    static func set(_ value: String, for key: String) {
+    /// Writes, and says whether it worked.
+    ///
+    /// The return value is not decoration. Swallowing the OSStatus here meant a
+    /// build whose entitlements the Keychain rejected (-34018) failed every
+    /// write in silence, and the only symptom was the app asking for the
+    /// password on every launch — which reads as a login bug, not a storage
+    /// one, and sends you looking in the wrong file.
+    @discardableResult
+    static func set(_ value: String, for key: String) -> Bool {
         let data = Data(value.utf8)
         var query = baseQuery(key)
         SecItemDelete(query as CFDictionary)
@@ -19,7 +27,12 @@ enum Keychain {
         // Readable only once the device has been unlocked at least once since
         // boot, and never migrated to another device by a backup.
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            assertionFailure("Keychain write failed for \(key): OSStatus \(status)")
+            return false
+        }
+        return true
     }
 
     static func get(_ key: String) -> String? {

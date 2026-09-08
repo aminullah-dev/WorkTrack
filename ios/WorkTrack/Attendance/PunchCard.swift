@@ -89,6 +89,12 @@ struct PunchCard: View {
             // Recorded, not refused — and the app says which, because a worker
             // who thinks he failed to check in will stand there trying again.
             label(L.t("punch_flagged"), icon: "exclamationmark.triangle.fill", tone: Palette.warning)
+        case .queued:
+            // Not a failure, and the wording matters: a worker told his punch
+            // "failed" stands at the gate doing it again.
+            label(L.t("punch_queued"), icon: "tray.and.arrow.down.fill", tone: Palette.deep)
+        case .expired:
+            label(L.t("punch_expired"), icon: "clock.badge.exclamationmark", tone: Palette.negative)
         case .failed(let message):
             label(message, icon: "xmark.circle.fill", tone: Palette.negative)
         }
