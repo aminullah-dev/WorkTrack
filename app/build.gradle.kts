@@ -60,8 +60,12 @@ android {
 
     defaultConfig {
         applicationId = "app.worktrack"
-        versionCode = 1
-        versionName = "1.0.0"
+        // 1.0.1 carries the location-permission fix: 1.0.0 asked for
+        // ACCESS_FINE_LOCATION alone, which Android 12 and newer drop outright
+        // from an app targeting SDK 31+, so GPS check-in could never get
+        // permission. Do not ship 1.0.0 to anyone.
+        versionCode = 2
+        versionName = "1.0.1"
 
         // Inherited by the release build: Firebase Hosting rewrites /v1/** to
         // the `api` Cloud Function (see backend/firebase.json), a stable URL

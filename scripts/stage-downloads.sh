@@ -22,11 +22,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/app/release"
+# Gradle owns this directory and clears stale outputs from it, so read the
+# APKs where the build actually leaves them rather than from a hand-kept copy.
+SRC="$ROOT/app/build/outputs/apk/release"
 DEST="$ROOT/web/dist/app"
 
 if [ ! -d "$SRC" ]; then
-  echo "No $SRC — build the release APKs first:" >&2
+  echo "No $SRC — build the signed release APKs first:" >&2
   echo "  ./gradlew :app:assembleRelease" >&2
   exit 1
 fi
