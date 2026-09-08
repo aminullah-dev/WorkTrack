@@ -22,20 +22,43 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Gradle owns this directory and clears stale outputs from it, so read the
+TARGET="${1:-prod}"
+
+# Gradle owns these directories and clears stale outputs from them, so read the
 # APKs where the build actually leaves them rather than from a hand-kept copy.
-SRC="$ROOT/app/build/outputs/apk/release"
-DEST="$ROOT/web/dist/app"
+case "$TARGET" in
+  prod)
+    SRC="$ROOT/app/build/outputs/apk/release"
+    WEB="$ROOT/web/dist"
+    DEST="$WEB/app"
+    GRADLE_TASK=":app:assembleRelease"
+    WEB_TASK="npm --prefix web run build"
+    ;;
+  demo)
+    # The demo hosting is rebuilt from scratch on every portal deploy, so the
+    # APKs have to be re-staged each time or the download links on
+    # linumic.com/…/demo/ start returning the SPA's index.html.
+    SRC="$ROOT/app/build/outputs/apk/demo"
+    WEB="$ROOT/web/dist-demo"
+    DEST="$WEB"
+    GRADLE_TASK=":app:assembleDemo"
+    WEB_TASK="npm --prefix web run build -- --mode demo --outDir dist-demo"
+    ;;
+  *)
+    echo "Usage: $0 [prod|demo]" >&2
+    exit 1
+    ;;
+esac
 
 if [ ! -d "$SRC" ]; then
-  echo "No $SRC — build the signed release APKs first:" >&2
-  echo "  ./gradlew :app:assembleRelease" >&2
+  echo "No $SRC — build the signed APKs first:" >&2
+  echo "  ./gradlew $GRADLE_TASK" >&2
   exit 1
 fi
 
-if [ ! -d "$ROOT/web/dist" ]; then
-  echo "No web/dist — build the portal first:" >&2
-  echo "  npm --prefix web run build" >&2
+if [ ! -d "$WEB" ]; then
+  echo "No $WEB — build the portal first:" >&2
+  echo "  $WEB_TASK" >&2
   exit 1
 fi
 
@@ -49,27 +72,47 @@ print(m["elements"][0]["versionName"])
 PY
 )"
 
-echo "Staging WorkTrack $VERSION"
-rm -rf "$DEST"
+echo "Staging WorkTrack $VERSION ($TARGET)"
+if [ "$TARGET" = "prod" ]; then
+  rm -rf "$DEST"
+fi
 mkdir -p "$DEST"
 
-# x86_64 is emulator-only; shipping it to customers just adds 33 MB of confusion.
-declare -a NAMES=(
-  "app-arm64-v8a-release.apk:worktrack-$VERSION-arm64.apk"
-  "app-armeabi-v7a-release.apk:worktrack-$VERSION-arm32.apk"
-  "app-universal-release.apk:worktrack-$VERSION-universal.apk"
-)
+# x86_64 is emulator-only; shipping it to anyone just adds 33 MB of confusion.
+#
+# The demo filenames are fixed rather than versioned: linumic.com's demo page
+# links to them by name, so a version in the filename would break those links
+# on every release.
+if [ "$TARGET" = "prod" ]; then
+  declare -a NAMES=(
+    "app-arm64-v8a-release.apk:worktrack-$VERSION-arm64.apk"
+    "app-armeabi-v7a-release.apk:worktrack-$VERSION-arm32.apk"
+    "app-universal-release.apk:worktrack-$VERSION-universal.apk"
+  )
+else
+  declare -a NAMES=(
+    "app-arm64-v8a-demo.apk:worktrack-demo.apk"
+    "app-armeabi-v7a-demo.apk:worktrack-demo-older-phones.apk"
+  )
+fi
 
 for pair in "${NAMES[@]}"; do
   from="${pair%%:*}"
   to="${pair##*:}"
   if [ ! -f "$SRC/$from" ]; then
-    echo "  missing $from — did the release build run?" >&2
+    echo "  missing $from — did $GRADLE_TASK run?" >&2
     exit 1
   fi
   cp "$SRC/$from" "$DEST/$to"
   echo "  $to  ($(du -h "$DEST/$to" | cut -f1))"
 done
+
+if [ "$TARGET" = "demo" ]; then
+  echo
+  echo "Staged into web/dist-demo — deploy the demo hosting to publish:"
+  echo "  npx firebase deploy --only hosting --project worktrack-demo-af --config firebase.demo.json"
+  exit 0
+fi
 
 # Customers are told to check this before installing, so it has to be generated
 # from the files actually being published, not typed by hand.

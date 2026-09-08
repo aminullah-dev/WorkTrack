@@ -264,6 +264,21 @@ const salaryComponents = [
   { id: "sc_transport", name: "کمک‌هزینه ترانسپورت", code: "TRANSPORT", type: "EARNING", calc: "FIXED", value: 3000, taxable: false, active: true },
   { id: "sc_food", name: "کمک‌هزینه غذا", code: "FOOD", type: "EARNING", calc: "FIXED", value: 2000, taxable: false, active: true },
   { id: "sc_pension", name: "سهم کارفرما (تقاعد)", code: "PENSION_ER", type: "EMPLOYER_COST", calc: "PERCENT_OF_BASIC", value: 5, taxable: false, active: true },
+  // Individual-only, so the demo shows a component that reaches one person
+  // rather than the whole company.
+  { id: "sc_site", name: "امتیاز ساحه", code: "SITE", type: "EARNING", calc: "FIXED", value: 4000, taxable: true, scope: "INDIVIDUAL", active: true },
+];
+
+/**
+ * Per-employee exceptions, so a visitor opening an employee sees the three
+ * shapes this supports rather than having to imagine them: one person on the
+ * site bonus nobody else gets, one on a larger transport allowance, and one
+ * withheld from transport altogether.
+ */
+const employeeComponents = [
+  { employeeId: "emp_yusuf", componentId: "sc_site", value: null, active: true },
+  { employeeId: "emp_ahmad", componentId: "sc_transport", value: 4500, active: true },
+  { employeeId: "emp_omar", componentId: "sc_transport", value: null, active: false },
 ];
 
 // Per-employee monthly basic salary (AFN). The manager (emp_admin) earns more.
@@ -614,6 +629,12 @@ async function seedPayroll() {
 }
 
 async function seedExtras() {
+  for (const a of employeeComponents) {
+    await col("employeeComponents")
+      .doc(`${a.employeeId}__${a.componentId}`)
+      .set({ companyId: CID, ...a, updatedAt: now });
+  }
+
   for (const c of salaryComponents) {
     await col("salaryComponents").doc(c.id).set({ companyId: CID, ...c, updatedAt: now });
   }
