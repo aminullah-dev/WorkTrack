@@ -267,6 +267,9 @@ const salaryComponents = [
   // Individual-only, so the demo shows a component that reaches one person
   // rather than the whole company.
   { id: "sc_site", name: "امتیاز ساحه", code: "SITE", type: "EARNING", calc: "FIXED", value: 4000, taxable: true, scope: "INDIVIDUAL", active: true },
+  // A deduction that reaches one person, so the demo shows both sides of the
+  // payslip being set individually rather than only the earnings side.
+  { id: "sc_loan", name: "قسط قرضه", code: "LOAN", type: "DEDUCTION", calc: "FIXED", value: 2500, taxable: false, scope: "INDIVIDUAL", active: true },
 ];
 
 /**
@@ -279,6 +282,8 @@ const employeeComponents = [
   { employeeId: "emp_yusuf", componentId: "sc_site", value: null, active: true },
   { employeeId: "emp_ahmad", componentId: "sc_transport", value: 4500, active: true },
   { employeeId: "emp_omar", componentId: "sc_transport", value: null, active: false },
+  // فاطمه is repaying a company loan; nobody else has this line.
+  { employeeId: "emp_fatima", componentId: "sc_loan", value: null, active: true },
 ];
 
 // Per-employee monthly basic salary (AFN). The manager (emp_admin) earns more.
@@ -391,9 +396,21 @@ async function seedAuth() {
   }
 }
 
+/**
+ * How far back attendance is laid down.
+ *
+ * It has to cover the whole elapsed part of the current Shamsi month, not just
+ * the last week. Payroll counts a working day with no attendance record as
+ * unexcused absence, so a visitor who presses "Run payroll" on the seeded
+ * month would otherwise watch everybody's pay drop by the days the seed never
+ * wrote — the demo's headline artifact falling apart on the first click.
+ * 40 days clears the longest Shamsi month with room to spare.
+ */
+const ATTENDANCE_DAYS = 40;
+
 async function seedAttendance() {
-  // 7 days of attendance for every employee, with realistic variety.
-  for (let d = 6; d >= 0; d--) {
+  // Attendance for every employee, with realistic variety in the last week.
+  for (let d = ATTENDANCE_DAYS - 1; d >= 0; d--) {
     const iso = isoDaysAgo(d);
     const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay(); // 5 = Friday
     employees.forEach((e, idx) => {
