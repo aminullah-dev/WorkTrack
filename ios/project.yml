@@ -41,6 +41,10 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        # Asked for at the moment somebody punches, and only then. There is no
+        # background tracking in this app and no plan for any, so "when in use"
+        # is the whole claim.
+        NSLocationWhenInUseUsageDescription: "برای ثبت حاضری، موقعیت شما یک بار در همان لحظه خوانده می‌شود تا معلوم شود در ساحهٔ کاری هستید."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.worktrack

@@ -28,6 +28,8 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>برای ثبت حاضری، موقعیت شما یک بار در همان لحظه خوانده می‌شود تا معلوم شود در ساحهٔ کاری هستید.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

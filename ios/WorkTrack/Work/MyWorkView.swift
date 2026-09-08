@@ -8,9 +8,25 @@ struct MyWorkView: View {
     @EnvironmentObject private var auth: AuthStore
     @EnvironmentObject private var app: AppState
     @StateObject private var model: WorkViewModel
+    @StateObject private var attendance: AttendanceViewModel
+    @StateObject private var location = LocationProvider()
+
+    /// The company's today, from the server's own timezone — not the phone's.
+    private let todayISO: String
 
     init(client: ApiClient) {
         _model = StateObject(wrappedValue: WorkViewModel(client: client))
+        let provider = LocationProvider()
+        _location = StateObject(wrappedValue: provider)
+        _attendance = StateObject(
+            wrappedValue: AttendanceViewModel(client: client, location: provider)
+        )
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = TimeZone(identifier: "Asia/Kabul")
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        todayISO = f.string(from: Date())
     }
 
     var body: some View {
@@ -29,13 +45,19 @@ struct MyWorkView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .loaded(let work):
                     List {
+                        Section {
+                            PunchCard(model: attendance, todayISO: todayISO)
+                        }
                         daySection(L.t("work_today"), work.today, isToday: true)
                         if let next = work.next {
                             daySection(L.t("work_next"), next, isToday: false)
                         }
                     }
                     .listStyle(.insetGrouped)
-                    .refreshable { await model.load() }
+                    .refreshable {
+                        await model.load()
+                        await attendance.load(todayISO: todayISO)
+                    }
                 }
             }
             .navigationTitle(L.t("work_title"))
@@ -53,7 +75,10 @@ struct MyWorkView: View {
                 }
             }
         }
-        .task { await model.load() }
+        .task {
+            await model.load()
+            await attendance.load(todayISO: todayISO)
+        }
     }
 
     @ViewBuilder
