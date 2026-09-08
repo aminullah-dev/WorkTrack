@@ -12,64 +12,95 @@
  *   await updateBrochure(false)   // show the diff
  *   await updateBrochure(true)    // save
  *
- * The licence sentence here is the wording actually published: an earlier draft
- * opened with "Freeing a seat is yours to do", which duplicated the sentence
- * before it and was dropped.
- *
  * Every replacement asserts the old text appears EXACTLY once. A page whose
  * wording has drifted is skipped and reported rather than half-edited — the
  * failure mode to avoid is a page that is neither the old version nor the new.
+ *
+ * ---------------------------------------------------------------------------
+ * CURRENT EDIT SET (2026-09-08): work assignment.
+ *
+ * The claims here are deliberately PORTAL-ONLY. The employee half of this
+ * feature is built and the server is live, but it reaches a worker's phone only
+ * in a signed APK, and none has been released yet. Saying "staff open the app
+ * and see what they are on" today would be false on the day it was published.
+ *
+ * WHEN THE SIGNED APK SHIPS, a second small edit makes the page whole:
+ *
+ *   1. add to each app list, after the payslips line —
+ *      EN  <li><span>Today&rsquo;s work, and the next working day</span></li>
+ *      FA  <li><span>کار امروز، و روز کاری بعد</span></li>
+ *      PS  <li><span>د نن کار، او راتلونکې کاري ورځ</span></li>
+ *
+ *   2. in the feature card body, replace "The portal shows" with wording that
+ *      puts it on the phone too. Until then it says what is true.
+ *
+ * A previous set (per-person allowances, the licence sentence, the download
+ * button) was applied on 2026-09-07 and has been removed from this file; its
+ * assertions would now report as drifted, which is correct but noisy.
+ * ---------------------------------------------------------------------------
  */
+
+/** The markup of one feature card, so a new one matches its neighbours exactly. */
+const CARD = (title, body) =>
+  `<div class="lnm-feat"><strong>${title}</strong><br>` +
+  `<span style="font-weight:400;color:var(--ink-2);font-size:.94em">${body}</span></div>`;
+
+// Anchors. Each new card is inserted BEFORE the leave card, so work assignment
+// lands between "when people work" and "when they are off" — where a reader
+// looking for it would go.
+//
+// The anchor is the leave card's OPENING tag, not the whole shifts card that
+// precedes it, and that is deliberate: WordPress texturises on render, so the
+// "night&rsquo;s work" visible in the published HTML may be a plain apostrophe
+// in the stored block. Anchoring on a fragment with no punctuation at all means
+// the match does not depend on guessing which form is in the database.
+const LEAVE_EN = '<div class="lnm-feat"><strong>Leave with a real approval chain</strong>';
+const LEAVE_FA = '<div class="lnm-feat"><strong>رخصتی با زنجیرهٔ تأیید واقعی</strong>';
+const LEAVE_PS = '<div class="lnm-feat"><strong>رخصتي د تصویب ریښتینې لړۍ سره</strong>';
+
+const CARD_EN = CARD(
+  "Who is on which part of the job",
+  "Assign a day&rsquo;s work to one person or a whole crew, against the project it belongs to. The portal shows who is on what for any day, and each person&rsquo;s next working day &mdash; which after a Thursday is Saturday, not an empty Friday.",
+);
+
+const CARD_FA = CARD(
+  "چه کسی روی کدام بخش کار است",
+  "کار یک روز را به یک نفر یا به یک تیم بدهید، زیر پروژه‌ای که به آن تعلق دارد. پورتال نشان می‌دهد در هر روز چه کسی روی چه کاری است، و روز کاری بعدِ هر نفر &mdash; که بعد از پنجشنبه شنبه است، نه جمعهٔ خالی.",
+);
+
+const CARD_PS = CARD(
+  "څوک د کار په کومه برخه دی",
+  "د یوې ورځې کار یو تن یا یو بشپړ ټیم ته وسپارئ، د هغې پروژې لاندې چې ورپورې اړه لري. پورټال ښیي چې په هره ورځ څوک په کوم کار دی، او د هر چا راتلونکې کاري ورځ &mdash; چې د پنجشنبې وروسته شنبه ده، نه تشه جمعه.",
+);
 
 const EDITS = {
   2054: {
     lang: "English",
     replacements: [
+      [LEAVE_EN, CARD_EN + LEAVE_EN],
       [
-        "Monthly runs over Solar Hijri periods. Basic pay, allowances, deductions and unpaid absence, with income tax withheld on the statutory monthly brackets &mdash; and payslips staff open on their phones.",
-        "Monthly runs over Solar Hijri periods. Basic pay, allowances and deductions &mdash; set for the whole company, or a different figure for one person &mdash; unpaid absence, and income tax withheld on the statutory monthly brackets. Payslips staff open on their phones.",
-      ],
-      [
-        "Nobody has to call us to change a number.",
-        "How many seats you have is part of your licence, which we issue &mdash; tell us and we change it.",
-      ],
-      [
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/what-we-do/worktrack/demo/">Try the demo</a>',
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/what-we-do/worktrack/demo/">Try the demo</a><a class="lnm-btn lnm-btn-ghost" href="https://worktrack-prod.web.app/app/">Download the app</a>',
+        "<li><span>Payroll runs and payslips</span></li>",
+        "<li><span>Payroll runs and payslips</span></li><li><span>Projects, crews, and who is on what today</span></li>",
       ],
     ],
   },
   2055: {
     lang: "Dari",
     replacements: [
+      [LEAVE_FA, CARD_FA + LEAVE_FA],
       [
-        "اجرای ماهانه روی دوره‌های هجری شمسی. معاش اساسی، مزایا، کسورات و غیرحاضری بدون معاش، با مالیهٔ معاش روی جدول قانونی ماهانه &mdash; و فیش‌هایی که کارمند روی گوشی خودش باز می‌کند.",
-        "اجرای ماهانه روی دوره‌های هجری شمسی. معاش اساسی، مزایا و کسورات &mdash; برای همهٔ شرکت، یا مبلغی جداگانه برای یک نفر &mdash; غیرحاضری بدون معاش، و مالیهٔ معاش روی جدول قانونی ماهانه. فیش‌هایی که کارمند روی گوشی خودش باز می‌کند.",
-      ],
-      [
-        "کسی لازم نیست برای عوض کردن یک عدد به ما زنگ بزند.",
-        "تعداد صندلی‌ها بخشی از لایسنس شماست که ما صادر می‌کنیم &mdash; به ما بگویید تا تغییرش دهیم.",
-      ],
-      [
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/fa/mahsoolat-fa/worktrack-fa/demo-fa/">دمو را امتحان کنید</a>',
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/fa/mahsoolat-fa/worktrack-fa/demo-fa/">دمو را امتحان کنید</a><a class="lnm-btn lnm-btn-ghost" href="https://worktrack-prod.web.app/app/">دانلود اپلیکیشن</a>',
+        "<li><span>اجرای معاش و فیش‌ها</span></li>",
+        "<li><span>اجرای معاش و فیش‌ها</span></li><li><span>پروژه‌ها، تیم‌ها، و اینکه امروز چه کسی روی چه کاری است</span></li>",
       ],
     ],
   },
   2056: {
     lang: "Pashto",
     replacements: [
+      [LEAVE_PS, CARD_PS + LEAVE_PS],
       [
-        "میاشتنۍ اجرا د لمریز هجري دورو پر بنسټ. اساسي معاش، امتیازات، کسرونه او بې‌معاشه غیرحاضري، د معاش مالیه د قانوني میاشتني جدول له مخې &mdash; او هغه فیشونه چې کارکوونکی یې پر خپل موبایل پرانیزي.",
-        "میاشتنۍ اجرا د لمریز هجري دورو پر بنسټ. اساسي معاش، امتیازات او کسرونه &mdash; د ټول شرکت لپاره، یا د یو تن لپاره بېل مبلغ &mdash; بې‌معاشه غیرحاضري، او د معاش مالیه د قانوني میاشتني جدول له مخې. هغه فیشونه چې کارکوونکی یې پر خپل موبایل پرانیزي.",
-      ],
-      [
-        "هیچا ته اړتیا نشته چې د یو عدد بدلولو لپاره موږ ته زنګ ووهي.",
-        "د ځایونو شمېر ستاسو د جواز برخه ده چې موږ یې ورکوو &mdash; موږ ته ووایاست، بدلوو یې.",
-      ],
-      [
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/ps/mahsoolat-ps/worktrack-ps/demo-ps/">ډیمو وازمایئ</a>',
-        '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/ps/mahsoolat-ps/worktrack-ps/demo-ps/">ډیمو وازمایئ</a><a class="lnm-btn lnm-btn-ghost" href="https://worktrack-prod.web.app/app/">اپلیکیشن ډاونلوډ کړئ</a>',
+        "<li><span>د معاش اجرا او فیشونه</span></li>",
+        "<li><span>د معاش اجرا او فیشونه</span></li><li><span>پروژې، ټیمونه، او دا چې نن څوک په کوم کار دی</span></li>",
       ],
     ],
   },
