@@ -24,7 +24,7 @@ pod.)
 
 ## What works
 
-Three tabs — work, leave, pay. Sign in, and "your work" — today and the next working day, with the project,
+Five tabs — work, attendance, leave, pay, notices. Sign in, and "your work" — today and the next working day, with the project,
 the place, who else is on the job, and reporting progress on your own task. It
 talks to the live demo backend (`Backend.current` in `Core/Environment.swift`).
 
@@ -77,4 +77,10 @@ every Simulator — rather than falling back to the photo library, because
 choosing an existing image would let one worker check another in by
 photographing a photograph.
 
-After that: regularisation requests (asking a manager to correct a day).
+After that: a profile screen (sign out, language, sync state), and push
+notifications — which is also the point at which the Firebase SDK earns its
+place and FirebaseAuthREST can go.
+
+Also worth knowing during development: an ad-hoc signed rebuild can invalidate
+the Keychain item, so a reinstall sometimes asks for the password again. On a
+properly signed build the identity is stable and it does not happen.

@@ -54,6 +54,8 @@ struct SignedInTabs: View {
                 .tabItem { Label(L.t("tab_leave"), systemImage: "airplane") }
             PayslipsView(client: client)
                 .tabItem { Label(L.t("tab_pay"), systemImage: "banknote.fill") }
+            AnnouncementsView(client: client)
+                .tabItem { Label(L.t("tab_ann"), systemImage: "megaphone.fill") }
         }
     }
 }
