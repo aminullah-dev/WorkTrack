@@ -75,3 +75,35 @@ struct AnnouncementsView: View {
             ?? ISO8601DateFormatter().date(from: announcement.publishedAt)
     }
 }
+
+
+/// The full list, pushed from the work screen when there are more than fit.
+struct AnnouncementsList: View {
+    let items: [Announcement]
+    @EnvironmentObject private var app: AppState
+
+    var body: some View {
+        List(items) { announcement in
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top) {
+                    Text(announcement.title).font(.headline)
+                    Spacer()
+                    if announcement.priority != .normal {
+                        Pill(
+                            text: announcement.priority.label,
+                            tone: announcement.priority == .urgent
+                                ? Palette.negative : Palette.warning
+                        )
+                    }
+                }
+                Text(announcement.body).font(.subheadline)
+                if let author = announcement.createdByName, !author.isEmpty {
+                    Text(author).font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .navigationTitle(L.t("ann_title"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

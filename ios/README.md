@@ -24,7 +24,7 @@ pod.)
 
 ## What works
 
-Five tabs — work, attendance, leave, pay, notices. Sign in, and "your work" — today and the next working day, with the project,
+Five tabs — work, attendance, leave, pay, profile — with company notices under the day's work. Sign in, and "your work" — today and the next working day, with the project,
 the place, who else is on the job, and reporting progress on your own task. It
 talks to the live demo backend (`Backend.current` in `Core/Environment.swift`).
 
@@ -77,9 +77,14 @@ every Simulator — rather than falling back to the photo library, because
 choosing an existing image would let one worker check another in by
 photographing a photograph.
 
-After that: a profile screen (sign out, language, sync state), and push
-notifications — which is also the point at which the Firebase SDK earns its
-place and FirebaseAuthREST can go.
+Push notifications are the obvious next thing and are BLOCKED, not skipped:
+they do not exist anywhere in this product yet — not on the backend, not on
+Android — and on iOS they additionally need APNs keys from the same Apple
+Developer account that gates everything else. Building the iOS half alone
+would be a client with nothing to receive.
+
+What is left that is not blocked: QR/kiosk check-in, which Android has and
+this does not.
 
 Also worth knowing during development: an ad-hoc signed rebuild can invalidate
 the Keychain item, so a reinstall sometimes asks for the password again. On a

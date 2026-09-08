@@ -8,23 +8,20 @@ struct MyWorkView: View {
     @EnvironmentObject private var auth: AuthStore
     @EnvironmentObject private var app: AppState
     @StateObject private var model: WorkViewModel
-    @StateObject private var attendance: AttendanceViewModel
-    @StateObject private var location = LocationProvider()
+    @ObservedObject private var attendance: AttendanceViewModel
     @StateObject private var reachability = Reachability()
+    @StateObject private var notices: AnnouncementsViewModel
 
     /// The company's today, from the server's own timezone — not the phone's.
     private let todayISO: String
 
-    init(client: ApiClient) {
-        // One cache file, shared: the plan and the attendance day belong to the
-        // same day and must not be written over each other.
-        let cache = WorkCache()
+    /// The attendance model is owned by SignedInTabs and shared with the
+    /// profile screen; the cache file is shared too, because the plan and the
+    /// attendance day belong to the same day and must not overwrite each other.
+    init(client: ApiClient, attendance: AttendanceViewModel, cache: WorkCache) {
         _model = StateObject(wrappedValue: WorkViewModel(client: client, cache: cache))
-        let provider = LocationProvider()
-        _location = StateObject(wrappedValue: provider)
-        _attendance = StateObject(
-            wrappedValue: AttendanceViewModel(client: client, location: provider, cache: cache)
-        )
+        _notices = StateObject(wrappedValue: AnnouncementsViewModel(client: client))
+        self.attendance = attendance
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.timeZone = TimeZone(identifier: "Asia/Kabul")
@@ -68,6 +65,7 @@ struct MyWorkView: View {
                         if let next = work.next {
                             daySection(L.t("work_next"), next, isToday: false)
                         }
+                        noticesSection
                     }
                     .listStyle(.insetGrouped)
                     .refreshable {
@@ -78,21 +76,9 @@ struct MyWorkView: View {
                 }
             }
             .navigationTitle(L.t("work_title"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        ForEach(Language.allCases, id: \.self) { lang in
-                            Button(lang.label) { app.setLanguage(lang) }
-                        }
-                        Divider()
-                        Button(L.t("sign_out"), role: .destructive) { auth.signOut() }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
-            }
         }
         .task {
+            await notices.load()
             await model.load()
             await attendance.load(todayISO: todayISO, work: loadedWork)
             // Anything the phone was holding goes now.
@@ -133,6 +119,44 @@ struct MyWorkView: View {
                 }
             }
             .font(.subheadline).textCase(nil)
+        }
+    }
+
+    /// Company notices, under the day's work.
+    ///
+    /// Not a tab: iOS allows five, and a sixth is folded into a system "More"
+    /// menu that arrives in English and hides the screen behind an extra tap.
+    /// This is also where the Android dashboard puts them, and a worker reading
+    /// his day is the moment he will actually read a notice.
+    @ViewBuilder
+    private var noticesSection: some View {
+        if case .loaded(let items) = notices.state, !items.isEmpty {
+            Section(L.t("ann_title")) {
+                ForEach(items.prefix(3)) { announcement in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .top) {
+                            Text(announcement.title).font(.subheadline).fontWeight(.medium)
+                            Spacer()
+                            if announcement.priority != .normal {
+                                Pill(
+                                    text: announcement.priority.label,
+                                    tone: announcement.priority == .urgent
+                                        ? Palette.negative : Palette.warning
+                                )
+                            }
+                        }
+                        Text(announcement.body)
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+                if items.count > 3 {
+                    NavigationLink(L.t("ann_all")) {
+                        AnnouncementsList(items: items)
+                    }
+                    .font(.caption)
+                }
+            }
         }
     }
 
