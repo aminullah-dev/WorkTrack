@@ -178,10 +178,43 @@ describe.skipIf(!EMULATOR)("device licence enforcement", () => {
     );
   });
 
-  it("refuses a phone that sends no device id at all", async () => {
-    // Only reachable from a hand-rolled client; the shipped app always sends it.
+  it("lets an employee into the portal without taking a seat", async () => {
+    // A browser has no device id and no way to get one. This used to 403 with
+    // "sign in again to activate this device" — advice a browser can never act
+    // on, and shown only at the companies that pay for enforcement. The licence
+    // counts devices running the app, and a browser is not one.
+    await license({ deviceLimit: 1 });
+
+    expect(await call(["EMPLOYEE"], {})).toBeNull();
+    expect(await seats()).toEqual([]); // and it consumed nothing
+  });
+
+  it("still refuses a kiosk that is not a known device", async () => {
+    // The boundary that must not move with the line above: a kiosk also sends
+    // no header, but its login IS its device record, so an unknown one was
+    // revoked on purpose.
     await license();
 
-    expect((await call(["EMPLOYEE"], {}))?.code).toBe("DEVICE_NOT_ACTIVATED");
+    expect((await call(["KIOSK"], {}, "kiosk_gone"))?.code).toBe("DEVICE_REVOKED");
+  });
+
+  it("still counts a phone that does send its device id", async () => {
+    // The exemption is for the absent header, not a weakening of the limit.
+    await license({ deviceLimit: 1 });
+
+    expect(await call(["EMPLOYEE"], { "X-Device-Id": "and-1" })).toBeNull();
+    expect(await seats()).toEqual(["and-1"]);
+
+    clearDeviceGuardCache();
+    expect((await call(["EMPLOYEE"], { "X-Device-Id": "and-2" }, "emp_2"))?.code).toBe(
+      "LICENSE_LIMIT_REACHED",
+    );
+  });
+
+  it("still refuses a browser session on a suspended licence", async () => {
+    // Exempt from the SEAT count, not from whether the licence is usable at all.
+    await license({ status: "SUSPENDED" });
+
+    expect((await call(["EMPLOYEE"], {}))?.code).toBe("LICENSE_INACTIVE");
   });
 });

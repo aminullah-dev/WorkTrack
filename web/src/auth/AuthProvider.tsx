@@ -29,8 +29,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Manager roles allowed into the portal. Employees/kiosks are rejected. */
-const MANAGER_ROLES = new Set([
+/**
+ * Roles allowed into the portal.
+ *
+ * EMPLOYEE is here so somebody whose phone cannot run the app — an iPhone, or
+ * no smartphone at all — can still see the work assigned to them. They get one
+ * page: their own. Every other route is hidden by permission, and the server
+ * refuses them regardless, so this widens the door, not what is behind it.
+ *
+ * KIOSK stays out: a kiosk login is a shared device bolted to a wall, and the
+ * portal is not what it is for.
+ */
+const PORTAL_ROLES = new Set([
+  "EMPLOYEE",
   "SUPER_ADMIN",
   "COMPANY_ADMIN",
   "HR_ADMIN",
@@ -79,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         const { data } = await api.get<Me>("/me");
-        if (!data.roles.some((r) => MANAGER_ROLES.has(r))) {
+        if (!data.roles.some((r) => PORTAL_ROLES.has(r))) {
           await firebaseSignOut(auth);
           setMe(null);
           setStatus("signedOut");
@@ -114,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         const { data } = await api.get<Me>("/me");
-        if (!data.roles.some((r) => MANAGER_ROLES.has(r))) {
+        if (!data.roles.some((r) => PORTAL_ROLES.has(r))) {
           await firebaseSignOut(auth);
           throw new NoManagerAccessError();
         }
@@ -130,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Best-effort refresh; keep the current session on failure. Only applies
         // to an already-signed-in manager, so the role gate is a safety no-op.
         const { data } = await api.get<Me>("/me");
-        if (data.roles.some((r) => MANAGER_ROLES.has(r))) setMe(data);
+        if (data.roles.some((r) => PORTAL_ROLES.has(r))) setMe(data);
       },
     }),
     [status, me],

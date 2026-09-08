@@ -421,6 +421,41 @@ describe.skipIf(!EMULATOR)("work assignment", () => {
     expect((await request("GET", "/v1/sync/pull?type=tasks")).body.data.items).toEqual([]);
   });
 
+  it("reaches an employee in a browser even when the licence enforces devices", async () => {
+    // The case this used to break: a portal request carries no X-Device-Id,
+    // and the guard used to answer every one of them with "this device is not
+    // activated, sign in again" — at exactly the companies paying for
+    // enforcement. The licence counts phones running the app; a browser is not
+    // one of them.
+    const { setLicense } = await import("../services/license");
+    const { clearDeviceGuardCache } = await import("../middleware/deviceGuard");
+    await setLicense(cid, {
+      plan: "STANDARD",
+      deviceLimit: 5,
+      status: "ACTIVE",
+      expiresAt: null,
+      enforceDevices: true,
+    } as Parameters<typeof setLicense>[1]);
+    clearDeviceGuardCache();
+
+    const projectId = await makeProject();
+    await request("POST", "/v1/work/tasks", {
+      projectId,
+      assigneeIds: ["e_ali"],
+      title: "Visible from a browser",
+      startDate: TODAY,
+    });
+
+    token.claims = asWorker("e_ali");
+    const res = await request("GET", `/v1/work/mine?date=${TODAY}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.today.tasks[0].title).toBe("Visible from a browser");
+
+    // And it took no seat doing so.
+    const devices = await db.collection("companies").doc(cid).collection("devices").get();
+    expect(devices.size).toBe(0);
+  });
+
   it("is closed to anyone without a token", async () => {
     token.claims = {};
     expect((await request("GET", "/v1/work/mine")).status).toBe(401);

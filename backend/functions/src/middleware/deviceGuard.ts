@@ -92,11 +92,29 @@ export async function enforceDeviceLicense(
     const deviceId = isKiosk ? auth.employeeId : req.header("X-Device-Id");
 
     if (!deviceId) {
-      throw new ApiError(
-        403,
-        ErrorCodes.DEVICE_NOT_ACTIVATED,
-        "This device is not activated. Sign in again to activate it.",
-      );
+      // An employee in a browser, not on a phone.
+      //
+      // The licence counts DEVICES RUNNING THE APP. The app sends X-Device-Id
+      // on every request (AuthInterceptor); a browser has no device id to send
+      // and no way to obtain one, so a missing header here means "not a
+      // licensed device" rather than "an unactivated one". Refusing it would
+      // have shown an employee opening the portal a 403 on every page telling
+      // them to "sign in again to activate this device" — advice a browser can
+      // never act on, and only at companies that pay for enforcement.
+      //
+      // This is a licence boundary, not a security one. The browser session is
+      // still bound by RBAC, which for an EMPLOYEE is their own record and
+      // their own work; nothing here widens what they may read.
+      //
+      // Accepted consequence: somebody who repackaged the app to drop the
+      // header would not take a seat. Anyone able to rebuild and re-sign the
+      // APK is well past the point where a header check is what protects the
+      // agreement.
+      //
+      // Kiosks never reach this branch — a kiosk's device id is its own login
+      // (see above), so an unknown kiosk is still refused.
+      next();
+      return;
     }
 
     const active = await cached(`dev:${auth.companyId}:${deviceId}`, async () => {

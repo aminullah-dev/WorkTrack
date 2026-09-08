@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { useAuth } from "./auth/AuthProvider";
+import { useAuth, useHasPermission } from "./auth/AuthProvider";
 import { LoginPage } from "./auth/LoginPage";
 import { Layout } from "./ui/Layout";
 import { LoadingState } from "./ui/components";
@@ -18,6 +18,7 @@ import { VendorConsole } from "./pages/VendorConsole";
 
 export function App() {
   const { status } = useAuth();
+  const can = useHasPermission();
 
   if (status === "loading") {
     return <LoadingState />;
@@ -40,7 +41,17 @@ export function App() {
       {/* Kiosk mode runs full-screen, outside the portal chrome. */}
       <Route path="/kiosk" element={<KioskPage />} />
       <Route element={<Layout />}>
-        <Route index element={<DashboardPage />} />
+        {/*
+          The dashboard is the company's numbers — headcount, who is present,
+          the attendance trend — and every one of them needs attendance:read.
+          An employee landing there would meet a page of failed requests, so
+          they land on their own work instead, which is the only thing the
+          portal has for them.
+        */}
+        <Route
+          index
+          element={can("attendance:read") ? <DashboardPage /> : <Navigate to="/work" replace />}
+        />
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="shifts" element={<ShiftsPage />} />

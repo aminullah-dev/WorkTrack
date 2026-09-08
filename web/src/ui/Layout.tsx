@@ -12,7 +12,15 @@ export function Layout() {
   const features = useFeatures();
 
   const navItems = [
-    { to: "/", icon: <IconGrid />, label: t("nav_dashboard"), show: true, end: true },
+    // Hidden from an employee: "/" bounces them to their own work, so leaving
+    // the item visible would offer a link that silently goes somewhere else.
+    {
+      to: "/",
+      icon: <IconGrid />,
+      label: t("nav_dashboard"),
+      show: can("attendance:read"),
+      end: true,
+    },
     { to: "/employees", icon: <IconPeople />, label: t("nav_employees"), show: can("employees:read") },
     { to: "/attendance", icon: <IconClock />, label: t("nav_attendance"), show: can("attendance:read") },
     {
