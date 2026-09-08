@@ -1,0 +1,55 @@
+# XcodeGen spec. The .xcodeproj is GENERATED from this file and is not in git —
+# a pbxproj is a merge-conflict machine that nobody can review, and this is the
+# same file in a form a person can read.
+#
+#   cd ios && xcodegen generate && open WorkTrack.xcodeproj
+#
+name: WorkTrack
+options:
+  bundleIdPrefix: app.worktrack
+  deploymentTarget:
+    iOS: "16.0"          # iPhone 8 and later — secondhand phones matter here
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""            # no Developer ID yet — simulator only
+    CODE_SIGN_IDENTITY: ""
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+
+targets:
+  WorkTrack:
+    type: application
+    platform: iOS
+    sources:
+      - path: WorkTrack
+    info:
+      path: WorkTrack/Info.plist
+      properties:
+        CFBundleDisplayName: WorkTrack
+        UILaunchScreen: {}
+        # Dari first, exactly like the portal and the Android app. Without this
+        # the app inherits the phone's language and an Afghan user with an
+        # English phone gets an English, left-to-right layout.
+        CFBundleDevelopmentRegion: fa
+        CFBundleLocalizations: [fa, ps, en]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.worktrack
+        GENERATE_INFOPLIST_FILE: NO
+
+  WorkTrackTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: WorkTrackTests
+    dependencies:
+      - target: WorkTrack

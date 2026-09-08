@@ -1,0 +1,46 @@
+import Foundation
+import Security
+
+/// The Keychain, for the one secret this app holds: the refresh token.
+///
+/// Not UserDefaults, which is a plist any backup reads. And the Keychain
+/// specifically because it SURVIVES the app being deleted and reinstalled —
+/// which matters beyond secrecy: whenever this app grows a device identity, it
+/// has to live here too, or reinstalling would hand the phone a new identity
+/// and take a fresh licence seat every time. See docs/15-ios-app.md.
+enum Keychain {
+    private static let service = "app.worktrack.auth"
+
+    static func set(_ value: String, for key: String) {
+        let data = Data(value.utf8)
+        var query = baseQuery(key)
+        SecItemDelete(query as CFDictionary)
+        query[kSecValueData as String] = data
+        // Readable only once the device has been unlocked at least once since
+        // boot, and never migrated to another device by a backup.
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        SecItemAdd(query as CFDictionary, nil)
+    }
+
+    static func get(_ key: String) -> String? {
+        var query = baseQuery(key)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var out: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess,
+              let data = out as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func remove(_ key: String) {
+        SecItemDelete(baseQuery(key) as CFDictionary)
+    }
+
+    private static func baseQuery(_ key: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+        ]
+    }
+}
