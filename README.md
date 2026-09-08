@@ -50,6 +50,8 @@ To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-
 12. [Local demo setup — run everything with sample data](docs/11-local-demo-setup.md)
 13. [Production deployment — take it live](docs/12-production-deployment.md)
 14. [Operations runbook — diagnosing and repairing a live system](docs/13-operations-runbook.md)
+15. [The hosted demo](docs/14-hosted-demo.md)
+16. [اپلیکیشن iOS — امکان‌سنجی و برنامه](docs/15-ios-app.md)
 
 ## Android app
 
