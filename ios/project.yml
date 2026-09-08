@@ -17,16 +17,31 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
-    # No Developer ID yet, so device builds have nothing to sign with. But
-    # simulator builds must still be signed ad-hoc ("-"): the Keychain refuses
-    # an app with no entitlements, and SecItemAdd fails with -34018. Turning
-    # signing off wholesale made every launch ask for the password again,
-    # silently, because nothing checked the status.
-    DEVELOPMENT_TEAM: ""
-    CODE_SIGN_IDENTITY: "-"
+    # Simulator builds are signed ad-hoc ("-"). That is not cosmetic: the
+    # Keychain refuses an app with no entitlements and SecItemAdd fails with
+    # -34018, which showed up as the app asking for the password on every
+    # launch, silently, because nothing checked the status. Keep the simulator
+    # on manual ad-hoc signing; it needs no account and no network.
+    CODE_SIGN_IDENTITY[sdk=iphonesimulator*]: "-"
+    CODE_SIGN_STYLE[sdk=iphonesimulator*]: Manual
     CODE_SIGNING_REQUIRED: "YES"
     CODE_SIGNING_ALLOWED: "YES"
-    CODE_SIGN_STYLE: Manual
+
+    # Building for a real iPhone, and TestFlight, need the Apple Developer
+    # team. Put the Team ID here — developer.apple.com/account, Membership
+    # details, "Team ID", ten characters like A1B2C3D4E5:
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Development"
+    CODE_SIGN_STYLE[sdk=iphoneos*]: Automatic
+    # ...then, because automatic signing has to ask Apple for the certificate
+    # and profile the first time:
+    #   xcodebuild -workspace WorkTrack.xcworkspace -scheme WorkTrack \
+    #     -destination 'generic/platform=iOS' -allowProvisioningUpdates
+    #
+    # A Team ID is an identifier, not a secret — it is printed in every
+    # provisioning profile and every App Store URL — so unlike the Android
+    # keystore it belongs in the repository. What must never be committed is
+    # the signing certificate's private key and the App Store Connect API key.
 
 targets:
   WorkTrack:
