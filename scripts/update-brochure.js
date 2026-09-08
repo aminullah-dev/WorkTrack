@@ -12,6 +12,10 @@
  *   await updateBrochure(false)   // show the diff
  *   await updateBrochure(true)    // save
  *
+ * The licence sentence here is the wording actually published: an earlier draft
+ * opened with "Freeing a seat is yours to do", which duplicated the sentence
+ * before it and was dropped.
+ *
  * Every replacement asserts the old text appears EXACTLY once. A page whose
  * wording has drifted is skipped and reported rather than half-edited — the
  * failure mode to avoid is a page that is neither the old version nor the new.
@@ -27,7 +31,7 @@ const EDITS = {
       ],
       [
         "Nobody has to call us to change a number.",
-        "Freeing a seat is yours to do. How many seats you have is part of your licence, which we issue &mdash; tell us and we change it.",
+        "How many seats you have is part of your licence, which we issue &mdash; tell us and we change it.",
       ],
       [
         '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/what-we-do/worktrack/demo/">Try the demo</a>',
@@ -44,7 +48,7 @@ const EDITS = {
       ],
       [
         "کسی لازم نیست برای عوض کردن یک عدد به ما زنگ بزند.",
-        "آزاد کردن یک صندلی کار خود شماست. تعداد صندلی‌ها بخشی از لایسنس شماست که ما صادر می‌کنیم &mdash; به ما بگویید تا تغییرش دهیم.",
+        "تعداد صندلی‌ها بخشی از لایسنس شماست که ما صادر می‌کنیم &mdash; به ما بگویید تا تغییرش دهیم.",
       ],
       [
         '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/fa/mahsoolat-fa/worktrack-fa/demo-fa/">دمو را امتحان کنید</a>',
@@ -61,7 +65,7 @@ const EDITS = {
       ],
       [
         "هیچا ته اړتیا نشته چې د یو عدد بدلولو لپاره موږ ته زنګ ووهي.",
-        "د یوه ځای ازادول ستاسو خپل کار دی. د ځایونو شمېر ستاسو د جواز برخه ده چې موږ یې ورکوو &mdash; موږ ته ووایاست، بدلوو یې.",
+        "د ځایونو شمېر ستاسو د جواز برخه ده چې موږ یې ورکوو &mdash; موږ ته ووایاست، بدلوو یې.",
       ],
       [
         '<a class="lnm-btn lnm-btn-primary" href="https://linumic.com/ps/mahsoolat-ps/worktrack-ps/demo-ps/">ډیمو وازمایئ</a>',
