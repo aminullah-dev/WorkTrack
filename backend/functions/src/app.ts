@@ -5,6 +5,7 @@ import { errorHandler } from "./lib/errors";
 import { requireAuth } from "./middleware/auth";
 import { enforceDeviceLicense } from "./middleware/deviceGuard";
 import { vendorRouter } from "./routes/vendor";
+import { supportRouter } from "./routes/support";
 import { meRouter } from "./routes/me";
 import { attendanceRouter } from "./routes/attendance";
 import { leaveRouter } from "./routes/leave";
@@ -63,6 +64,11 @@ export function createApp(): express.Express {
   // Mounted before the device guard: a phone cannot claim its licence seat if
   // holding a seat is the precondition for being allowed to ask.
   v1.use("/devices", devicesRouter);
+  // Also before the device guard, and for the same reason: the customer most
+  // likely to need support is the one the licence has just locked out, and a
+  // support channel they cannot reach when the product refuses them is not a
+  // support channel.
+  v1.use("/support", supportRouter);
   v1.use(enforceDeviceLicense);
   v1.use("/me", meRouter);
   v1.use("/employees", employeesRouter);

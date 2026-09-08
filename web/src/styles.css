@@ -1732,3 +1732,13 @@ table.data tbody tr:hover {
   margin-top: 12px;
 }
 .vendor-section h3 { margin: 0 0 10px; font-size: 14px; }
+
+/* Something went well and the person should see it. */
+.notice-ok {
+  margin: 10px 0 0;
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  background: var(--green-bg, rgba(46, 125, 50, 0.12));
+  color: var(--green, #2E7D32);
+}

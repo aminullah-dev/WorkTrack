@@ -282,6 +282,15 @@ export interface SalaryComponent {
 
 export type SalaryComponentWrite = Omit<SalaryComponent, "id">;
 
+/** An issue this company raised with Linumic. A receipt, not the vendor's file. */
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  status: "OPEN" | "WAITING" | "RESOLVED";
+  openedAt: string | null;
+  resolvedAt: string | null;
+}
+
 /** One employee's exception against a component: a different amount, or none. */
 export interface ComponentAssignment {
   employeeId: string;

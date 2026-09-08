@@ -9,6 +9,7 @@ import type {
   CalendarDay,
   CompanyDeletion,
   ComponentAssignment,
+  SupportTicket,
   DayKind,
   Employee,
   EmployeeSalary,
@@ -251,6 +252,25 @@ export function useSaveSalaryComponent() {
         : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["salary-components"] });
+    },
+  });
+}
+
+/** Issues this company has raised with Linumic. */
+export function useSupportTickets() {
+  return useQuery({
+    queryKey: ["support-tickets"],
+    queryFn: () => api.get<SupportTicket[]>("/support/tickets").then((e) => e.data),
+  });
+}
+
+export function useRaiseSupportTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { subject: string; detail?: string }) =>
+      api.post<{ id: string }>("/support/tickets", body, false).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["support-tickets"] });
     },
   });
 }
