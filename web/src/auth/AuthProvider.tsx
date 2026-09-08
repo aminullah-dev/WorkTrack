@@ -15,7 +15,7 @@ import { auth } from "../firebase";
 import { api, ApiError } from "../api/client";
 import type { CompanyFeatures, Me } from "../api/types";
 
-type Status = "loading" | "signedOut" | "signedIn" | "kiosk";
+type Status = "loading" | "signedOut" | "signedIn" | "kiosk" | "vendor";
 
 interface AuthContextValue {
   status: Status;
@@ -65,6 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // A dedicated kiosk device account has no employee record; route it
         // straight to the full-screen kiosk display from its token claims.
         const claims = await user.getIdTokenResult();
+        // Linumic staff. They have no employee record and no company, so /me
+        // would refuse them — the console is a different application that
+        // happens to be served from the same bundle.
+        if (claims.claims.vendor === true) {
+          setMe(null);
+          setStatus("vendor");
+          return;
+        }
         if (asRoles(claims.claims.r).includes("KIOSK")) {
           setMe(null);
           setStatus("kiosk");
@@ -95,6 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn: async (email, password) => {
         const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
         const claims = await cred.user.getIdTokenResult();
+        if (claims.claims.vendor === true) {
+          setMe(null);
+          setStatus("vendor");
+          return;
+        }
         if (asRoles(claims.claims.r).includes("KIOSK")) {
           setMe(null);
           setStatus("kiosk");

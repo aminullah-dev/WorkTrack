@@ -13,6 +13,7 @@ import { FinancePage } from "./pages/FinancePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KioskPage } from "./pages/KioskPage";
 import { DevicesPage } from "./pages/DevicesPage";
+import { VendorConsole } from "./pages/VendorConsole";
 
 export function App() {
   const { status } = useAuth();
@@ -22,6 +23,11 @@ export function App() {
   }
   if (status === "signedOut") {
     return <LoginPage />;
+  }
+  // Linumic staff get their own console, not the customer portal — they have
+  // no company, and every tenant route would refuse their token anyway.
+  if (status === "vendor") {
+    return <VendorConsole />;
   }
   // A dedicated kiosk device is locked to the full-screen check-in display.
   if (status === "kiosk") {

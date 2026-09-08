@@ -76,7 +76,7 @@ export interface DeviceDto {
   lastSeenAt: string | null;
 }
 
-interface DeviceDoc {
+export interface DeviceDoc {
   type?: string;
   label?: string | null;
   platform?: string | null;

@@ -4,6 +4,7 @@ import { isOriginAllowed } from "./lib/cors";
 import { errorHandler } from "./lib/errors";
 import { requireAuth } from "./middleware/auth";
 import { enforceDeviceLicense } from "./middleware/deviceGuard";
+import { vendorRouter } from "./routes/vendor";
 import { meRouter } from "./routes/me";
 import { attendanceRouter } from "./routes/attendance";
 import { leaveRouter } from "./routes/leave";
@@ -50,6 +51,12 @@ export function createApp(): express.Express {
   // Public, unauthenticated routes (company self-signup) — mounted BEFORE the
   // auth middleware so a new company can be created without a token.
   app.use("/v1/public", publicRouter);
+
+  // The vendor console. Mounted OUTSIDE the tenant router on purpose: requireAuth
+  // demands cid/eid, which a vendor account does not have, and these routes take
+  // the company id from the URL rather than the token. requireVendor is what
+  // makes that safe — see middleware/vendor.ts.
+  app.use("/v1/vendor", vendorRouter);
 
   const v1 = express.Router();
   v1.use(requireAuth);
