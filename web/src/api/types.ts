@@ -538,3 +538,104 @@ export interface Regularization {
   createdAt: string;
   updatedAt: string;
 }
+
+// --------------------------------------------------------------- work
+
+/** A thing the company is building: a contract, a site, a phase. */
+export interface Project {
+  id: string;
+  companyId: string;
+  name: string;
+  code: string;
+  description: string | null;
+  branchId: string | null;
+  managerId: string | null;
+  status: "PLANNED" | "ACTIVE" | "PAUSED" | "DONE";
+  startDate: string | null;
+  endDate: string | null;
+  updatedAt: string;
+}
+
+export type ProjectWrite = Omit<Project, "id" | "companyId" | "updatedAt">;
+
+/**
+ * A named crew. Not a department: the plastering team is drawn from three
+ * departments and looks different next month.
+ */
+export interface WorkTeam {
+  id: string;
+  companyId: string;
+  name: string;
+  projectId: string | null;
+  leadId: string | null;
+  memberIds: string[];
+  active: boolean;
+  updatedAt: string;
+}
+
+export type WorkTeamWrite = Omit<WorkTeam, "id" | "companyId" | "updatedAt">;
+
+export type TaskStatus = "PLANNED" | "IN_PROGRESS" | "DONE" | "BLOCKED";
+
+/**
+ * One piece of work, on a date range, for one or more people.
+ *
+ * `assigneeIds` is always people — assigning a crew expands to its members on
+ * the server, so `teamId` records where the assignment came from rather than
+ * who is responsible now.
+ */
+export interface WorkTask {
+  id: string;
+  companyId: string;
+  projectId: string;
+  projectName: string;
+  title: string;
+  detail: string | null;
+  location: string | null;
+  startDate: string;
+  endDate: string;
+  status: TaskStatus;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  teamId: string | null;
+  teamName: string | null;
+  assigneeIds: string[];
+  assigneeNames: string[];
+  statusNote: string | null;
+  completedAt: string | null;
+  updatedAt: string;
+}
+
+export interface TaskWrite {
+  projectId: string;
+  title: string;
+  detail?: string | null;
+  location?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  teamId?: string | null;
+  assigneeIds: string[];
+}
+
+/** One day of one person's work, with why it is empty when it is. */
+export interface WorkDay {
+  date: string;
+  kind: DayKind;
+  tasks: WorkTask[];
+}
+
+export interface MyWork {
+  today: WorkDay;
+  next: WorkDay | null;
+}
+
+export interface DayBoardRow {
+  employeeId: string;
+  name: string;
+  tasks: WorkTask[];
+}
+
+export interface DayBoard {
+  date: string;
+  rows: DayBoardRow[];
+}

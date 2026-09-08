@@ -16,4 +16,18 @@
     <string name="dash_chip_out">بهر</string>
     <string name="dash_priority_important">مهم</string>
     <string name="dash_priority_urgent">بېړنی</string>
+    <string name="dash_work_today">ستاسو د نن کار</string>
+    <string name="dash_work_next">د %1$s کار</string>
+    <string name="dash_work_none_today">د نن ورځې لپاره تاسو ته کار نه دی ټاکل شوی. که ډاډه نه یاست، له خپل سرپرست وپوښتئ.</string>
+    <string name="dash_work_none_next">د دې ورځې لپاره لا کار نه دی ټاکل شوی.</string>
+    <string name="dash_work_team">ټیمي کار</string>
+    <string name="dash_work_solo">انفرادي</string>
+    <string name="dash_work_with">ملګري: %1$s</string>
+    <string name="dash_work_start">پیل مې کړ</string>
+    <string name="dash_work_finish">بشپړ شو</string>
+    <string name="dash_work_status_planned">پلان شوی</string>
+    <string name="dash_work_status_in_progress">روان</string>
+    <string name="dash_work_status_done">ترسره شو</string>
+    <string name="dash_work_status_blocked">درېدلی</string>
+    <string name="dash_work_offline">د دې بدلون ثبتولو لپاره انټرنټ ته اړتیا ده. ستاسو کار همدلته خوندي دی.</string>
 </resources>

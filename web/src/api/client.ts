@@ -102,6 +102,11 @@ export const api = {
     request<Envelope<T>>(path, { method: "POST", body, idempotent }),
   put: <T>(path: string, body: unknown) =>
     request<Envelope<T>>(path, { method: "PUT", body }),
+  // PATCH for partial edits, where PUT would need the caller to resend fields
+  // it never touched — and, sending them back stale, quietly undo somebody
+  // else's change.
+  patch: <T>(path: string, body: unknown) =>
+    request<Envelope<T>>(path, { method: "PATCH", body }),
   del: <T>(path: string) => request<Envelope<T>>(path, { method: "DELETE" }),
 };
 

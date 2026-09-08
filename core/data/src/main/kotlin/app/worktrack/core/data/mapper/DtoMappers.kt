@@ -10,6 +10,8 @@ import app.worktrack.core.database.entity.LeaveBalanceEntity
 import app.worktrack.core.database.entity.LeaveRequestEntity
 import app.worktrack.core.database.entity.LeaveTypeEntity
 import app.worktrack.core.database.entity.PayslipEntity
+import app.worktrack.core.database.entity.ProjectEntity
+import app.worktrack.core.database.entity.TaskEntity
 import app.worktrack.core.database.entity.PayslipLineEntity
 import app.worktrack.core.database.entity.ShiftAssignmentEntity
 import app.worktrack.core.database.entity.ShiftEntity
@@ -20,6 +22,7 @@ import app.worktrack.core.model.PunchType
 import app.worktrack.core.model.RoleCode
 import app.worktrack.core.model.SyncStatus
 import app.worktrack.core.model.UserSession
+import java.time.LocalDate
 import app.worktrack.core.network.dto.AnnouncementDto
 import app.worktrack.core.network.dto.AttendanceDayDto
 import app.worktrack.core.network.dto.BranchDto
@@ -30,6 +33,8 @@ import app.worktrack.core.network.dto.LeaveRequestDto
 import app.worktrack.core.network.dto.LeaveTypeDto
 import app.worktrack.core.network.dto.MeDto
 import app.worktrack.core.network.dto.PayslipDto
+import app.worktrack.core.network.dto.ProjectDto
+import app.worktrack.core.network.dto.WorkTaskDto
 import app.worktrack.core.network.dto.PunchDto
 import app.worktrack.core.network.dto.ShiftAssignmentDto
 import app.worktrack.core.network.dto.ShiftDto
@@ -249,5 +254,31 @@ fun AnnouncementDto.toEntity() = AnnouncementEntity(
     publishedAt = publishedAt,
     expiresAt = expiresAt,
     createdByName = createdByName,
+    updatedAt = updatedAt,
+)
+
+// ------------------------------------------------------------------- work
+
+fun ProjectDto.toEntity() = ProjectEntity(
+    id = id,
+    name = name,
+    code = code,
+    status = status,
+    updatedAt = updatedAt,
+)
+
+fun WorkTaskDto.toEntity() = TaskEntity(
+    id = id,
+    projectId = projectId,
+    projectName = projectName,
+    title = title,
+    detail = detail,
+    location = location,
+    startDate = LocalDate.parse(startDate),
+    endDate = LocalDate.parse(endDate),
+    status = status,
+    priority = priority,
+    teamName = teamName,
+    assigneeNames = assigneeNames,
     updatedAt = updatedAt,
 )

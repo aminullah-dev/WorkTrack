@@ -12,6 +12,7 @@ import app.worktrack.core.data.repository.FaceRepositoryImpl
 import app.worktrack.core.data.repository.LeaveRepositoryImpl
 import app.worktrack.core.data.repository.PayslipRepositoryImpl
 import app.worktrack.core.data.repository.SyncRepositoryImpl
+import app.worktrack.core.data.repository.WorkRepositoryImpl
 import app.worktrack.core.domain.repository.AnnouncementRepository
 import app.worktrack.core.domain.repository.AttendanceRepository
 import app.worktrack.core.domain.repository.AuthRepository
@@ -19,6 +20,7 @@ import app.worktrack.core.domain.repository.FaceRepository
 import app.worktrack.core.domain.repository.LeaveRepository
 import app.worktrack.core.domain.repository.PayslipRepository
 import app.worktrack.core.domain.repository.SyncRepository
+import app.worktrack.core.domain.repository.WorkRepository
 import app.worktrack.core.data.device.StoredDeviceIdProvider
 import app.worktrack.core.network.auth.AuthTokenProvider
 import app.worktrack.core.network.device.DeviceIdProvider
@@ -40,6 +42,7 @@ interface DataModule {
     @Binds fun bindFaceRepository(impl: FaceRepositoryImpl): FaceRepository
     @Binds fun bindPayslipRepository(impl: PayslipRepositoryImpl): PayslipRepository
     @Binds fun bindAnnouncementRepository(impl: AnnouncementRepositoryImpl): AnnouncementRepository
+    @Binds fun bindWorkRepository(impl: WorkRepositoryImpl): WorkRepository
     @Binds fun bindSyncRepository(impl: SyncRepositoryImpl): SyncRepository
     @Binds fun bindAuthTokenProvider(impl: FirebaseAuthTokenProvider): AuthTokenProvider
 

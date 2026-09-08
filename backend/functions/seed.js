@@ -642,6 +642,160 @@ async function seedExtras() {
   });
 }
 
+/**
+ * Work assignment: two projects, two crews, and a week of scheduled work.
+ *
+ * Dated relative to today rather than fixed, so the demo answers "what am I on
+ * today" with something on it every day it is opened — including the Android
+ * app's dashboard, which is the whole point of the feature.
+ *
+ * Spans are deliberately mixed: single days, a job running through today, and
+ * work dated ahead, so the "next working day" card is never empty either.
+ */
+const projects = [
+  {
+    id: "prj_darulaman",
+    name: "برج دارالامان",
+    code: "DRL",
+    description: "اعمار بلاک B — ۸ منزل، قرارداد شاروالی کابل",
+    status: "ACTIVE",
+  },
+  {
+    id: "prj_school",
+    name: "بازسازی مکتب نمبر ۴",
+    code: "SCH-4",
+    description: "ترمیم صنف‌ها و سیستم برق",
+    status: "ACTIVE",
+  },
+];
+
+const workTeams = [
+  {
+    id: "tm_concrete",
+    name: "تیم کانکریت",
+    leadId: "emp_yusuf",
+    memberIds: ["emp_ahmad", "emp_omar", "emp_yusuf"],
+  },
+  {
+    id: "tm_electric",
+    name: "تیم برق",
+    leadId: "emp_fatima",
+    memberIds: ["emp_fatima", "emp_maryam"],
+  },
+];
+
+const NAMES = Object.fromEntries(
+  employees.map((e) => [e.id, `${e.firstName} ${e.lastName}`]),
+);
+
+/** startOffset/endOffset are days from today; 0 = today, -1 = tomorrow. */
+const workTasks = [
+  {
+    id: "tk_slab", project: "prj_darulaman", team: "tm_concrete",
+    title: "قالب‌بندی و ریختن کانکریت منزل سوم",
+    detail: "قبل از ریختن، آرماتوربندی توسط انجنیر ساحه کنترول شود.",
+    // Two days on purpose: the pour, then the curing check. It also means the
+    // Android demo login has something on its "next working day" card.
+    location: "بلاک B — منزل سوم", start: 0, end: -1, status: "IN_PROGRESS", priority: "HIGH",
+  },
+  {
+    id: "tk_rebar", project: "prj_darulaman", assignees: ["emp_omar"],
+    title: "آرماتوربندی منزل چهارم",
+    detail: null, location: "بلاک B — منزل چهارم", start: 1, end: -2,
+    status: "IN_PROGRESS", priority: "NORMAL",
+  },
+  {
+    id: "tk_wiring", project: "prj_school", team: "tm_electric",
+    title: "کشیدن وایرینگ صنف‌های ۱ تا ۴",
+    detail: "کیبل ۲.۵ ملی‌متر از گدام گرفته شود.",
+    location: "منزل اول", start: 0, end: 0, status: "PLANNED", priority: "NORMAL",
+  },
+  {
+    id: "tk_panel", project: "prj_school", assignees: ["emp_fatima"],
+    title: "نصب پنل برق مرکزی",
+    detail: null, location: "دهلیز مرکزی", start: -1, end: -1,
+    status: "PLANNED", priority: "HIGH",
+  },
+  {
+    id: "tk_survey", project: "prj_darulaman", assignees: ["emp_maryam"],
+    title: "سروی و نشانی ستون‌های منزل پنجم",
+    detail: null, location: "بلاک B", start: -1, end: -1,
+    status: "PLANNED", priority: "NORMAL",
+  },
+  {
+    id: "tk_cleanup", project: "prj_darulaman", team: "tm_concrete",
+    title: "پاک‌کاری ساحه و جمع‌آوری قالب‌ها",
+    detail: null, location: "بلاک B", start: -3, end: -3,
+    status: "PLANNED", priority: "LOW",
+  },
+];
+
+async function seedWork() {
+  for (const p of projects) {
+    await col("projects").doc(p.id).set({
+      companyId: CID,
+      name: p.name,
+      code: p.code,
+      description: p.description,
+      branchId: "br_main",
+      managerId: "emp_admin",
+      status: p.status,
+      startDate: null,
+      endDate: null,
+      createdBy: "emp_admin",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  for (const t of workTeams) {
+    await col("projectTeams").doc(t.id).set({
+      companyId: CID,
+      name: t.name,
+      projectId: null,
+      leadId: t.leadId,
+      memberIds: [...t.memberIds].sort(),
+      active: true,
+      createdBy: "emp_admin",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  const teamsById = Object.fromEntries(workTeams.map((t) => [t.id, t]));
+  for (const t of workTasks) {
+    const team = t.team ? teamsById[t.team] : null;
+    // Same rule as services/work.ts: a task is assigned to people, and a team
+    // is expanded to its members when it is written.
+    const assigneeIds = [
+      ...new Set([...(team ? team.memberIds : []), ...(t.assignees ?? [])]),
+    ].sort();
+    const project = projects.find((p) => p.id === t.project);
+
+    await col("tasks").doc(t.id).set({
+      companyId: CID,
+      projectId: project.id,
+      projectName: project.name,
+      title: t.title,
+      detail: t.detail,
+      location: t.location,
+      startDate: isoDaysAgo(t.start),
+      endDate: isoDaysAgo(t.end),
+      status: t.status,
+      priority: t.priority,
+      teamId: team ? team.id : null,
+      teamName: team ? team.name : null,
+      assigneeIds,
+      assigneeNames: assigneeIds.map((id) => NAMES[id] ?? id),
+      statusNote: null,
+      completedAt: null,
+      createdBy: "emp_admin",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
 async function seedFinance() {
   // Chart of accounts (mirrors DEFAULT_ACCOUNTS in services/accounting.ts).
   const accounts = [
@@ -736,6 +890,7 @@ async function main() {
   await seedAttendance();
   await seedLeave();
   await seedExtras();
+  await seedWork();
   // Finance before payroll: the run posts its accrual to the chart of accounts,
   // so the chart has to exist first. computePayrollRun would create the codes it
   // needs on its own, but then seedFinance would write over them afterwards.

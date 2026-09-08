@@ -5,8 +5,10 @@ import app.worktrack.core.domain.repository.AnnouncementRepository
 import app.worktrack.core.domain.repository.AttendanceRepository
 import app.worktrack.core.domain.repository.AuthRepository
 import app.worktrack.core.domain.repository.LeaveRepository
+import app.worktrack.core.domain.usecase.work.ObserveMyWorkUseCase
 import app.worktrack.core.model.Announcement
 import app.worktrack.core.model.LeaveBalance
+import app.worktrack.core.model.MyWork
 import app.worktrack.core.model.TodayAttendance
 import app.worktrack.core.model.UserSession
 import javax.inject.Inject
@@ -18,6 +20,8 @@ data class DashboardSnapshot(
     val today: TodayAttendance,
     val leaveBalances: List<LeaveBalance>,
     val announcements: List<Announcement>,
+    /** Which part of the job this person is on today, and next. */
+    val myWork: MyWork,
 )
 
 class ObserveDashboardUseCase @Inject constructor(
@@ -25,6 +29,7 @@ class ObserveDashboardUseCase @Inject constructor(
     private val attendanceRepository: AttendanceRepository,
     private val leaveRepository: LeaveRepository,
     private val announcementRepository: AnnouncementRepository,
+    private val observeMyWork: ObserveMyWorkUseCase,
     private val timeProvider: TimeProvider,
 ) {
 
@@ -34,13 +39,15 @@ class ObserveDashboardUseCase @Inject constructor(
         attendanceRepository.observeToday(),
         leaveRepository.observeMyBalances(timeProvider.today().year),
         announcementRepository.observeAnnouncements(),
-    ) { session, today, balances, announcements ->
+        observeMyWork(),
+    ) { session, today, balances, announcements, myWork ->
         session?.let {
             DashboardSnapshot(
                 session = it,
                 today = today,
                 leaveBalances = balances,
                 announcements = announcements.take(MAX_DASHBOARD_ANNOUNCEMENTS),
+                myWork = myWork,
             )
         }
     }

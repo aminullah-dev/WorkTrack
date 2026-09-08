@@ -10,7 +10,10 @@ import app.worktrack.core.network.dto.LeaveDecisionDto
 import app.worktrack.core.network.dto.LeaveRequestDto
 import app.worktrack.core.network.dto.MeDto
 import app.worktrack.core.network.dto.PayslipDto
+import app.worktrack.core.network.dto.MyWorkDto
 import app.worktrack.core.network.dto.SyncPullResponseDto
+import app.worktrack.core.network.dto.TaskStatusDto
+import app.worktrack.core.network.dto.WorkTaskDto
 import app.worktrack.core.network.dto.SyncPushRequestDto
 import app.worktrack.core.network.dto.SyncPushResponseDto
 import retrofit2.http.Body
@@ -51,6 +54,21 @@ interface WorkTrackApi {
 
     @GET("announcements")
     suspend fun announcements(): ApiEnvelope<List<AnnouncementDto>>
+
+    /**
+     * What this employee is on today and next. Takes no date: the server knows
+     * what day it is where the company is, and a phone set to another timezone
+     * would otherwise ask about the wrong one.
+     */
+    @GET("work/mine")
+    suspend fun myWork(): ApiEnvelope<MyWorkDto>
+
+    /** Report progress on one of your own tasks. */
+    @POST("work/tasks/{id}/status")
+    suspend fun setTaskStatus(
+        @Path("id") taskId: String,
+        @Body body: TaskStatusDto,
+    ): ApiEnvelope<WorkTaskDto>
 
     @GET("leave/requests")
     suspend fun leaveRequests(

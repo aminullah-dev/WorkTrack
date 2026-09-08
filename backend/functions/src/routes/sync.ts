@@ -94,7 +94,7 @@ async function applyOp(
 // ---------------------------------------------------------------------- pull
 
 /** How each resource type is scoped for delta pull. */
-type PullScope = "company" | "employee" | "employeeOrApprover" | "self";
+type PullScope = "company" | "employee" | "employeeOrApprover" | "self" | "assignee";
 
 const PULL_REGISTRY: Record<string, { collection: TenantCollection; scope: PullScope }> = {
   branches: { collection: "branches", scope: "company" },
@@ -110,6 +110,8 @@ const PULL_REGISTRY: Record<string, { collection: TenantCollection; scope: PullS
   attendanceDays: { collection: "attendanceDays", scope: "employee" },
   payslips: { collection: "payslips", scope: "employee" },
   announcements: { collection: "announcements", scope: "company" },
+  projects: { collection: "projects", scope: "company" },
+  tasks: { collection: "tasks", scope: "assignee" },
 };
 
 /**
@@ -183,6 +185,10 @@ function buildQueries(
       ];
     case "self":
       return [base.where(FieldPath.documentId(), "==", employeeId)];
+    // A task names its people directly, so one array-contains replaces the
+    // "which teams am I in" lookup a team-valued field would have needed.
+    case "assignee":
+      return [base.where("assigneeIds", "array-contains", employeeId)];
   }
 }
 

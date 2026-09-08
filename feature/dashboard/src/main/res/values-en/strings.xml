@@ -16,4 +16,18 @@
     <string name="dash_chip_out">OUT</string>
     <string name="dash_priority_important">Important</string>
     <string name="dash_priority_urgent">Urgent</string>
+    <string name="dash_work_today">Your work today</string>
+    <string name="dash_work_next">Work for %1$s</string>
+    <string name="dash_work_none_today">Nothing assigned to you today. Ask your supervisor if that seems wrong.</string>
+    <string name="dash_work_none_next">Nothing assigned for that day yet.</string>
+    <string name="dash_work_team">Team job</string>
+    <string name="dash_work_solo">Individual</string>
+    <string name="dash_work_with">With: %1$s</string>
+    <string name="dash_work_start">Started</string>
+    <string name="dash_work_finish">Finished</string>
+    <string name="dash_work_status_planned">Planned</string>
+    <string name="dash_work_status_in_progress">In progress</string>
+    <string name="dash_work_status_done">Done</string>
+    <string name="dash_work_status_blocked">Blocked</string>
+    <string name="dash_work_offline">You need a connection to record that. Your work is still here.</string>
 </resources>

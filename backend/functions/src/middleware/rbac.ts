@@ -27,6 +27,9 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "devices:manage",
     "announcements:read",
     "announcements:write",
+    "work:read",
+    "work:write",
+    "self:tasks",
     "audit:read",
   ]),
   PAYROLL_ADMIN: new Set([
@@ -65,7 +68,12 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "kiosk:issue",
     "devices:read",
     "announcements:read",
+    "work:read",
+    "work:write",
+    "self:tasks",
   ]),
+  // A team lead plans his own crew's day. This is the role the work-assignment
+  // feature is for: he is the person who knows what the site needs tomorrow.
   TEAM_LEAD: new Set([
     "employees:read",
     "attendance:read",
@@ -73,6 +81,9 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "leave:approve",
     "rosters:read",
     "announcements:read",
+    "work:read",
+    "work:write",
+    "self:tasks",
   ]),
   EMPLOYEE: new Set([
     "self:punch",
@@ -80,12 +91,16 @@ const ROLE_PERMISSIONS: Record<string, ReadonlySet<string>> = {
     "self:leave",
     "self:payslips",
     "announcements:read",
+    // Read his own assignments and report progress on them. NOT work:read:
+    // what the rest of the company is doing is not his to browse.
+    "self:tasks",
   ]),
   AUDITOR: new Set([
     "employees:read",
     "attendance:read",
     "leave:read",
     "payroll:read",
+    "work:read",
     "audit:read",
   ]),
   KIOSK: new Set(["kiosk:issue"]),

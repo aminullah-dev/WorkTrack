@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EmployeesPage } from "./pages/EmployeesPage";
 import { AttendancePage } from "./pages/AttendancePage";
 import { ShiftsPage } from "./pages/ShiftsPage";
+import { WorkPage } from "./pages/WorkPage";
 import { LeavePage } from "./pages/LeavePage";
 import { PayrollPage } from "./pages/PayrollPage";
 import { FinancePage } from "./pages/FinancePage";
@@ -43,6 +44,7 @@ export function App() {
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="shifts" element={<ShiftsPage />} />
+        <Route path="work" element={<WorkPage />} />
         <Route path="leave" element={<LeavePage />} />
         <Route path="payroll" element={<PayrollPage />} />
         <Route path="finance" element={<FinancePage />} />

@@ -14,6 +14,7 @@ import app.worktrack.core.database.dao.OutboxDao
 import app.worktrack.core.database.dao.PayslipDao
 import app.worktrack.core.database.dao.ShiftDao
 import app.worktrack.core.database.dao.SyncCursorDao
+import app.worktrack.core.database.dao.WorkDao
 import app.worktrack.core.database.entity.OutboxEntryEntity
 import app.worktrack.core.database.entity.SyncCursorEntity
 import app.worktrack.core.datastore.SessionStore
@@ -31,12 +32,14 @@ import app.worktrack.core.network.dto.LeaveBalanceDto
 import app.worktrack.core.network.dto.LeaveRequestDto
 import app.worktrack.core.network.dto.LeaveTypeDto
 import app.worktrack.core.network.dto.PayslipDto
+import app.worktrack.core.network.dto.ProjectDto
 import app.worktrack.core.network.dto.PunchDto
 import app.worktrack.core.network.dto.ShiftAssignmentDto
 import app.worktrack.core.network.dto.ShiftDto
 import app.worktrack.core.network.dto.SyncOpDto
 import app.worktrack.core.network.dto.SyncOpResultDto
 import app.worktrack.core.network.dto.SyncPushRequestDto
+import app.worktrack.core.network.dto.WorkTaskDto
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
@@ -73,6 +76,7 @@ class SyncRepositoryImpl @Inject constructor(
     private val leaveDao: LeaveDao,
     private val payslipDao: PayslipDao,
     private val announcementDao: AnnouncementDao,
+    private val workDao: WorkDao,
     private val sessionStore: SessionStore,
     private val api: WorkTrackApi,
     private val timeProvider: TimeProvider,
@@ -131,6 +135,7 @@ class SyncRepositoryImpl @Inject constructor(
         pushOutbox().let { if (it is AppResult.Failure) return it }
         pullDeltas().let { if (it is AppResult.Failure) return it }
         attendanceDao.prunePunchesBefore(timeProvider.now().minus(PUNCH_RETENTION))
+        workDao.pruneTasksBefore(timeProvider.today().minusDays(TASK_RETENTION_DAYS))
         return AppResult.success(Unit)
     }
 
@@ -322,6 +327,16 @@ class SyncRepositoryImpl @Inject constructor(
             ResourceTypes.ANNOUNCEMENTS -> announcementDao.upsertAnnouncements(
                 items.decode(AnnouncementDto.serializer()).map { it.toEntity() },
             )
+
+            ResourceTypes.PROJECTS -> workDao.upsertProjects(
+                items.decode(ProjectDto.serializer()).map { it.toEntity() },
+            )
+
+            // Scoped to this employee by the server, so everything that arrives
+            // is his own work.
+            ResourceTypes.TASKS -> workDao.upsertTasks(
+                items.decode(WorkTaskDto.serializer()).map { it.toEntity() },
+            )
         }
     }
 
@@ -347,5 +362,6 @@ class SyncRepositoryImpl @Inject constructor(
     private companion object {
         const val PUSH_BATCH_SIZE = 50
         val PUNCH_RETENTION: Duration = Duration.ofDays(90)
+        const val TASK_RETENTION_DAYS = 60L
     }
 }

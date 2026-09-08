@@ -47,6 +47,11 @@ export type TenantCollection =
   | "accounts"
   | "journalEntries"
   | "announcements"
+  // What the company is building, who is on which crew, and the individual
+  // pieces of work scheduled against a date. See services/work.ts.
+  | "projects"
+  | "projectTeams"
+  | "tasks"
   | "documents"
   | "auditLogs"
   | "notifications"

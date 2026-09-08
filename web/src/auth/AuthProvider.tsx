@@ -174,6 +174,11 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   "ledger:read": ["FINANCE_ADMIN", "AUDITOR"],
   "ledger:write": ["FINANCE_ADMIN"],
   "rosters:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  "work:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
+  "work:write": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  // Everyone who is somebody's employee — which is everyone who does the work,
+  // their team lead included.
+  "self:tasks": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "EMPLOYEE"],
   "rosters:write": ["HR_ADMIN", "BRANCH_MANAGER"],
   "kiosk:issue": ["HR_ADMIN", "BRANCH_MANAGER"],
   // settings:write is intentionally empty — only COMPANY_ADMIN/SUPER_ADMIN (the

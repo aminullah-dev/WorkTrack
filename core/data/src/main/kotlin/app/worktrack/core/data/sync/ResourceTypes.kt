@@ -18,6 +18,8 @@ object ResourceTypes {
     const val LEAVE_REQUESTS = "leaveRequests"
     const val PAYSLIPS = "payslips"
     const val ANNOUNCEMENTS = "announcements"
+    const val PROJECTS = "projects"
+    const val TASKS = "tasks"
 
     /** Pull order: reference data first so later types can resolve foreign keys. */
     val pullOrder: List<String> = listOf(
@@ -33,6 +35,9 @@ object ResourceTypes {
         ATTENDANCE_DAYS,
         PAYSLIPS,
         ANNOUNCEMENTS,
+        // Projects before tasks: a task names the project it belongs to.
+        PROJECTS,
+        TASKS,
     )
 }
 

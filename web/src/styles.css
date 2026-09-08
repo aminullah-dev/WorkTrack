@@ -1742,3 +1742,43 @@ table.data tbody tr:hover {
   background: var(--green-bg, rgba(46, 125, 50, 0.12));
   color: var(--green, #2E7D32);
 }
+
+/* Generic tab strip (work page). The vendor console has its own, older copy. */
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+.tab {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Scrolling checkbox list for picking people. Capped so a 200-person company
+   does not push the dialog's buttons off the screen. */
+.picker-list {
+  max-height: 190px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  margin-top: 4px;
+}
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.picker-row:hover { background: var(--surface-2, rgba(127, 127, 127, 0.08)); }

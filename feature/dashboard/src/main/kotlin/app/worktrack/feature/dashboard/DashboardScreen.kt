@@ -1,6 +1,7 @@
 package app.worktrack.feature.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +16,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,11 +36,15 @@ import app.worktrack.core.designsystem.component.StatusChip
 import app.worktrack.core.designsystem.component.WtPrimaryButton
 import app.worktrack.core.designsystem.component.WtSecondaryButton
 import app.worktrack.core.designsystem.l10n.formatClockTime
+import app.worktrack.core.designsystem.l10n.formatShamsiDate
 import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.domain.usecase.dashboard.DashboardSnapshot
 import app.worktrack.core.model.Announcement
 import app.worktrack.core.model.AnnouncementPriority
 import app.worktrack.core.model.LeaveBalance
+import app.worktrack.core.model.TaskStatus
+import app.worktrack.core.model.WorkDay
+import app.worktrack.core.model.WorkTask
 
 @Composable
 fun DashboardRoute(
@@ -44,13 +53,28 @@ fun DashboardRoute(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    when (val s = state) {
-        DashboardUiState.Loading -> FullScreenLoading()
-        is DashboardUiState.Ready -> DashboardScreen(
-            snapshot = s.snapshot,
-            onPunchClick = onPunchClick,
-            onAttendanceHistoryClick = onAttendanceHistoryClick,
-        )
+    val statusError by viewModel.statusError.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val offlineMessage = stringResource(R.string.dash_work_offline)
+
+    LaunchedEffect(statusError) {
+        if (statusError) {
+            snackbar.showSnackbar(offlineMessage)
+            viewModel.onStatusErrorShown()
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        when (val s = state) {
+            DashboardUiState.Loading -> FullScreenLoading()
+            is DashboardUiState.Ready -> DashboardScreen(
+                snapshot = s.snapshot,
+                onPunchClick = onPunchClick,
+                onAttendanceHistoryClick = onAttendanceHistoryClick,
+                onTaskStatus = viewModel::onTaskStatus,
+            )
+        }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
 }
 
@@ -59,6 +83,7 @@ internal fun DashboardScreen(
     snapshot: DashboardSnapshot,
     onPunchClick: () -> Unit,
     onAttendanceHistoryClick: () -> Unit,
+    onTaskStatus: (String, TaskStatus) -> Unit = { _, _ -> },
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -87,6 +112,21 @@ internal fun DashboardScreen(
                 onPunchClick = onPunchClick,
                 onAttendanceHistoryClick = onAttendanceHistoryClick,
             )
+        }
+
+        // Above leave and announcements on purpose: this is what the worker
+        // opened the app to find out, and it is useless once he has walked past
+        // the wrong part of the site.
+        item { SectionHeader(stringResource(R.string.dash_work_today)) }
+        item { WorkDayCard(snapshot.myWork.today, isToday = true, onTaskStatus = onTaskStatus) }
+
+        snapshot.myWork.next?.let { next ->
+            item {
+                SectionHeader(
+                    stringResource(R.string.dash_work_next, formatShamsiDate(next.date, withWeekday = true)),
+                )
+            }
+            item { WorkDayCard(next, isToday = false, onTaskStatus = onTaskStatus) }
         }
 
         if (snapshot.leaveBalances.isNotEmpty()) {
@@ -255,4 +295,133 @@ private fun AnnouncementCard(announcement: Announcement) {
             )
         }
     }
+}
+
+/**
+ * One day of assigned work.
+ *
+ * An empty day says so in words. A blank card would be read as "the app is
+ * broken" or, worse, as "nothing to do" — and the two are not the same thing.
+ */
+@Composable
+private fun WorkDayCard(
+    day: WorkDay,
+    isToday: Boolean,
+    onTaskStatus: (String, TaskStatus) -> Unit,
+) {
+    if (day.tasks.isEmpty()) {
+        Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Text(
+                text = stringResource(
+                    if (isToday) R.string.dash_work_none_today else R.string.dash_work_none_next,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        day.tasks.forEach { task ->
+            TaskCard(task = task, actionable = isToday, onTaskStatus = onTaskStatus)
+        }
+    }
+}
+
+@Composable
+private fun TaskCard(
+    task: WorkTask,
+    actionable: Boolean,
+    onTaskStatus: (String, TaskStatus) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(text = task.title, style = MaterialTheme.typography.titleMedium)
+                    // The project and the place: which part of the job, and where.
+                    Text(
+                        text = listOfNotNull(task.projectName, task.location).joinToString(" — "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                StatusChip(text = statusLabel(task.status), tone = statusTone(task.status))
+            }
+
+            task.detail?.let {
+                Spacer(Modifier.height(6.dp))
+                Text(text = it, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusChip(
+                    text = stringResource(
+                        if (task.isTeamWork) R.string.dash_work_team else R.string.dash_work_solo,
+                    ),
+                    tone = ChipTone.NEUTRAL,
+                )
+                task.teamName?.let {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (task.isTeamWork) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        R.string.dash_work_with,
+                        task.assigneeNames.joinToString("، "),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Only today's work can be reported on: marking tomorrow's job
+            // finished today is never something the worker meant to do.
+            if (actionable && task.status != TaskStatus.DONE) {
+                Spacer(Modifier.height(12.dp))
+                Row {
+                    if (task.status != TaskStatus.IN_PROGRESS) {
+                        WtSecondaryButton(
+                            text = stringResource(R.string.dash_work_start),
+                            onClick = { onTaskStatus(task.id, TaskStatus.IN_PROGRESS) },
+                        )
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    WtPrimaryButton(
+                        text = stringResource(R.string.dash_work_finish),
+                        onClick = { onTaskStatus(task.id, TaskStatus.DONE) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun statusLabel(status: TaskStatus): String = stringResource(
+    when (status) {
+        TaskStatus.PLANNED -> R.string.dash_work_status_planned
+        TaskStatus.IN_PROGRESS -> R.string.dash_work_status_in_progress
+        TaskStatus.DONE -> R.string.dash_work_status_done
+        TaskStatus.BLOCKED -> R.string.dash_work_status_blocked
+    },
+)
+
+private fun statusTone(status: TaskStatus): ChipTone = when (status) {
+    TaskStatus.PLANNED -> ChipTone.NEUTRAL
+    TaskStatus.IN_PROGRESS -> ChipTone.WARNING
+    TaskStatus.DONE -> ChipTone.POSITIVE
+    TaskStatus.BLOCKED -> ChipTone.NEGATIVE
 }

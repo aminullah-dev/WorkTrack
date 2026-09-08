@@ -29,6 +29,15 @@ import type {
   KioskAccountCreated,
   Kpis,
   LeaveRequest,
+  DayBoard,
+  MyWork,
+  Project,
+  ProjectWrite,
+  TaskStatus,
+  TaskWrite,
+  WorkTask,
+  WorkTeam,
+  WorkTeamWrite,
   PayrollRun,
   SalaryComponent,
   SalaryComponentWrite,
@@ -655,5 +664,141 @@ export function useCancelCompanyDeletion() {
   return useMutation({
     mutationFn: () => api.del<CompanyDeletion>("/company/deletion"),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["company-deletion"] }),
+  });
+}
+
+// ---------------------------------------------------------------- work
+
+/** Everything the work board reads invalidates together: one plan, one cache. */
+function invalidateWork(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ["work-tasks"] });
+  void qc.invalidateQueries({ queryKey: ["work-board"] });
+  void qc.invalidateQueries({ queryKey: ["my-work"] });
+}
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: () => api.get<Project[]>("/work/projects").then((e) => e.data),
+  });
+}
+
+export function useSaveProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: ProjectWrite }) =>
+      id
+        ? api.put<Project>(`/work/projects/${id}`, body).then((e) => e.data)
+        : api.post<Project>("/work/projects", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+      invalidateWork(qc);
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/projects/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useWorkTeams() {
+  return useQuery({
+    queryKey: ["work-teams"],
+    queryFn: () => api.get<WorkTeam[]>("/work/teams").then((e) => e.data),
+  });
+}
+
+export function useSaveWorkTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: WorkTeamWrite }) =>
+      id
+        ? api.put<WorkTeam>(`/work/teams/${id}`, body).then((e) => e.data)
+        : api.post<WorkTeam>("/work/teams", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["work-teams"] });
+    },
+  });
+}
+
+export function useDeleteWorkTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/teams/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["work-teams"] });
+    },
+  });
+}
+
+/** Tasks overlapping a date window, optionally narrowed to a project or person. */
+export function useWorkTasks(
+  from: string,
+  to: string,
+  filter: { projectId?: string; employeeId?: string } = {},
+) {
+  return useQuery({
+    queryKey: ["work-tasks", from, to, filter.projectId ?? "", filter.employeeId ?? ""],
+    queryFn: () =>
+      api
+        .get<WorkTask[]>("/work/tasks", {
+          from,
+          to,
+          projectId: filter.projectId,
+          employeeId: filter.employeeId,
+        })
+        .then((e) => e.data),
+  });
+}
+
+/** One day, grouped by person — the morning question, answered. */
+export function useDayBoard(date: string) {
+  return useQuery({
+    queryKey: ["work-board", date],
+    queryFn: () => api.get<DayBoard>("/work/board", { date }).then((e) => e.data),
+  });
+}
+
+/** The signed-in manager's own assignments — the same view their staff get. */
+export function useMyWork() {
+  return useQuery({
+    queryKey: ["my-work"],
+    queryFn: () => api.get<MyWork>("/work/mine").then((e) => e.data),
+  });
+}
+
+export function useSaveTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: TaskWrite | Partial<TaskWrite> }) =>
+      id
+        ? api.patch<WorkTask>(`/work/tasks/${id}`, body).then((e) => e.data)
+        : api.post<WorkTask>("/work/tasks", body).then((e) => e.data),
+    onSuccess: () => invalidateWork(qc),
+  });
+}
+
+export function useDeleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/tasks/${id}`),
+    onSuccess: () => invalidateWork(qc),
+  });
+}
+
+export function useSetTaskStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, note }: { id: string; status: TaskStatus; note?: string }) =>
+      api
+        .post<WorkTask>(`/work/tasks/${id}/status`, { status, note }, false)
+        .then((e) => e.data),
+    onSuccess: () => invalidateWork(qc),
   });
 }

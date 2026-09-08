@@ -22,6 +22,14 @@ export function Layout() {
       show: can("rosters:read") && features.shifts,
     },
     {
+      to: "/work",
+      icon: <IconClipboard />,
+      label: t("nav_work"),
+      // Visible to a plain employee too: "My work" is their half of this page,
+      // and it is the only tab they get.
+      show: can("work:read") || can("self:tasks"),
+    },
+    {
       to: "/leave",
       icon: <IconPlane />,
       label: t("nav_leave"),
@@ -165,6 +173,9 @@ const IconGear = () => (
 );
 const IconQr = () => (
   <Svg><rect x="3.5" y="3.5" width="6" height="6" rx="1" /><rect x="14.5" y="3.5" width="6" height="6" rx="1" /><rect x="3.5" y="14.5" width="6" height="6" rx="1" /><path d="M14.5 14.5h3v3M20.5 14.5v6M14.5 20.5h3" /></Svg>
+);
+const IconClipboard = () => (
+  <Svg><rect x="5" y="4.5" width="14" height="16" rx="2" /><path d="M9 4.5V3.5h6v1" /><path d="M9 10h6M9 14h4" /></Svg>
 );
 const IconChart = () => (
   <Svg><path d="M4 4v16h16" /><path d="M8 15l3-4 3 2 4-6" /></Svg>

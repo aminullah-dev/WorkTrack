@@ -10,6 +10,8 @@ import app.worktrack.core.database.entity.LeaveBalanceEntity
 import app.worktrack.core.database.entity.LeaveRequestEntity
 import app.worktrack.core.database.entity.LeaveTypeEntity
 import app.worktrack.core.database.entity.PayslipWithLines
+import app.worktrack.core.database.entity.ProjectEntity
+import app.worktrack.core.database.entity.TaskEntity
 import app.worktrack.core.database.entity.ShiftEntity
 import app.worktrack.core.model.Announcement
 import app.worktrack.core.model.AnnouncementPriority
@@ -25,6 +27,10 @@ import app.worktrack.core.model.LeaveBalance
 import app.worktrack.core.model.LeaveRequest
 import app.worktrack.core.model.LeaveType
 import app.worktrack.core.model.PayComponentType
+import app.worktrack.core.model.Project
+import app.worktrack.core.model.TaskPriority
+import app.worktrack.core.model.TaskStatus
+import app.worktrack.core.model.WorkTask
 import app.worktrack.core.model.Payslip
 import app.worktrack.core.model.PayslipLine
 import app.worktrack.core.model.PayslipStatus
@@ -211,5 +217,31 @@ fun AnnouncementEntity.toModel() = Announcement(
     publishedAt = publishedAt,
     expiresAt = expiresAt,
     createdByName = createdByName,
+    updatedAt = updatedAt,
+)
+
+// ------------------------------------------------------------------- work
+
+fun ProjectEntity.toModel() = Project(
+    id = id,
+    name = name,
+    code = code,
+    status = status,
+    updatedAt = updatedAt,
+)
+
+fun TaskEntity.toModel() = WorkTask(
+    id = id,
+    projectId = projectId,
+    projectName = projectName,
+    title = title,
+    detail = detail,
+    location = location,
+    startDate = startDate,
+    endDate = endDate,
+    status = status.toEnumOr(TaskStatus.PLANNED),
+    priority = priority.toEnumOr(TaskPriority.NORMAL),
+    teamName = teamName,
+    assigneeNames = assigneeNames,
     updatedAt = updatedAt,
 )
