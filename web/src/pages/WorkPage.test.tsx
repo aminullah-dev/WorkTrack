@@ -216,7 +216,7 @@ describe("assigning work", () => {
     // The server only re-expands a team when the assignment was part of the
     // edit. Sending an empty one here would strip everybody off the task.
     await openPlanEdit();
-    const dialog = screen.getByText("ویرایش", { selector: "h2" }).closest(".modal")!;
+    const dialog = screen.getByText("ویرایش", { selector: "h2" }).closest(".modal") as HTMLElement;
     await userEvent.clear(within(dialog).getByLabelText("کار"));
     await userEvent.type(within(dialog).getByLabelText("کار"), "Slab pour, third floor");
     await userEvent.click(within(dialog).getByRole("button", { name: "ذخیره" }));
@@ -230,7 +230,7 @@ describe("assigning work", () => {
 
   it("sends the assignment when the crew was actually changed", async () => {
     await openPlanEdit();
-    const dialog = screen.getByText("ویرایش", { selector: "h2" }).closest(".modal")!;
+    const dialog = screen.getByText("ویرایش", { selector: "h2" }).closest(".modal") as HTMLElement;
     await userEvent.click(within(dialog).getByRole("checkbox", { name: /Fatima Sadat/ }));
     await userEvent.click(within(dialog).getByRole("button", { name: "ذخیره" }));
 
@@ -242,7 +242,7 @@ describe("assigning work", () => {
   it("sends a new individual assignment with no team", async () => {
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "تعیین کار" }));
-    const dialog = screen.getByText("تعیین کار", { selector: "h2" }).closest(".modal")!;
+    const dialog = screen.getByText("تعیین کار", { selector: "h2" }).closest(".modal") as HTMLElement;
 
     await userEvent.selectOptions(within(dialog).getByLabelText("پروژه"), "p1");
     await userEvent.type(within(dialog).getByLabelText("کار"), "Run the site power");
@@ -262,7 +262,7 @@ describe("assigning work", () => {
   it("will not save a task with no project or no title", async () => {
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "تعیین کار" }));
-    const dialog = screen.getByText("تعیین کار", { selector: "h2" }).closest(".modal")!;
+    const dialog = screen.getByText("تعیین کار", { selector: "h2" }).closest(".modal") as HTMLElement;
     expect(within(dialog).getByRole("button", { name: "ذخیره" })).toBeDisabled();
 
     await userEvent.selectOptions(within(dialog).getByLabelText("پروژه"), "p1");
