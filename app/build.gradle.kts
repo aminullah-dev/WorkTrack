@@ -64,8 +64,20 @@ android {
         // ACCESS_FINE_LOCATION alone, which Android 12 and newer drop outright
         // from an app targeting SDK 31+, so GPS check-in could never get
         // permission. Do not ship 1.0.0 to anyone.
-        versionCode = 2
-        versionName = "1.0.1"
+        //
+        // 1.1.0 adds work assignment: the dashboard tells an employee which
+        // part of the job they are on today and on their next working day.
+        //
+        // Bumping this is not bookkeeping. The download page publishes a
+        // SHA-256 per file and tells customers to check it before installing,
+        // and the filenames carry the version. Shipping different bytes as
+        // "worktrack-1.0.1-arm64.apk" would change the published checksum under
+        // an unchanged name, so somebody who verified yesterday's download
+        // would find a mismatch today and rightly conclude it had been
+        // tampered with. It would also leave two different apps both answering
+        // "1.0.1" when support asks which version somebody is running.
+        versionCode = 3
+        versionName = "1.1.0"
 
         // Inherited by the release build: Firebase Hosting rewrites /v1/** to
         // the `api` Cloud Function (see backend/firebase.json), a stable URL
