@@ -5,6 +5,7 @@ import { useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 import { shamsiToday } from "../shamsi/solarHijri";
+import { SalaryComponentsCard } from "./SalaryComponentsCard";
 
 const SHAMSI_MONTHS_FA = [
   "حمل", "ثور", "جوزا", "سرطان", "اسد", "سنبله",
@@ -154,6 +155,8 @@ export function PayrollPage() {
           </table>
         </div>
       )}
+      <SalaryComponentsCard />
+
       {toast && <Toast message={toast} />}
     </>
   );

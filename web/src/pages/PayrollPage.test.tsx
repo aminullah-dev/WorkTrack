@@ -42,6 +42,10 @@ vi.mock("../api/hooks", () => ({
     isPending: false,
   }),
   useRunPayslips: () => ({ data: [], isLoading: false, isError: false }),
+  // The page also carries the earnings-and-deductions card; it is exercised by
+  // its own test, so keep it inert here.
+  useSalaryComponents: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useSaveSalaryComponent: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("../auth/AuthProvider", () => ({
