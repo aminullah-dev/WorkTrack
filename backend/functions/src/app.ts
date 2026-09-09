@@ -13,6 +13,7 @@ import { payslipsRouter } from "./routes/payslips";
 import { announcementsRouter } from "./routes/announcements";
 import { employeesRouter } from "./routes/employees";
 import { analyticsRouter } from "./routes/analytics";
+import { advancesRouter } from "./routes/advances";
 import { payrollRouter } from "./routes/payroll";
 import { financeRouter } from "./routes/finance";
 import { devicesRouter } from "./routes/devices";
@@ -77,6 +78,7 @@ export function createApp(): express.Express {
   v1.use("/leave", leaveRouter);
   v1.use("/payslips", payslipsRouter);
   v1.use("/payroll", payrollRouter);
+  v1.use("/advances", advancesRouter);
   v1.use("/finance", financeRouter);
   v1.use("/announcements", announcementsRouter);
   v1.use("/analytics", analyticsRouter);

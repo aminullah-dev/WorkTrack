@@ -1,6 +1,8 @@
 import { nowTimestamp, tenant } from "../lib/firestore";
 import { shamsiMonthEndIso, shamsiMonthStartIso } from "../lib/shamsi";
 import { ensureAccounts, postJournalEntry } from "./accounting";
+import { planRepayments } from "./advances";
+import { outstandingFor, reconcileRepayments } from "./advanceStore";
 import { localDateOf } from "./attendance";
 import { expectedWorkingDays, holidaySet } from "./calendar";
 import { componentsForEmployee, listAssignments } from "./salaryAssignments";
@@ -122,6 +124,16 @@ export async function computePayrollRun(
     getSettings(cid),
     holidaySet(cid, fromIso, toIso),
   ]);
+
+  // What each person still owes on money taken before payday, read as this run
+  // should see it: any repayment a PREVIOUS attempt at this same month made is
+  // excluded, so recomputing a month takes the same money once rather than
+  // again on top.
+  const advancesByEmployee = await outstandingFor(
+    cid,
+    employeesSnap.docs.map((d) => d.id),
+    runId,
+  );
 
   // The days people were actually expected in. Weekends and public holidays are
   // excluded, so neither is ever mistaken for absence.
@@ -299,6 +311,25 @@ export async function computePayrollRun(
     }
     employerCost = round2(employerCost);
 
+    // Advances come out LAST, and deliberately so. Tax is owed to the state on
+    // what was earned; an advance is the company's own money coming back. When
+    // there is not enough to go round, the thing that yields is the debt to
+    // the employer, not the debt to the government — and the floor being
+    // protected is the worker's pay reaching zero rather than going below it.
+    const advancesOwed = advancesByEmployee.get(employeeId) ?? [];
+    const payBeforeAdvances = round2(
+      gross - lines.filter((l) => l.type === "DEDUCTION").reduce((s, l) => s + l.amount, 0),
+    );
+    const repaymentPlan = planRepayments(advancesOwed, payBeforeAdvances);
+    if (repaymentPlan.total > 0) {
+      lines.push({
+        componentCode: "ADVANCE",
+        componentName: "کسر پیش‌پرداخت",
+        type: "DEDUCTION",
+        amount: repaymentPlan.total,
+      });
+    }
+
     const totalDeductions = round2(
       lines.filter((l) => l.type === "DEDUCTION").reduce((s, l) => s + l.amount, 0),
     );
@@ -330,6 +361,18 @@ export async function computePayrollRun(
       lines,
       updatedAt: now,
     });
+
+    // After the payslip, not before: if writing the payslip fails, the debt is
+    // untouched and the month can simply be run again.
+    if (advancesOwed.length > 0) {
+      await reconcileRepayments(
+        cid,
+        runId,
+        `${periodYear}-${String(periodMonth).padStart(2, "0")}`,
+        advancesOwed.map((a) => a.id),
+        repaymentPlan.repayments,
+      );
+    }
 
     totalGross += gross;
     totalNet += net;

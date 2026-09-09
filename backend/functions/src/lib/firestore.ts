@@ -33,6 +33,11 @@ export type TenantCollection =
   // and a second calendar can be added later without moving these documents.
   | "holidays"
   | "salaryComponents"
+  // Money handed to somebody before payday, and taken back out of it. Kept as
+  // a principal plus a subcollection of repayments keyed by the payroll run
+  // that made them, because a run can be recomputed and a mutated balance
+  // would take the same month's money twice. See services/advanceStore.ts.
+  | "advances"
   // Which of those components apply to one person, and at what amount. A
   // component is a definition; this is the exception list against it — an
   // allowance only some people get, a different figure for one of them, or a

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
-import { db, tenant } from "../lib/firestore";
+import { db, nowTimestamp, tenant } from "../lib/firestore";
 import { computePayrollRun } from "./payroll";
 import { currentShamsiMonth, shamsiMonthStartIso } from "../lib/shamsi";
 import { localDateOf } from "./attendance";
@@ -759,3 +759,185 @@ function allDates(): string[] {
 function eachWorkingDay(): string[] {
   return allDates().filter((d) => new Date(`${d}T00:00:00Z`).getUTCDay() !== 5);
 }
+
+/**
+ * Advances, taken back out of the pay they were an advance on.
+ *
+ * The arithmetic is pinned in services/advances.test.ts. What only a real run
+ * can show is whether the money comes out once — payroll is deliberately
+ * recomputable, and a repayment that simply subtracted from a balance would
+ * take the same month twice.
+ */
+describe.skipIf(!EMULATOR)("salary advances", () => {
+  beforeEach(async () => {
+    cid = `adv_${Date.now()}_${seq++}`;
+    await db.collection("companies").doc(cid).set({
+      name: "Advances",
+      timezone: "Asia/Kabul",
+      settings: { profile: { currency: "AFN", timezone: "Asia/Kabul" } },
+    });
+  });
+
+  async function advance(
+    id: string,
+    employeeId: string,
+    principal: number,
+    instalment: number | null = null,
+  ): Promise<void> {
+    await tenant(cid, "advances").doc(id).set({
+      employeeId,
+      employeeName: employeeId,
+      principal,
+      instalment,
+      issuedOn: "2026-08-01",
+      note: null,
+      repaid: 0,
+      status: "OUTSTANDING",
+      createdBy: "admin",
+      createdAt: nowTimestamp(),
+      updatedAt: nowTimestamp(),
+    });
+  }
+
+  async function payslipOf(employeeId: string): Promise<Record<string, any>> {
+    const snap = await tenant(cid, "payslips").doc(`${employeeId}_1405_05`).get();
+    return snap.data() as Record<string, any>;
+  }
+
+  function advanceLine(payslip: Record<string, any>): number {
+    return (payslip.lines as { componentCode: string; amount: number }[])
+      .filter((l) => l.componentCode === "ADVANCE")
+      .reduce((s, l) => s + l.amount, 0);
+  }
+
+  async function outstandingOf(id: string): Promise<number> {
+    const doc = (await tenant(cid, "advances").doc(id).get()).data() as any;
+    return Math.round((doc.principal - doc.repaid) * 100) / 100;
+  }
+
+  it("takes the advance out of the payslip", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await advance("a1", "e1", 5000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const slip = await payslipOf("e1");
+    expect(advanceLine(slip)).toBe(5000);
+    expect(await outstandingOf("a1")).toBe(0);
+  });
+
+  it("does not take it twice when the month is run again", async () => {
+    // Payroll is recomputable by design — payslip ids and the journal entry are
+    // derived from the run. An advance that mutated a balance would be taken
+    // once per run of the same month, and the worker would be paid less every
+    // time somebody corrected an attendance record.
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await advance("a1", "e1", 5000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+    const firstNet = (await payslipOf("e1")).net;
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const slip = await payslipOf("e1");
+    expect(advanceLine(slip)).toBe(5000);
+    expect(slip.net).toBe(firstNet);
+    expect(await outstandingOf("a1")).toBe(0);
+  });
+
+  it("takes an instalment and leaves the rest owing", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await advance("a1", "e1", 12000, 3000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(advanceLine(await payslipOf("e1"))).toBe(3000);
+    expect(await outstandingOf("a1")).toBe(9000);
+  });
+
+  it("never pushes a payslip below zero, and carries the rest", async () => {
+    // Somebody who was absent most of the month owes more than the month pays.
+    await employee("e1");
+    await salary("e1", 30000);
+    await unpaidDays("e1", 30);
+    await advance("a1", "e1", 40000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const slip = await payslipOf("e1");
+    expect(slip.net).toBeGreaterThanOrEqual(0);
+    // Whatever was taken, the debt fell by exactly that and no more.
+    expect(await outstandingOf("a1")).toBe(Math.round((40000 - advanceLine(slip)) * 100) / 100);
+  });
+
+  it("gives way to tax rather than the other way round", async () => {
+    // An advance is the company's own money coming back; tax is owed to the
+    // state on what was earned. When there is not enough for both, the debt to
+    // the employer is what yields.
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await advance("a1", "e1", 999999);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const slip = await payslipOf("e1");
+    const tax = (slip.lines as { componentCode: string; amount: number }[]).find(
+      (l) => l.componentCode === "TAX",
+    );
+    expect(tax?.amount).toBeGreaterThan(0);
+    expect(slip.net).toBe(0);
+  });
+
+  it("repays the oldest debt first, across two advances", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await tenant(cid, "advances").doc("older").set({
+      employeeId: "e1", employeeName: "e1", principal: 2000, instalment: null,
+      issuedOn: "2026-07-01", note: null, repaid: 0, status: "OUTSTANDING",
+      createdBy: "admin", createdAt: nowTimestamp(), updatedAt: nowTimestamp(),
+    });
+    await advance("newer", "e1", 3000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(advanceLine(await payslipOf("e1"))).toBe(5000);
+    expect(await outstandingOf("older")).toBe(0);
+    expect(await outstandingOf("newer")).toBe(0);
+  });
+
+  it("leaves one employee's debt off another's payslip", async () => {
+    await employee("e1");
+    await employee("e2");
+    await salary("e1", 30000);
+    await salary("e2", 30000);
+    await attendAll("e1");
+    await attendAll("e2");
+    await advance("a1", "e1", 5000);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(advanceLine(await payslipOf("e1"))).toBe(5000);
+    expect(advanceLine(await payslipOf("e2"))).toBe(0);
+  });
+
+  it("ignores an advance that was cancelled", async () => {
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+    await advance("a1", "e1", 5000);
+    await tenant(cid, "advances").doc("a1").update({ status: "CANCELLED" });
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(advanceLine(await payslipOf("e1"))).toBe(0);
+  });
+});
