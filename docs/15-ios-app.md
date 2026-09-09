@@ -220,16 +220,60 @@ similarity گزارش‌شدهٔ سرور بالای ۰٫۸ باشد. زیر آ�
 ترتیب مهم است. اگر از حاضری شروع کنید، هم‌زمان با GPS، دوربین، آفلاین و RTL
 درگیر می‌شوید و هیچ‌کدام تمام نمی‌شود.
 
-### قدم بعدی، حالا که حساب هست
+### توزیع، عملاً — دستورالعمل تکرارشونده
 
-- **Team ID** را از `developer.apple.com/account` → Membership details بردارید
-  و در `ios/project.yml` جلوی `DEVELOPMENT_TEAM` بگذارید (ده حرف، مثل
-  `A1B2C3D4E5`). بدون آن build شبیه‌ساز کار می‌کند ولی build گوشی با پیام
-  «requires a development team» می‌ایستد.
-- اولین build گوشی باید `-allowProvisioningUpdates` داشته باشد تا اپل
-  certificate و profile را بسازد.
-- برای TestFlight یک App ID و یک رکورد در App Store Connect لازم است؛ حجم کار
-  آن یک بعدازظهر است، نه یک هفته.
+**۱۸ سنبله ۱۴۰۵: انجام شد و کار می‌کند.** اپ از TestFlight روی یک آیفون ۱۵ پرو
+مکس نصب شد. آنچه پایین است همان کاری است که واقعاً جواب داد، نه نقشهٔ نظری.
+
+یک بار انجام شده و دیگر تکرار نمی‌شود:
+
+| کار | کجا |
+|---|---|
+| Team ID در `ios/project.yml` | `27RXPRW77S` |
+| لاگین Apple ID | Xcode → Settings → Accounts |
+| Developer Mode روی گوشی | iPhone → Settings → Privacy & Security |
+| ثبت UDID دستگاه | developer.apple.com → Devices |
+| رکورد اپ | App Store Connect → «Linumic WorkTrack» |
+| کلید API | `~/.appstoreconnect/private_keys/AuthKey_LY3MRPLPAB.p8` |
+
+**هر بار که build تازه می‌فرستید** (دست‌کم هر ۹۰ روز، وگرنه اپ روی گوشی تسترها
+باز نمی‌شود):
+
+```bash
+cd ios
+# CURRENT_PROJECT_VERSION را در project.yml یک عدد بالا ببرید — اپل build با
+# شمارهٔ تکراری را رد می‌کند.
+xcodegen generate && pod install
+xcodebuild -workspace WorkTrack.xcworkspace -scheme WorkTrack \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath /tmp/WorkTrack.xcarchive -allowProvisioningUpdates archive
+xcodebuild -exportArchive -archivePath /tmp/WorkTrack.xcarchive \
+  -exportPath /tmp/WorkTrackExport \
+  -exportOptionsPlist ios/exportOptions.plist -allowProvisioningUpdates
+xcrun altool --upload-app -f /tmp/WorkTrackExport/WorkTrack.ipa -t ios \
+  --apiKey LY3MRPLPAB --apiIssuer 0e948a64-b5af-4815-bc6c-f7943bb4f637
+```
+
+بعد در App Store Connect → TestFlight، build تازه را به گروه Internal Testing
+اضافه کنید. برای تست داخلی هیچ بررسی‌ای از طرف اپل لازم نیست.
+
+**سه چیزی که وقت گرفت و دفعهٔ بعد نباید بگیرد:**
+
+- **کیبل شارژ ≠ کیبل دیتا.** گوشی شارژ می‌شد و مک اصلاً نمی‌دیدش. تشخیصش با
+  `ioreg -p IOUSB -w0 | grep iPhone` است: اگر iPhone در فهرست USB نیست، مشکل
+  کیبل است نه تنظیمات.
+- **`xcodebuild` دستگاه را خودش ثبت نمی‌کند** (فقط Xcode گرافیکی). UDID را از
+  خطای build بردارید و دستی در Devices ثبت کنید.
+- **`TARGETED_DEVICE_FAMILY` باید روی TARGET باشد.** XcodeGen خودش `1,2` را روی
+  هر target می‌نویسد و تنظیم سطح پروژه را بی‌صدا بی‌اثر می‌کند — اولین بار
+  درست به نظر می‌رسید و خروجی عوض نشده بود. اپل هم اپ portrait-only را که ادعای
+  iPad دارد رد می‌کند (خطای ۹۰۴۷۴).
+
+**و یک چیز که هرگز تمام نمی‌شود:** هر build بعد از ۹۰ روز منقضی می‌شود. اپ روی
+گوشی تستر باز نمی‌شود و پیام «Beta has expired» می‌دهد. این یعنی **هر سه ماه یک
+آپلود اجباری**، حتی اگر هیچ کد تازه‌ای ننوشته باشید. در اندروید چنین چیزی نداریم
+و اگر روزی iOS به دست مشتری واقعی برسد، این باید در تقویم کاری باشد نه در حافظهٔ
+کسی.
 
 ---
 
