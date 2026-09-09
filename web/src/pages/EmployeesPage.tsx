@@ -311,7 +311,10 @@ function EmployeeForm({
     setFieldErrors({});
     setFormError(null);
     const body = {
-      employeeCode: form.employeeCode,
+      // Left out when blank, which is what asks the server to number this
+      // person. Sending "" would just fail validation, and on an edit it is
+      // the difference between "leave the code alone" and "erase it".
+      employeeCode: form.employeeCode.trim() || undefined,
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
@@ -365,7 +368,18 @@ function EmployeeForm({
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
         <h2>{isEdit ? t("emp_edit_title") : t("emp_add")}</h2>
         <div className="form-grid">
-          <Text label={t("emp_code")} value={form.employeeCode} onChange={(v) => set("employeeCode", v)} error={fieldErrors.employeeCode} />
+          {/* Blank on a new hire: the server assigns the next code, and the
+              placeholder says so rather than leaving an empty box that looks
+              like something the user forgot. Still typeable — a company with
+              its own payroll numbers keeps using them. */}
+          <Text
+            label={t("emp_code")}
+            value={form.employeeCode}
+            onChange={(v) => set("employeeCode", v)}
+            error={fieldErrors.employeeCode}
+            placeholder={isEdit ? undefined : t("emp_code_auto")}
+            dir="ltr"
+          />
           <Text label={t("emp_phone")} value={form.phone} onChange={(v) => set("phone", v)} dir="ltr" />
           <Text label={t("emp_name")} value={form.firstName} onChange={(v) => set("firstName", v)} error={fieldErrors.firstName} />
           <Text label={`${t("emp_name")} (2)`} value={form.lastName} onChange={(v) => set("lastName", v)} error={fieldErrors.lastName} />
@@ -512,17 +526,25 @@ function Text({
   onChange,
   error,
   dir,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   error?: string;
   dir?: "ltr" | "rtl";
+  placeholder?: string;
 }) {
   return (
     <div className="field">
       <label>{label}</label>
-      <input className="input" dir={dir} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input
+        className="input"
+        dir={dir}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
       {error && <span className="field-error">{error}</span>}
     </div>
   );

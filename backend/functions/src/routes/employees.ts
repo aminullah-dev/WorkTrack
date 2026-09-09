@@ -8,6 +8,7 @@ import { ulid } from "../lib/ids";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
 import { parseBody } from "../middleware/validate";
+import { nextEmployeeCode } from "../services/employees";
 import { clearFace } from "../services/face";
 import {
   ASSIGNABLE_ROLES,
@@ -125,7 +126,10 @@ employeesRouter.get(
 );
 
 const employeeWriteSchema = z.object({
-  employeeCode: z.string().min(1).max(40),
+  // Optional, and generated when it is left out — see services/employees.ts.
+  // On an edit, leaving it out keeps the code the employee already has; a
+  // full set() would otherwise blank it, and this schema serves both routes.
+  employeeCode: z.string().min(1).max(40).optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   email: z.string().email(),
@@ -146,9 +150,10 @@ const employeeWriteSchema = z.object({
 function toDoc(
   payload: z.infer<typeof employeeWriteSchema>,
   avatarUrl: string | null,
+  employeeCode: string,
 ): EmployeeDoc {
   return {
-    employeeCode: payload.employeeCode,
+    employeeCode,
     firstName: payload.firstName,
     lastName: payload.lastName,
     email: payload.email,
@@ -172,7 +177,7 @@ employeesRouter.post(
     const auth = authOf(req);
     const payload = parseBody(req, employeeWriteSchema);
     const id = ulid();
-    const doc = toDoc(payload, null);
+    const employees = tenant(auth.companyId, "employees");
 
     // Create the login FIRST so a duplicate-email failure doesn't leave an
     // orphaned employee record behind.
@@ -184,12 +189,26 @@ employeesRouter.post(
         email: payload.email,
         displayName: `${payload.firstName} ${payload.lastName}`.trim(),
         role: payload.role,
-        branchIds: doc.branchId ? [doc.branchId] : [],
+        branchIds: payload.branchId ? [payload.branchId] : [],
         password: payload.initialPassword,
       });
     }
 
-    await tenant(auth.companyId, "employees").doc(id).create(doc);
+    // Reading the codes and writing the new one in one transaction. Two
+    // administrators adding somebody in the same moment would otherwise both
+    // read the same highest code and both be handed it: nothing enforces
+    // uniqueness on a display code, so the collision would be silent and
+    // permanent, and payroll would have two people answering to E-014.
+    const doc = await db.runTransaction(async (tx) => {
+      let code = payload.employeeCode?.trim();
+      if (!code) {
+        const snap = await tx.get(employees.select("employeeCode"));
+        code = nextEmployeeCode(snap.docs.map((d) => d.get("employeeCode") as string));
+      }
+      const created = toDoc(payload, null, code);
+      tx.create(employees.doc(id), created);
+      return created;
+    });
     await seedLeaveBalances(auth.companyId, id);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
@@ -197,7 +216,7 @@ employeesRouter.post(
       action: "employees.create",
       resourceType: "employees",
       resourceId: id,
-      after: { employeeCode: payload.employeeCode, email: payload.email, role: payload.role },
+      after: { employeeCode: doc.employeeCode, email: payload.email, role: payload.role },
     });
     res.status(201).json({
       data: { ...employeeToDto(id, auth.companyId, doc), tempPassword },
@@ -245,7 +264,12 @@ employeesRouter.put(
       throw ApiError.notFound("Employee not found");
     }
     const existingDoc = existing.data() as EmployeeDoc & { faceEnrolledAt?: unknown };
-    const doc = toDoc(payload, existingDoc.avatarUrl ?? null);
+    // Omitting the code on an edit means "leave it alone", not "clear it".
+    const doc = toDoc(
+      payload,
+      existingDoc.avatarUrl ?? null,
+      payload.employeeCode?.trim() || existingDoc.employeeCode,
+    );
     // A full set() would otherwise wipe face enrollment; carry it across edits.
     const preserved: Record<string, unknown> = { ...doc };
     if (existingDoc.faceEmbedding !== undefined) preserved.faceEmbedding = existingDoc.faceEmbedding;
