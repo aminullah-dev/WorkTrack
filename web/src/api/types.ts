@@ -147,7 +147,12 @@ export type AssignableRole =
   | "AUDITOR";
 
 export interface EmployeeWrite {
-  employeeCode: string;
+  /**
+   * Left out to have the server assign the next code. On an edit, leaving it
+   * out means "keep the one this employee already has" — the update writes the
+   * whole document, so sending an empty string would erase it.
+   */
+  employeeCode?: string;
   firstName: string;
   lastName: string;
   email: string;
