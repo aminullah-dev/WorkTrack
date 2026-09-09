@@ -19,6 +19,7 @@ import type {
 } from "../api/types";
 import { useAuth, useFeatures, useHasPermission } from "../auth/AuthProvider";
 import { EmployeeComponents } from "./EmployeeComponents";
+import { EmployeeDocuments } from "./EmployeeDocuments";
 import { useI18n } from "../i18n/LocaleProvider";
 import { Chip, EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 
@@ -470,6 +471,10 @@ function EmployeeForm({
         {/* Allowances and deductions for this person. Only for an employee who
             already exists — an assignment needs an id to point at. */}
         {canSetPay && isEdit && <EmployeeComponents employeeId={employee?.id ?? null} />}
+
+        {/* The papers held for this person. Edit only: a document needs an
+            employee id to hang off. */}
+        {isEdit && <EmployeeDocuments employeeId={employee?.id ?? null} />}
 
         {isEdit ? (
           <>

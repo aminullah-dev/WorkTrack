@@ -698,3 +698,27 @@ export interface AppNotification {
   read: boolean;
   createdAt: string | null;
 }
+
+export type DocumentType =
+  | "TAZKIRA"
+  | "CONTRACT"
+  | "WORK_PERMIT"
+  | "HEALTH_CERTIFICATE"
+  | "LICENCE"
+  | "OTHER";
+
+/** One paper the company holds for somebody, and when it runs out. */
+export interface EmployeeDocument {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: DocumentType;
+  number: string | null;
+  issuedOn: string | null;
+  /** Null for a document that does not expire, such as a tazkira. */
+  expiresOn: string | null;
+  note: string | null;
+  /** Only on the expiring list. */
+  standing?: "VALID" | "EXPIRING" | "EXPIRED" | "NO_EXPIRY";
+  daysLeft?: number | null;
+}

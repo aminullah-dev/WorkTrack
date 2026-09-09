@@ -4,6 +4,7 @@ import { companiesDueForPurge, purgeCompany } from "./services/companyDeletion";
 import { createApp } from "./app";
 import { kioskSecret } from "./config";
 import { runAttendanceAudit } from "./services/integrity";
+import { runDocumentWatch } from "./services/documentWatch";
 import { resetDemoTenant, DemoResetRefused } from "./services/demo-reset";
 
 // Deploy marker: v1.1 (finance + face recognition endpoints).
@@ -34,6 +35,28 @@ export const api = onRequest(
  * a repeat of the silent projection failure surfaces within a day instead of
  * whenever somebody happens to notice their staff marked absent.
  */
+/**
+ * Nightly check of the employee document register.
+ *
+ * A register nobody opens is not a control. This is what makes it one: whoever
+ * can act on it is told, unasked, that a work permit runs out in three weeks —
+ * rather than finding out four months after a contract lapsed, which means
+ * somebody has been working without one.
+ */
+export const documentExpiryWatch = onSchedule(
+  {
+    region: "us-central1",
+    schedule: "every day 03:00",
+    timeZone: "Asia/Kabul",
+    memory: "256MiB",
+    timeoutSeconds: 300,
+  },
+  async () => {
+    const result = await runDocumentWatch();
+    console.info("DOCUMENT_WATCH", JSON.stringify(result));
+  },
+);
+
 export const attendanceIntegrityAudit = onSchedule(
   {
     region: "us-central1",

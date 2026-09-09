@@ -6,6 +6,7 @@ import type {
   Advance,
   AdvanceWrite,
   AppNotification,
+  EmployeeDocument,
   PieceRecord,
   AttendanceOverviewRow,
   WeeklyAttendance,
@@ -238,6 +239,43 @@ export function useCancelAdvance() {
       void qc.invalidateQueries({ queryKey: ["advances"] });
       void qc.invalidateQueries({ queryKey: ["payroll"] });
     },
+  });
+}
+
+// ------------------------------------------------------------------ documents
+
+export function useEmployeeDocuments(employeeId: string | null) {
+  return useQuery({
+    enabled: employeeId !== null,
+    queryKey: ["documents", employeeId],
+    queryFn: () =>
+      api
+        .get<EmployeeDocument[]>(`/documents?employeeId=${encodeURIComponent(employeeId ?? "")}`)
+        .then((e) => e.data),
+  });
+}
+
+export function useExpiringDocuments() {
+  return useQuery({
+    queryKey: ["documents", "expiring"],
+    queryFn: () => api.get<EmployeeDocument[]>("/documents/expiring").then((e) => e.data),
+  });
+}
+
+export function useAddDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<EmployeeDocument>("/documents", body).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useDeleteDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`/documents/${id}`).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["documents"] }),
   });
 }
 

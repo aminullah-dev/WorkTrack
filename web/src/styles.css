@@ -1928,3 +1928,15 @@ table.data tbody tr:hover {
 .bell-item-title { font-weight: 600; }
 .bell-item-body { font-size: .88rem; color: var(--text-subtle); }
 .bell-item-when { font-size: .78rem; color: var(--text-subtle); }
+
+/* ------------------------------------------------------------- doc register */
+.doc-list { list-style: none; margin: 4px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.doc-list li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.doc-type { font-weight: 600; }
+.doc-number { color: var(--text-subtle); font-size: .9em; }
+.doc-form {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}

@@ -126,7 +126,13 @@ export async function notify(
 export async function notifyAll(
   cid: string,
   employeeIds: readonly string[],
-  input: { kind: NotificationKind; title: string; body: string; link?: string | null },
+  input: {
+    kind: NotificationKind;
+    title: string;
+    body: string;
+    link?: string | null;
+    dedupeKey?: string;
+  },
 ): Promise<void> {
   await Promise.all([...new Set(employeeIds)].map((employeeId) => notify(cid, { employeeId, ...input })));
 }

@@ -39,6 +39,11 @@ vi.mock("../api/hooks", () => ({
   useSetEmployeeSalary: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useResetEmployeePassword: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useResetEmployeeFace: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  // The edit form now carries the document register; it has its own test, so
+  // keep it inert here.
+  useEmployeeDocuments: () => ({ data: [], isLoading: false, isError: false }),
+  useAddDocument: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteDocument: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("../auth/AuthProvider", () => ({

@@ -43,9 +43,6 @@ export type TenantCollection =
   // total nobody can dispute — and disputes about piece counts are the whole
   // reason a workshop keeps a book. See services/pieceWork.ts.
   | "pieceRecords"
-  // What somebody needs to be told. One document per person per event, read by
-  // the portal and the apps; see services/notifications.ts.
-  | "notifications"
   // Which of those components apply to one person, and at what amount. A
   // component is a definition; this is the exception list against it — an
   // allowance only some people get, a different figure for one of them, or a
@@ -65,6 +62,9 @@ export type TenantCollection =
   | "projects"
   | "projectTeams"
   | "tasks"
+  // Tazkira, contract, work permit, health certificate — the papers a company
+  // has to hold for each person, and when each of them runs out. The entry
+  // existed and nothing used it; see services/employeeDocuments.ts.
   | "documents"
   | "auditLogs"
   | "notifications"
