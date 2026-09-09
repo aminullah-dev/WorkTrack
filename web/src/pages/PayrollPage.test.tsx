@@ -42,9 +42,13 @@ vi.mock("../api/hooks", () => ({
     isPending: false,
   }),
   useRunPayslips: () => ({ data: [], isLoading: false, isError: false }),
-  // The page also carries the earnings-and-deductions card; it is exercised by
-  // its own test, so keep it inert here.
+  // The page also carries the earnings-and-deductions card and the advances
+  // card; each is exercised by its own test, so keep them inert here.
   useSalaryComponents: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useAdvances: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useEmployees: () => ({ data: { data: [] }, isLoading: false, isError: false }),
+  useCreateAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCancelAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSaveSalaryComponent: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 

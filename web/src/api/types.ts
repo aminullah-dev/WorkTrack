@@ -646,3 +646,26 @@ export interface DayBoard {
   date: string;
   rows: DayBoardRow[];
 }
+
+/** Money handed to somebody before payday, and what is left of it. */
+export interface Advance {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  principal: number;
+  /** Null takes the whole thing at the next payroll. */
+  instalment: number | null;
+  issuedOn: string;
+  note: string | null;
+  repaid: number;
+  outstanding: number;
+  status: "OUTSTANDING" | "SETTLED" | "CANCELLED";
+}
+
+export interface AdvanceWrite {
+  employeeId: string;
+  principal: number;
+  instalment?: number | null;
+  issuedOn: string;
+  note?: string | null;
+}

@@ -3,6 +3,8 @@ import { api } from "./client";
 import { isoTodayIn } from "../time";
 import type {
   Account,
+  Advance,
+  AdvanceWrite,
   AttendanceOverviewRow,
   WeeklyAttendance,
   CompanySettings,
@@ -198,6 +200,42 @@ export function useRunPayroll() {
     mutationFn: (args: { periodYear: number; periodMonth: number }) =>
       api.post<PayrollRunResult>("/payroll/runs", args).then((e) => e.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payroll"] }),
+  });
+}
+
+// -------------------------------------------------------------------- advances
+
+export function useAdvances(employeeId: string | null) {
+  return useQuery({
+    queryKey: ["advances", employeeId ?? "all"],
+    queryFn: () =>
+      api
+        .get<Advance[]>(`/advances${employeeId ? `?employeeId=${encodeURIComponent(employeeId)}` : ""}`)
+        .then((e) => e.data),
+  });
+}
+
+export function useCreateAdvance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AdvanceWrite) => api.post<Advance>("/advances", body).then((e) => e.data),
+    // Payroll reads outstanding advances, so a new one changes what the next
+    // run will deduct.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["advances"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+export function useCancelAdvance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<{ id: string }>(`/advances/${id}/cancel`, {}).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["advances"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
   });
 }
 

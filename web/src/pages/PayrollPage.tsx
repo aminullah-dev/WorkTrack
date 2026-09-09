@@ -5,6 +5,7 @@ import { useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 import { shamsiToday } from "../shamsi/solarHijri";
+import { AdvancesCard } from "./AdvancesCard";
 import { SalaryComponentsCard } from "./SalaryComponentsCard";
 
 const SHAMSI_MONTHS_FA = [
@@ -156,6 +157,7 @@ export function PayrollPage() {
         </div>
       )}
       <SalaryComponentsCard />
+      <AdvancesCard />
 
       {toast && <Toast message={toast} />}
     </>
