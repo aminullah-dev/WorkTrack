@@ -1,0 +1,413 @@
+<!doctype html>
+<!--
+  The privacy notice for WorkTrack.
+
+  It lives in web/public/, so `vite build` copies it into dist on every build
+  and it is deployed with the portal. That is deliberate: the APK download page
+  sits in dist/ and has to be restored by hand after every build, which is a
+  step somebody will eventually forget. This one cannot be lost that way.
+
+  Every factual claim here was read out of the code, not assumed:
+
+    - only an embedding leaves the phone   ios/WorkTrack/Face/FaceService.swift
+                                           backend/.../services/face.ts
+    - the check-in photo is Android-only,  backend/.../services/punch.ts
+      optional, and off unless enabled     (selfie is nullish)
+    - location is read at the punch, not   ios/.../AttendanceViewModel.punch
+      in the background                    (NSLocationWhenInUseUsageDescription)
+    - no client touches the database       backend/firestore.rules
+    - closing an account purges after 30   services/companyDeletion.ts GRACE_DAYS
+    - the data is in the United States     Firestore location nam5
+
+  If any of those change, this file is wrong and has to change with them.
+-->
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سیاست حریم خصوصی — ورک‌ترک</title>
+<style>
+  :root {
+    --ink: #0A2735;
+    --ink-2: #4a5c68;
+    --line: #e2e6e9;
+    --bg: #F9F9F9;
+    --accent: #004E72;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.85 -apple-system, BlinkMacSystemFont, "Segoe UI", Vazirmatn, Tahoma, sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 72px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  .sub { color: var(--ink-2); font-size: .92rem; }
+  h2 { font-size: 1.12rem; margin: 34px 0 10px; color: var(--accent); }
+  p, li { color: var(--ink); }
+  ul { padding-inline-start: 22px; }
+  li { margin-bottom: 7px; }
+  .callout {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-inline-start: 3px solid var(--accent);
+    padding: 14px 16px;
+    margin: 18px 0;
+    border-radius: 6px;
+  }
+  .langs { display: flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap; }
+  .langs button {
+    font: inherit; font-size: .9rem; cursor: pointer;
+    padding: 6px 16px; border-radius: 999px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+  }
+  .langs button[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  section[hidden] { display: none; }
+  section[lang="en"] { direction: ltr; text-align: left; }
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: .87rem; }
+  code { background: #eef1f3; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="langs" role="tablist">
+    <button role="tab" data-lang="fa" aria-selected="true">دری</button>
+    <button role="tab" data-lang="ps" aria-selected="false">پښتو</button>
+    <button role="tab" data-lang="en" aria-selected="false">English</button>
+  </div>
+
+  <!-- ================================================================ DARI -->
+  <section lang="fa" dir="rtl">
+    <header>
+      <h1>سیاست حریم خصوصی ورک‌ترک</h1>
+      <div class="sub">آخرین به‌روزرسانی: ۱۸ سنبله ۱۴۰۵ (۸ سپتمبر ۲۰۲۶)</div>
+    </header>
+
+    <div class="callout">
+      <strong>خلاصه در چند خط:</strong> ورک‌ترک ابزار کاری است که کارفرمای شما آن را خریده.
+      داده‌های شما مال کارفرمای شماست، نه مال ما. ما به‌عنوان سازندهٔ نرم‌افزار هیچ استفادهٔ
+      دیگری از آن نمی‌کنیم — نه تبلیغات، نه فروش، نه تحلیل رفتار. <strong>عکس چهرهٔ شما هرگز
+      از گوشی خارج نمی‌شود.</strong> موقعیت مکانی فقط در همان لحظه‌ای که حاضری می‌زنید خوانده
+      می‌شود، نه در پس‌زمینه.
+    </div>
+
+    <h2>۱. چه کسی مسئول است</h2>
+    <p>
+      <strong>کارفرمای شما</strong> تصمیم می‌گیرد چه داده‌ای جمع شود و چه مدت نگه داشته شود.
+      <strong>ورک‌ترک (لینومیک)</strong> فقط نرم‌افزار و سرور را فراهم می‌کند و داده را از طرف
+      کارفرما نگه می‌دارد. اگر می‌خواهید داده‌تان اصلاح یا حذف شود، اول با کارفرمای خود تماس
+      بگیرید — دسترسی و اختیار حذف دست اوست، نه ما.
+    </p>
+
+    <h2>۲. چه داده‌ای جمع می‌شود</h2>
+    <ul>
+      <li><strong>شناسایی:</strong> نام، ایمیل، شمارهٔ تماس، کد کارمندی، شعبه و سمت. این‌ها را
+        کارفرما وارد می‌کند، نه شما.</li>
+      <li><strong>حاضری:</strong> زمان ورود و خروج، رخصتی، و درخواست‌های اصلاح.</li>
+      <li><strong>موقعیت مکانی:</strong> مختصات و دقت آن، <strong>فقط در همان ثانیه‌ای که دکمهٔ
+        ثبت ورود یا خروج را می‌زنید.</strong> برنامه در پس‌زمینه شما را دنبال نمی‌کند و اجازهٔ
+        موقعیت دائمی هم نمی‌گیرد. هدفش یک چیز است: معلوم شود در ساحهٔ کاری بودید یا نه.</li>
+      <li><strong>چهره (اگر کارفرما فعالش کرده باشد):</strong> پایین جداگانه توضیح داده شده.</li>
+      <li><strong>معاش:</strong> فیش‌ها و اجزای معاش، اگر کارفرما این بخش را استفاده کند.</li>
+    </ul>
+
+    <h2>۳. چهره — دقیقاً چه اتفاقی می‌افتد</h2>
+    <div class="callout">
+      عکس شما <strong>از گوشی بیرون نمی‌رود و در گوشی هم ذخیره نمی‌شود.</strong>
+    </div>
+    <p>
+      وقتی چهره‌تان را ثبت می‌کنید، برنامه روی خودِ گوشی عکس را به یک رشته از <strong>۱۹۲ عدد</strong>
+      تبدیل می‌کند. فقط همین اعداد به سرور می‌روند. عکس همان‌جا در حافظهٔ گوشی از بین می‌رود.
+    </p>
+    <p>
+      هنگام حاضری، دوباره همین کار تکرار می‌شود و سرور فقط دو رشته عدد را با هم مقایسه می‌کند تا
+      بگوید «همان شخص است» یا «نیست». از این اعداد نمی‌شود عکس شما را دوباره ساخت، و برای هیچ کار
+      دیگری — شناسایی در جای دیگر، تحلیل، فروش — استفاده نمی‌شود.
+    </p>
+    <p>
+      <strong>اگر با اپ اندروید کار می‌کنید</strong>، کارفرما می‌تواند به‌طور جداگانه گزینهٔ
+      «عکس هنگام ورود» را روشن کند. در آن حالت یک عکس کوچک همراه حاضری ذخیره می‌شود و سرپرست
+      می‌تواند ببیندش. این با تشخیص چهره فرق دارد، اختیاری است، و <strong>در اپ آیفون اصلاً وجود
+      ندارد.</strong> اگر مطمئن نیستید کارفرمای‌تان آن را روشن کرده یا نه، از او بپرسید.
+    </p>
+
+    <h2>۴. چه چیزی جمع <em>نمی‌شود</em></h2>
+    <ul>
+      <li>هیچ ابزار تحلیلی، ردیابی، یا تبلیغاتی در برنامه نیست. رفتار شما در برنامه به هیچ شرکت
+        دیگری فرستاده نمی‌شود.</li>
+      <li>موقعیت مکانی در پس‌زمینه خوانده نمی‌شود.</li>
+      <li>به مخاطبین، گالری عکس، پیام‌ها یا فایل‌های گوشی شما دسترسی گرفته نمی‌شود.</li>
+      <li>داده‌های شما به هیچ‌کس فروخته نمی‌شود.</li>
+    </ul>
+
+    <h2>۵. کجا نگهداری می‌شود و چه کسی می‌بیند</h2>
+    <p>
+      داده روی زیرساخت گوگل کلاود (Firebase) در <strong>ایالات متحده</strong> نگهداری می‌شود و در
+      انتقال و در حالت ذخیره رمزنگاری شده است.
+    </p>
+    <p>
+      هیچ برنامه‌ای — نه اپ موبایل و نه پورتال — اجازهٔ دسترسی مستقیم به پایگاه داده را ندارد؛
+      همه چیز از یک API با احراز هویت می‌گذرد که نقش هر کاربر را بررسی می‌کند. کارمند فقط دادهٔ
+      خودش را می‌بیند. سرپرست فقط کارمندان شعبهٔ خودش را. کارهای حساس مثل بازنشانی چهره در دفتر
+      رویدادها ثبت می‌شود.
+    </p>
+    <p>
+      کارکنان لینومیک برای پشتیبانی فقط وقتی به دادهٔ یک شرکت دسترسی پیدا می‌کنند که برای رفع یک
+      مشکل لازم باشد.
+    </p>
+
+    <h2>۶. چه مدت نگه داشته می‌شود</h2>
+    <p>
+      تا زمانی که کارفرمای شما حسابش را فعال نگه دارد. <strong>حذف خودکار زمان‌دار وجود ندارد</strong>،
+      چون سوابق حاضری و معاش معمولاً باید سال‌ها نگهداری شوند.
+    </p>
+    <ul>
+      <li>کارفرما می‌تواند در هر زمان ثبت چهرهٔ یک کارمند را پاک کند.</li>
+      <li>وقتی کارفرما حسابش را می‌بندد، حساب فوراً معلق می‌شود و پس از <strong>۳۰ روز</strong>
+        مهلت انصراف، همه چیز برای همیشه پاک می‌شود.</li>
+    </ul>
+
+    <h2>۷. حقوق شما</h2>
+    <p>
+      برای دیدن، اصلاح یا حذف داده‌تان با <strong>کارفرمای خود</strong> تماس بگیرید. اگر او پاسخ
+      نداد یا فکر می‌کنید داده‌ای نادرست نگهداری می‌شود، به آدرس زیر بنویسید.
+    </p>
+
+    <h2>۸. تماس</h2>
+    <p>لینومیک — <a href="mailto:privacy@linumic.com">privacy@linumic.com</a></p>
+
+    <footer>
+      اگر این سیاست تغییر کند، تاریخ بالای صفحه عوض می‌شود و برای تغییرات مهم به کارفرمایان اطلاع
+      داده می‌شود.
+    </footer>
+  </section>
+
+  <!-- ============================================================== PASHTO -->
+  <section lang="ps" dir="rtl" hidden>
+    <header>
+      <h1>د ورک‌ټرک د محرمیت تګلاره</h1>
+      <div class="sub">وروستی تازه کول: د ۱۴۰۵ د وږي ۱۸ (د ۲۰۲۶ د سپټمبر ۸)</div>
+    </header>
+
+    <div class="callout">
+      <strong>لنډیز:</strong> ورک‌ټرک یوه کاري وسیله ده چې ستاسو کارفرما اخیستې. ستاسو معلومات
+      ستاسو د کارفرما دي، زموږ نه. موږ د سافټویر جوړوونکي په توګه بله کومه ګټه ترې نه اخلو — نه
+      اعلانونه، نه پلورل، نه د چلند شننه. <strong>ستاسو د مخ عکس هیڅکله له موبایل نه نه وځي.</strong>
+      موقعیت یوازې په هغه شېبه کې لوستل کېږي چې حاضري ثبتوئ، نه په شاليد کې.
+    </div>
+
+    <h2>۱. څوک مسؤل دی</h2>
+    <p>
+      <strong>ستاسو کارفرما</strong> پرېکړه کوي چې کوم معلومات راټول شي او څومره وخت وساتل شي.
+      <strong>ورک‌ټرک (لینومیک)</strong> یوازې سافټویر او سرور برابروي او معلومات د کارفرما له
+      لوري ساتي. که غواړئ معلومات مو سم یا ړنګ شي، لومړی له خپل کارفرما سره اړیکه ونیسئ.
+    </p>
+
+    <h2>۲. کوم معلومات راټولېږي</h2>
+    <ul>
+      <li><strong>پېژندنه:</strong> نوم، بریښنالیک، د اړیکې شمېره، د کارمند کوډ، څانګه او دنده.
+        دا کارفرما ننباسي، تاسو نه.</li>
+      <li><strong>حاضري:</strong> د ننوتلو او وتلو وخت، رخصتي، او د سمون غوښتنې.</li>
+      <li><strong>موقعیت:</strong> د ځای همغږي او د هغې دقت، <strong>یوازې په هغه ثانیه کې چې د
+        حاضرۍ تڼۍ کېکاږئ.</strong> پروګرام په شاليد کې تاسو نه څاري او د دايمي موقعیت اجازه نه
+        اخلي. موخه یې یوه ده: معلومه شي چې په کاري ساحه کې وئ که نه.</li>
+      <li><strong>مخ (که کارفرما یې فعال کړی وي):</strong> لاندې جلا تشریح شوی.</li>
+      <li><strong>معاش:</strong> فیشونه او د معاش برخې، که کارفرما دا برخه وکاروي.</li>
+    </ul>
+
+    <h2>۳. مخ — په حقیقت کې څه کېږي</h2>
+    <div class="callout">
+      ستاسو عکس <strong>له موبایل نه نه وځي او په موبایل کې هم نه ساتل کېږي.</strong>
+    </div>
+    <p>
+      کله چې خپل مخ ثبتوئ، پروګرام په خپله موبایل کې عکس په <strong>۱۹۲ عددونو</strong> بدلوي.
+      یوازې همدا عددونه سرور ته ځي. عکس هلته د موبایل په حافظه کې له منځه ځي.
+    </p>
+    <p>
+      د حاضرۍ پر مهال بیا همدا کار تکرارېږي او سرور یوازې دوه لړۍ عددونه پرتله کوي ترڅو ووايي
+      «همدا سړی دی» یا «نه دی». له دې عددونو ستاسو عکس بېرته نه شي جوړېدای، او د بل هېڅ کار لپاره
+      نه کارول کېږي.
+    </p>
+    <p>
+      <strong>که د اندرویډ اپ کاروئ</strong>، کارفرما کولی شي په جلا توګه د «د ننوتلو عکس» اختیار
+      فعال کړي. په هغه حالت کې یو کوچنی عکس له حاضرۍ سره ساتل کېږي او سرپرست یې لیدلی شي. دا د مخ
+      له پېژندنې سره توپیر لري، اختیاري ده، او <strong>په آیفون اپ کې بیخي نشته.</strong>
+    </p>
+
+    <h2>۴. څه <em>نه</em> راټولېږي</h2>
+    <ul>
+      <li>په پروګرام کې د شننې، څارنې یا اعلاناتو هېڅ وسیله نشته.</li>
+      <li>موقعیت په شاليد کې نه لوستل کېږي.</li>
+      <li>ستاسو اړیکو، عکسونو، پیغامونو یا فایلونو ته لاسرسی نه اخیستل کېږي.</li>
+      <li>ستاسو معلومات هیچا ته نه پلورل کېږي.</li>
+    </ul>
+
+    <h2>۵. چېرې ساتل کېږي او څوک یې ویني</h2>
+    <p>
+      معلومات د ګوګل کلاوډ (Firebase) پر زېربنا په <strong>متحده ایالاتو</strong> کې ساتل کېږي او
+      په لېږد او ساتنه کې کوډ شوي دي.
+    </p>
+    <p>
+      هېڅ پروګرام — نه ګرځنده اپ او نه پورټال — د معلوماتو بانک ته مستقیم لاسرسی نه لري؛ هر څه د
+      یو تصدیق شوي API له لارې ځي چې د هر کاروونکي دنده ګوري. کارمند یوازې خپل معلومات ویني.
+      سرپرست یوازې د خپلې څانګې کارمندان.
+    </p>
+
+    <h2>۶. څومره وخت ساتل کېږي</h2>
+    <p>
+      تر هغه چې ستاسو کارفرما خپل حساب فعال وساتي. <strong>وخت‌ټاکلې اتوماتیکه ړنګونه نشته</strong>،
+      ځکه د حاضرۍ او معاش اسناد معمولاً کلونه ساتل کېږي.
+    </p>
+    <ul>
+      <li>کارفرما کولی شي هر وخت د یو کارمند د مخ ثبت پاک کړي.</li>
+      <li>کله چې کارفرما خپل حساب بندوي، حساب سمدستي وځنډول کېږي او د <strong>۳۰ ورځو</strong>
+        مهلت وروسته هر څه د تل لپاره پاکېږي.</li>
+    </ul>
+
+    <h2>۷. ستاسو حقونه</h2>
+    <p>
+      د خپلو معلوماتو د لیدلو، سمولو یا ړنګولو لپاره له <strong>خپل کارفرما</strong> سره اړیکه
+      ونیسئ. که ځواب یې درنکړ، لاندې پته ته ولیکئ.
+    </p>
+
+    <h2>۸. اړیکه</h2>
+    <p>لینومیک — <a href="mailto:privacy@linumic.com">privacy@linumic.com</a></p>
+
+    <footer>
+      که دا تګلاره بدله شي، د پاڼې پورتنۍ نېټه بدلېږي او د مهمو بدلونونو لپاره کارفرمایانو ته
+      خبر ورکول کېږي.
+    </footer>
+  </section>
+
+  <!-- ============================================================= ENGLISH -->
+  <section lang="en" dir="ltr" hidden>
+    <header>
+      <h1>WorkTrack Privacy Policy</h1>
+      <div class="sub">Last updated: 8 September 2026</div>
+    </header>
+
+    <div class="callout">
+      <strong>In short:</strong> WorkTrack is a tool your employer bought. Your data belongs to
+      your employer, not to us. As the software maker we make no other use of it — no advertising,
+      no selling, no behavioural analysis. <strong>Your face photo never leaves your phone.</strong>
+      Location is read only at the moment you record attendance, never in the background.
+    </div>
+
+    <h2>1. Who is responsible</h2>
+    <p>
+      <strong>Your employer</strong> decides what is collected and how long it is kept.
+      <strong>WorkTrack (Linumic)</strong> provides the software and servers and holds the data on
+      the employer's behalf. To see, correct or delete your data, contact your employer first —
+      they hold the access and the power to delete, not us.
+    </p>
+
+    <h2>2. What is collected</h2>
+    <ul>
+      <li><strong>Identity:</strong> name, email, phone number, employee code, branch and position.
+        Your employer enters these, not you.</li>
+      <li><strong>Attendance:</strong> check-in and check-out times, leave, and correction requests.</li>
+      <li><strong>Location:</strong> coordinates and their accuracy, <strong>only at the second you
+        press check in or check out.</strong> The app does not follow you in the background and does
+        not request always-on location permission. It answers one question: were you at the work
+        site.</li>
+      <li><strong>Face (only if your employer enables it):</strong> explained separately below.</li>
+      <li><strong>Pay:</strong> payslips and salary components, if your employer uses that part.</li>
+    </ul>
+
+    <h2>3. Face — exactly what happens</h2>
+    <div class="callout">
+      Your photo <strong>never leaves the phone and is not stored on it either.</strong>
+    </div>
+    <p>
+      When you enrol your face, the app converts the photo into a string of <strong>192 numbers</strong>
+      on the device itself. Only those numbers are sent to the server. The photo is discarded from
+      memory there and then.
+    </p>
+    <p>
+      At check-in the same thing happens again, and the server only compares two strings of numbers
+      to say "same person" or "not the same person". The photo cannot be reconstructed from those
+      numbers, and they are used for nothing else — no identification elsewhere, no analysis, no
+      sale.
+    </p>
+    <p>
+      <strong>If you use the Android app</strong>, your employer can separately switch on a
+      "check-in photo" option. In that case a small photo is stored with the attendance record and
+      your supervisor can see it. That is a different feature from face recognition, it is optional,
+      and it <strong>does not exist in the iPhone app at all.</strong> If you are unsure whether
+      your employer has enabled it, ask them.
+    </p>
+
+    <h2>4. What is <em>not</em> collected</h2>
+    <ul>
+      <li>There is no analytics, tracking or advertising library in the app. What you do in the app
+        is not sent to any other company.</li>
+      <li>Location is never read in the background.</li>
+      <li>No access is taken to your contacts, photo library, messages or files.</li>
+      <li>Your data is not sold to anyone.</li>
+    </ul>
+
+    <h2>5. Where it is kept and who can see it</h2>
+    <p>
+      Data is held on Google Cloud (Firebase) infrastructure in the <strong>United States</strong>,
+      encrypted in transit and at rest.
+    </p>
+    <p>
+      No client — neither the mobile app nor the portal — is allowed to reach the database directly;
+      everything goes through an authenticated API that checks each user's role. An employee sees
+      only their own data. A supervisor sees only the staff of their own branch. Sensitive actions
+      such as resetting a face enrolment are written to an audit log.
+    </p>
+    <p>
+      Linumic staff access a company's data only when it is necessary to resolve a support issue.
+    </p>
+
+    <h2>6. How long it is kept</h2>
+    <p>
+      For as long as your employer keeps their account. <strong>There is no automatic time-based
+      deletion</strong>, because attendance and payroll records usually have to be retained for
+      years.
+    </p>
+    <ul>
+      <li>An employer can delete an employee's face enrolment at any time.</li>
+      <li>When an employer closes their account it is suspended immediately, and after a
+        <strong>30-day</strong> cancellation period everything is permanently erased.</li>
+    </ul>
+
+    <h2>7. Your rights</h2>
+    <p>
+      To see, correct or delete your data, contact <strong>your employer</strong>. If they do not
+      respond, or you believe data is being held incorrectly, write to the address below.
+    </p>
+
+    <h2>8. Contact</h2>
+    <p>Linumic — <a href="mailto:privacy@linumic.com">privacy@linumic.com</a></p>
+
+    <footer>
+      If this policy changes, the date at the top of this page changes with it, and employers are
+      notified of significant changes.
+    </footer>
+  </section>
+
+</div>
+
+<script>
+  // Plain buttons rather than links: the page is one document in three
+  // languages, and a reader who was sent this URL should not lose their place
+  // in it by navigating away.
+  const sections = document.querySelectorAll("section[lang]");
+  const buttons = document.querySelectorAll(".langs button");
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const lang = button.dataset.lang;
+      sections.forEach((s) => { s.hidden = s.getAttribute("lang") !== lang; });
+      buttons.forEach((b) => b.setAttribute("aria-selected", String(b === button)));
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+    });
+  });
+</script>
+</body>
+</html>
