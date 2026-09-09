@@ -408,6 +408,8 @@ export interface PayrollRunResult {
 export interface RunPayslipRow {
   id: string;
   employeeId: string;
+  /** Empty for employees who predate employee codes; the sheet prints a dash. */
+  employeeCode: string;
   employeeName: string;
   currency: string;
   gross: number;

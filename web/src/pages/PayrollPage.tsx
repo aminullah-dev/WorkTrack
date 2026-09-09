@@ -6,6 +6,7 @@ import { useI18n } from "../i18n/LocaleProvider";
 import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/components";
 import { shamsiToday } from "../shamsi/solarHijri";
 import { AdvancesCard } from "./AdvancesCard";
+import { PaymentSheet, payrollCsv } from "./PaymentSheet";
 import { SalaryComponentsCard } from "./SalaryComponentsCard";
 
 const SHAMSI_MONTHS_FA = [
@@ -167,15 +168,48 @@ export function PayrollPage() {
 function RunDetail({ runId, onBack }: { runId: string; onBack: () => void }) {
   const { t, num } = useI18n();
   const payslips = useRunPayslips(runId);
+  const [sheet, setSheet] = useState(false);
+
+  function downloadCsv(): void {
+    const blob = new Blob([payrollCsv(payslips.data ?? [])], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `payroll-${runId}.csv`;
+    a.click();
+    // Revoked immediately: the click has already handed the blob to the
+    // browser, and leaving it alive holds the whole file in memory.
+    URL.revokeObjectURL(url);
+  }
+
+  const ready = !payslips.isLoading && !payslips.isError && (payslips.data?.length ?? 0) > 0;
 
   return (
     <>
       <div className="topbar">
         <h1 className="page-title">{t("pay_title")}</h1>
-        <button className="btn btn-outline btn-sm" onClick={onBack}>
-          → {t("pay_back_to_runs")}
-        </button>
+        <div className="topbar-right">
+          {ready && (
+            <>
+              <button className="btn btn-outline btn-sm" onClick={() => setSheet(true)}>
+                {t("sheet_open")}
+              </button>
+              <button className="btn btn-outline btn-sm" onClick={downloadCsv}>
+                {t("sheet_csv")}
+              </button>
+            </>
+          )}
+          <button className="btn btn-outline btn-sm" onClick={onBack}>
+            → {t("pay_back_to_runs")}
+          </button>
+        </div>
       </div>
+
+      {sheet && (
+        <PaymentSheet runId={runId} rows={payslips.data ?? []} onClose={() => setSheet(false)} />
+      )}
 
       {payslips.isLoading ? (
         <LoadingState />

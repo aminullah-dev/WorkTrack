@@ -107,10 +107,16 @@ payrollRouter.get(
         const empSnap = await tenant(auth.companyId, "employees")
           .doc(d.employeeId as string)
           .get();
-        const emp = empSnap.data() as { firstName?: string; lastName?: string } | undefined;
+        const emp = empSnap.data() as
+          | { firstName?: string; lastName?: string; employeeCode?: string }
+          | undefined;
         return {
           id: doc.id,
           employeeId: d.employeeId,
+          // The printed payment sheet is keyed by the code, not the name: two
+          // people called احمد in one company is the ordinary case, and a sheet
+          // somebody signs has to be unambiguous about who signed which line.
+          employeeCode: emp?.employeeCode ?? "",
           employeeName: emp ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim() : d.employeeId,
           currency: d.currency,
           gross: d.gross,

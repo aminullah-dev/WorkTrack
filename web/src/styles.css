@@ -1782,3 +1782,82 @@ table.data tbody tr:hover {
   cursor: pointer;
 }
 .picker-row:hover { background: var(--surface-2, rgba(127, 127, 127, 0.08)); }
+
+/* ---------------------------------------------------------------- payment sheet
+ *
+ * The printed sheet a company carries to its workers to be signed for cash.
+ * Two audiences: the screen, where it is previewed in a modal, and the paper,
+ * where everything else on the page has to disappear.
+ */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 39, 53, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+  z-index: 60;
+}
+
+.print-sheet {
+  background: #fff;
+  color: #000;
+  width: 100%;
+  max-width: 900px;
+  padding: 28px 32px 36px;
+  border-radius: 8px;
+}
+
+.sheet-toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 18px; }
+
+.sheet-head { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 16px; }
+.sheet-head h1 { font-size: 1.35rem; margin: 0 0 6px; color: #000; }
+.sheet-meta { display: flex; justify-content: space-between; font-size: .95rem; }
+
+.sheet-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.sheet-table th,
+.sheet-table td {
+  border: 1px solid #000;
+  padding: 7px 8px;
+  text-align: start;
+}
+.sheet-table th { font-weight: 700; }
+.sheet-net { font-weight: 700; }
+.sheet-table tfoot td { font-weight: 700; }
+
+/* The column the whole page exists for. Tall enough to sign into, and left
+ * completely empty — a border and nothing else. */
+.sheet-sign { height: 42px; }
+
+.sheet-signoff { display: flex; gap: 48px; margin-top: 34px; font-size: .92rem; }
+.sheet-signoff > div { flex: 1; }
+.sheet-rule { border-bottom: 1px solid #000; margin-top: 30px; }
+
+@media print {
+  /* Everything that is not the sheet. The modal is rendered inside the app, so
+   * hiding the app and re-showing the sheet is what puts it alone on the page. */
+  body > *:not(.sheet-backdrop) { display: none !important; }
+  .no-print { display: none !important; }
+
+  .sheet-backdrop {
+    position: static;
+    background: none;
+    padding: 0;
+    display: block;
+    overflow: visible;
+  }
+  .print-sheet {
+    max-width: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  /* Repeat the header on every page: a second sheet of signatures with no
+   * column headings is a sheet nobody can check afterwards. */
+  .sheet-table thead { display: table-header-group; }
+  .sheet-table tr { break-inside: avoid; }
+
+  @page { size: A4; margin: 14mm; }
+}
