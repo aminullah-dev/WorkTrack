@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState, StatusChip, Toast } from "../ui/c
 import { shamsiToday } from "../shamsi/solarHijri";
 import { AdvancesCard } from "./AdvancesCard";
 import { PaymentSheet, payrollCsv } from "./PaymentSheet";
+import { PieceWorkCard } from "./PieceWorkCard";
 import { SalaryComponentsCard } from "./SalaryComponentsCard";
 
 const SHAMSI_MONTHS_FA = [
@@ -158,6 +159,7 @@ export function PayrollPage() {
         </div>
       )}
       <SalaryComponentsCard />
+      <PieceWorkCard />
       <AdvancesCard />
 
       {toast && <Toast message={toast} />}

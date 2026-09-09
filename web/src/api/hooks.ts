@@ -5,6 +5,7 @@ import type {
   Account,
   Advance,
   AdvanceWrite,
+  PieceRecord,
   AttendanceOverviewRow,
   WeeklyAttendance,
   CompanySettings,
@@ -234,6 +235,40 @@ export function useCancelAdvance() {
     mutationFn: (id: string) => api.post<{ id: string }>(`/advances/${id}/cancel`, {}).then((e) => e.data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["advances"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+// ------------------------------------------------------------------ piecework
+
+export function usePieceRecords() {
+  return useQuery({
+    queryKey: ["pieceWork"],
+    queryFn: () => api.get<PieceRecord[]>("/piece-work").then((e) => e.data),
+  });
+}
+
+export function useRecordPieces() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { employeeId: string; date: string; quantity: number; note?: string | null }) =>
+      api.post<PieceRecord>("/piece-work", body).then((e) => e.data),
+    // A piece count IS the wage for anybody on that model, so payroll's view
+    // of the month changes with it.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["pieceWork"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+export function useDeletePieceRecord() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`/piece-work/${id}`).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["pieceWork"] });
       void qc.invalidateQueries({ queryKey: ["payroll"] });
     },
   });

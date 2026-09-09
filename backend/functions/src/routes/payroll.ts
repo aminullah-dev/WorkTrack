@@ -150,7 +150,15 @@ payrollRouter.get(
  */
 
 const salarySchema = z.object({
+  /**
+   * The rate. What it is a rate FOR depends on payModel: a monthly salary, a
+   * day's wage, or the price of one piece. One field rather than three, so
+   * there is nothing to keep consistent — see services/payModels.ts.
+   */
   basicAmount: z.number().min(0).max(100_000_000),
+  // Optional so every existing client keeps working; absent means MONTHLY,
+  // which is what every company on file today is.
+  payModel: z.enum(["MONTHLY", "DAILY", "PIECE"]).optional(),
   effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
   revisionReason: z.string().max(200).nullish(),
 });
@@ -168,6 +176,7 @@ payrollRouter.get(
     }
     const d = snap.data() as {
       basicAmount?: number;
+      payModel?: string;
       currency?: string;
       effectiveFrom?: string;
       revisionReason?: string | null;
@@ -177,6 +186,7 @@ payrollRouter.get(
       data: {
         employeeId: req.params.id,
         basicAmount: d.basicAmount ?? 0,
+        payModel: d.payModel ?? "MONTHLY",
         currency: d.currency ?? "AFN",
         effectiveFrom: d.effectiveFrom ?? null,
         revisionReason: d.revisionReason ?? null,
@@ -207,6 +217,9 @@ payrollRouter.put(
       employeeId: req.params.id,
       structureId: null,
       basicAmount: payload.basicAmount,
+      // Omitting it on an edit keeps the model already on file rather than
+      // silently moving somebody back to a monthly salary.
+      payModel: payload.payModel ?? (before?.payModel as string | undefined) ?? "MONTHLY",
       currency: profile.currency,
       effectiveFrom: payload.effectiveFrom,
       revisionReason: payload.revisionReason ?? null,

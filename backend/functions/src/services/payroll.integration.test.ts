@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
 import { db, nowTimestamp, tenant } from "../lib/firestore";
 import { computePayrollRun } from "./payroll";
@@ -939,5 +939,179 @@ describe.skipIf(!EMULATOR)("salary advances", () => {
     await computePayrollRun(cid, 1405, 5, "admin", "AFN");
 
     expect(advanceLine(await payslipOf("e1"))).toBe(0);
+  });
+});
+
+/**
+ * Paying by the day and by the piece.
+ *
+ * The arithmetic is pinned in services/payModels.test.ts. What only a real run
+ * can show is whether the loss-of-pay charge is correctly SUPPRESSED for these
+ * models — the failure being guarded against pays a daily worker for the days
+ * they came and then deducts the days they did not, taking the absence twice.
+ */
+/** Every working day of the period before August — the first half of it. */
+const DAYS_BEFORE_AUGUST: string[] = (() => {
+  const out: string[] = [];
+  const end = new Date("2026-07-31T00:00:00Z").getTime();
+  for (let t = new Date("2026-07-23T00:00:00Z").getTime(); t <= end; t += 86_400_000) {
+    out.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return out;
+})();
+
+describe.skipIf(!EMULATOR)("pay models", () => {
+  beforeEach(async () => {
+    cid = `pm_${Date.now()}_${seq++}`;
+    await db.collection("companies").doc(cid).set({
+      name: "Pay models",
+      timezone: "Asia/Kabul",
+      settings: { profile: { currency: "AFN", timezone: "Asia/Kabul" } },
+    });
+  });
+
+  async function salaryWithModel(
+    employeeId: string,
+    amount: number,
+    payModel: string,
+  ): Promise<void> {
+    await tenant(cid, "employeeSalaries").doc(employeeId).set({
+      employeeId,
+      structureId: null,
+      basicAmount: amount,
+      payModel,
+      currency: "AFN",
+      effectiveFrom: "1405-01-01",
+      updatedAt: nowTimestamp(),
+    });
+  }
+
+  async function pieces(employeeId: string, date: string, quantity: number): Promise<void> {
+    await tenant(cid, "pieceRecords").doc(`${employeeId}_${date}`).set({
+      employeeId,
+      employeeName: employeeId,
+      date,
+      quantity,
+      note: null,
+      recordedBy: "admin",
+      createdAt: nowTimestamp(),
+    });
+  }
+
+  async function slip(employeeId: string): Promise<Record<string, any>> {
+    return (await tenant(cid, "payslips").doc(`${employeeId}_1405_05`).get()).data() as any;
+  }
+
+  function line(p: Record<string, any>, code: string): number {
+    return (p.lines as { componentCode: string; amount: number }[])
+      .filter((l) => l.componentCode === code)
+      .reduce((s, l) => s + l.amount, 0);
+  }
+
+  it("pays a daily worker for the days they came", async () => {
+    await employee("e1");
+    await salaryWithModel("e1", 700, "DAILY");
+    await attendAll("e1");
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const p = await slip("e1");
+    // Every elapsed working day was attended, so basic is 700 × those days.
+    expect(line(p, "BASIC")).toBe(700 * p.workedDays);
+  });
+
+  it("never charges a daily worker for the days they did not", async () => {
+    // The failure this whole module exists to prevent. PARTIAL attendance is
+    // what shows it: a first attempt used a worker absent the whole month, and
+    // the test passed either way — with nothing earned there is nothing to
+    // deduct, because loss of pay is capped at gross. So this one comes in for
+    // the second half of the month and stays away for the first.
+    await employee("e1");
+    await salaryWithModel("e1", 700, "DAILY");
+    await attendAll("e1", DAYS_BEFORE_AUGUST);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const p = await slip("e1");
+    expect(p.workedDays).toBeGreaterThan(0);
+    expect(p.lopDays).toBeGreaterThan(0); // the absence IS recorded…
+    expect(line(p, "LOP")).toBe(0); // …but never charged.
+    // The wage is exactly the days worked. Asserted on BASIC rather than on
+    // net, because net is also net of income tax and conflating the two hides
+    // which of them moved.
+    expect(line(p, "BASIC")).toBe(700 * p.workedDays);
+    expect(p.gross).toBe(700 * p.workedDays);
+  });
+
+  it("still charges a monthly employee for absence", async () => {
+    // The behaviour every existing company is on must not have moved.
+    await employee("e1");
+    await salaryWithModel("e1", 30000, "MONTHLY");
+    await unpaidDays("e1", 30);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(line(await slip("e1"), "LOP")).toBeGreaterThan(0);
+  });
+
+  it("treats a salary with no model on it as monthly", async () => {
+    // Every record written before today. Paying these by the day would divide
+    // a month's salary across each day worked and multiply somebody's wage.
+    await employee("e1");
+    await salary("e1", 30000);
+    await attendAll("e1");
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(line(await slip("e1"), "BASIC")).toBe(30000);
+  });
+
+  it("pays piece work for what was finished, not for the time it took", async () => {
+    await employee("e1");
+    await salaryWithModel("e1", 120, "PIECE");
+    await attendAll("e1");
+    await pieces("e1", shamsiMonthStartIso(1405, 5), 200);
+    // Month 5 of 1405 is 2026-07-23 to 2026-08-22, so a date in June is
+    // genuinely outside it. My first attempt used 2026-08-20, which is INSIDE
+    // — the test failed and the code was right.
+    await pieces("e1", "2026-06-15", 140);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const p = await slip("e1");
+    // Only the record inside the period counts; June belongs to another month.
+    expect(line(p, "BASIC")).toBe(120 * 200);
+    expect(line(p, "LOP")).toBe(0);
+  });
+
+  it("pays a piece worker nothing when nothing was finished", async () => {
+    await employee("e1");
+    await salaryWithModel("e1", 120, "PIECE");
+    await attendAll("e1");
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    const p = await slip("e1");
+    expect(line(p, "BASIC")).toBe(0);
+    expect(p.net).toBe(0);
+  });
+
+  it("does not let one worker's pieces reach another's payslip", async () => {
+    await employee("e1");
+    await employee("e2");
+    await salaryWithModel("e1", 120, "PIECE");
+    await salaryWithModel("e2", 120, "PIECE");
+    await attendAll("e1");
+    await attendAll("e2");
+    await pieces("e1", shamsiMonthStartIso(1405, 5), 200);
+
+    await computePayrollRun(cid, 1405, 5, "admin", "AFN");
+
+    expect(line(await slip("e1"), "BASIC")).toBe(24000);
+    expect(line(await slip("e2"), "BASIC")).toBe(0);
+  });
+
+  afterEach(async () => {
+    await db.recursiveDelete(db.collection("companies").doc(cid));
   });
 });

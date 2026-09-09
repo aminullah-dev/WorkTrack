@@ -305,6 +305,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "pieceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "employeeId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

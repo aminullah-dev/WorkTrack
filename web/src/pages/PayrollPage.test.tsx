@@ -49,6 +49,9 @@ vi.mock("../api/hooks", () => ({
   useEmployees: () => ({ data: { data: [] }, isLoading: false, isError: false }),
   useCreateAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCancelAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  usePieceRecords: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useRecordPieces: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeletePieceRecord: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSaveSalaryComponent: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 

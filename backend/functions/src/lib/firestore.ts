@@ -38,6 +38,11 @@ export type TenantCollection =
   // that made them, because a run can be recomputed and a mutated balance
   // would take the same month's money twice. See services/advanceStore.ts.
   | "advances"
+  // What a piece-rate worker finished, and when. One document per entry rather
+  // than a running total per month, because a total nobody can break down is a
+  // total nobody can dispute — and disputes about piece counts are the whole
+  // reason a workshop keeps a book. See services/pieceWork.ts.
+  | "pieceRecords"
   // Which of those components apply to one person, and at what amount. A
   // component is a definition; this is the exception list against it — an
   // allowance only some people get, a different figure for one of them, or a

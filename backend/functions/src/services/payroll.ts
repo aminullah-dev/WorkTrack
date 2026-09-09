@@ -5,6 +5,8 @@ import { planRepayments } from "./advances";
 import { outstandingFor, reconcileRepayments } from "./advanceStore";
 import { localDateOf } from "./attendance";
 import { expectedWorkingDays, holidaySet } from "./calendar";
+import { earnedBasic } from "./payModels";
+import { piecesByEmployee } from "./pieceWork";
 import { componentsForEmployee, listAssignments } from "./salaryAssignments";
 import type { ComponentScope } from "./salaryAssignments";
 import { getSettings } from "./settings";
@@ -129,6 +131,10 @@ export async function computePayrollRun(
   // should see it: any repayment a PREVIOUS attempt at this same month made is
   // excluded, so recomputing a month takes the same money once rather than
   // again on top.
+  // Piece counts for the period, for anybody paid by the piece. One query
+  // rather than one per employee — a workshop's month is a few hundred rows.
+  const piecesFor = await piecesByEmployee(cid, fromIso, toIso);
+
   const advancesByEmployee = await outstandingFor(
     cid,
     employeesSnap.docs.map((d) => d.id),
@@ -203,7 +209,10 @@ export async function computePayrollRun(
       });
       continue;
     }
-    const basic = (salarySnap.data()?.basicAmount as number | undefined) ?? 0;
+    const salaryDoc = salarySnap.data() as
+      | { basicAmount?: number; payModel?: string }
+      | undefined;
+    const rate = salaryDoc?.basicAmount ?? 0;
 
     // Day counts, driven by the working calendar rather than by whichever
     // attendance documents happen to exist.
@@ -233,6 +242,18 @@ export async function computePayrollRun(
       // means the person never turned up. Both are unpaid.
       else lopDays += 1;
     }
+
+    // What the basic pay comes to under this person's pay model, and whether
+    // unpaid absence is still to be charged on top of it. For a daily wage or
+    // piece work it is NOT: those already contain the absence, because a day
+    // not worked was simply never paid. Deducting as well would take it twice.
+    const earned = earnedBasic({
+      model: salaryDoc?.payModel,
+      rate,
+      workedDays,
+      pieces: piecesFor.get(employeeId) ?? 0,
+    });
+    const basic = earned.amount;
 
     // This employee's components: the company-wide ones they have not been
     // excluded from, plus any assigned only to them, each at whichever amount
@@ -276,7 +297,7 @@ export async function computePayrollRun(
     // month actually earned. Uncapped, a long spell drove net — and the ledger
     // accrual derived from it — negative.
     let lopAmount = 0;
-    if (lopDays > 0) {
+    if (lopDays > 0 && earned.chargeUnpaidAbsence) {
       lopAmount = Math.min(round2(lopPerDay(basic, workingDays.length) * lopDays), gross);
       lines.push({
         componentCode: "LOP",

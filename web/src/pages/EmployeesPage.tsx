@@ -11,6 +11,7 @@ import {
 import { ApiError } from "../api/client";
 import type {
   AssignableRole,
+  PayModel,
   Employee,
   EmployeeCreated,
   EmployeeStatus,
@@ -297,6 +298,7 @@ function EmployeeForm({
     createLogin: !isEdit,
     initialPassword: "",
     basicAmount: "",
+    payModel: "MONTHLY" as PayModel,
   });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -308,7 +310,15 @@ function EmployeeForm({
   useEffect(() => {
     const amount = existingSalary.data?.basicAmount;
     if (amount !== undefined) {
-      setForm((f) => (f.basicAmount === "" ? { ...f, basicAmount: String(amount) } : f));
+      setForm((f) =>
+        f.basicAmount === ""
+          ? {
+              ...f,
+              basicAmount: String(amount),
+              payModel: existingSalary.data?.payModel ?? "MONTHLY",
+            }
+          : f,
+      );
     }
   }, [existingSalary.data]);
 
@@ -351,7 +361,7 @@ function EmployeeForm({
         if (Number.isFinite(basicAmount) && basicAmount >= 0) {
           await setSalary.mutateAsync({
             id: targetId,
-            body: { basicAmount, effectiveFrom: form.joinDate },
+            body: { basicAmount, payModel: form.payModel, effectiveFrom: form.joinDate },
           });
         }
       }
@@ -410,8 +420,38 @@ function EmployeeForm({
 
         {canSetPay && (
           <div className="field">
+            {/* Chosen BEFORE the amount, because it decides what the amount
+                means: 30,000 is a monthly salary or an absurd daily wage, and
+                the label below changes to say which. */}
+            <label>{t("emp_pay_model")}</label>
+            <select
+              className="select"
+              value={form.payModel}
+              onChange={(e) => set("payModel", e.target.value as PayModel)}
+            >
+              {(["MONTHLY", "DAILY", "PIECE"] as PayModel[]).map((m) => (
+                <option key={m} value={m}>
+                  {t(`pay_model_${m.toLowerCase()}`)}
+                </option>
+              ))}
+            </select>
+            <small style={{ color: "var(--text-subtle)" }}>
+              {t(`pay_model_hint_${form.payModel.toLowerCase()}`)}
+            </small>
+          </div>
+        )}
+
+        {canSetPay && (
+          <div className="field">
             <label>
-              {t("emp_basic_salary", me?.currency ?? "AFN")}
+              {t(
+                form.payModel === "DAILY"
+                  ? "emp_rate_daily"
+                  : form.payModel === "PIECE"
+                    ? "emp_rate_piece"
+                    : "emp_basic_salary",
+                me?.currency ?? "AFN",
+              )}
             </label>
             <input
               className="input"

@@ -258,9 +258,13 @@ export interface WeeklyAttendance {
 }
 
 /** An employee's basic pay. Null until someone configures it. */
+/** Monthly salary, a day's wage, or the price of one piece — see payModel. */
+export type PayModel = "MONTHLY" | "DAILY" | "PIECE";
+
 export interface EmployeeSalary {
   employeeId: string;
   basicAmount: number;
+  payModel: PayModel;
   currency: string;
   effectiveFrom: string | null;
   revisionReason: string | null;
@@ -269,6 +273,8 @@ export interface EmployeeSalary {
 
 export interface EmployeeSalaryWrite {
   basicAmount: number;
+  /** Omitted on an edit keeps whatever is on file. */
+  payModel?: PayModel;
   effectiveFrom: string;
   revisionReason?: string | null;
 }
@@ -670,4 +676,14 @@ export interface AdvanceWrite {
   instalment?: number | null;
   issuedOn: string;
   note?: string | null;
+}
+
+/** One entry in a workshop's piece book: what somebody finished, and when. */
+export interface PieceRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  quantity: number;
+  note: string | null;
 }
