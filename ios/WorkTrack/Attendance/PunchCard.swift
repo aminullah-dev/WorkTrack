@@ -111,12 +111,21 @@ struct PunchCard: View {
                 Text(e.insideFence ? L.t("punch_inside") : L.t("punch_outside"))
                 Text("·")
                 // The number matters when it is bad news: "you are 340 m away"
-                // is actionable, "outside the site" alone is not.
-                Text("\(L.t("punch_distance")) \(L.n(Int(distance))) \(L.t("punch_meters"))")
+                // is actionable, "outside the site" alone is not. Past a
+                // kilometre metres stop being actionable and start being
+                // unreadable, so the unit follows the magnitude.
+                distanceText(distance)
             }
             .font(.caption)
             .foregroundStyle(e.insideFence ? Palette.positive : Palette.warning)
         }
+    }
+
+    private func distanceText(_ meters: Double) -> Text {
+        let d = AfghanCalendar.distance(meters: meters, language: L.language)
+        return Text(
+            "\(L.t("punch_distance")) \(d.value) \(L.t(d.isKilometres ? "punch_kilometres" : "punch_meters"))"
+        )
     }
 
     @ViewBuilder

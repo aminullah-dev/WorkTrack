@@ -65,3 +65,82 @@ final class AfghanCalendarTests: XCTestCase {
         XCTAssertEqual(AfghanCalendar.easternDigits("Block B 3"), "Block B ۳")
     }
 }
+
+/// How far away the worker is, in a form he can act on.
+///
+/// The bug this pins down was found on the first real handset: the phone was
+/// in Ottawa, the site in Kabul, and the card read "۱۰۴۵۷۲۲۰ متر" — eight
+/// digits, no separators, no chance of reading it as ten thousand kilometres.
+/// Printing raw metres quietly assumed the phone was near its site.
+final class DistanceFormatTests: XCTestCase {
+    func testMetresWhileMetresAreWalkable() {
+        let d = AfghanCalendar.distance(meters: 340, language: .dari)
+        XCTAssertFalse(d.isKilometres)
+        XCTAssertEqual(d.value, "۳۴۰")
+    }
+
+    func testJustUnderAKilometreIsStillMetres() {
+        // 999 m is a walk. 1000 m is where the unit turns over.
+        XCTAssertFalse(AfghanCalendar.distance(meters: 999, language: .dari).isKilometres)
+        XCTAssertTrue(AfghanCalendar.distance(meters: 1000, language: .dari).isKilometres)
+    }
+
+    func testTheOttawaCase() {
+        // The exact number the first device run put on screen.
+        let d = AfghanCalendar.distance(meters: 10_457_220, language: .dari)
+        XCTAssertTrue(d.isKilometres)
+        // Grouped, and no decimal noise at this magnitude.
+        XCTAssertEqual(d.value, "۱۰٬۴۵۷")
+        // The failure being guarded against is a bare run of digits.
+        XCTAssertFalse(d.value.contains("۱۰۴۵۷"), "grouping separator was dropped")
+    }
+
+    func testOneDecimalWhereItHelps() {
+        // At 1.4 km the fraction is the difference between a walk and a drive;
+        // at 10,457 km it is noise. Same formatter, different magnitudes.
+        XCTAssertEqual(AfghanCalendar.distance(meters: 1400, language: .dari).value, "۱٫۴")
+        XCTAssertEqual(AfghanCalendar.distance(meters: 12_000, language: .dari).value, "۱۲")
+    }
+
+    func testEnglishKeepsLatinDigitsAndSeparators() {
+        // Arabic-Indic marks beside Latin digits read as a rendering fault —
+        // the same rule `money` follows.
+        let d = AfghanCalendar.distance(meters: 10_457_220, language: .english)
+        XCTAssertEqual(d.value, "10,457")
+    }
+}
+
+/// The message a worker reads when the punch did not count.
+///
+/// The server keeps an out-of-fence punch as evidence but excludes it from the
+/// day's worked-time math, so the day stays empty and payroll now deducts for
+/// unexcused absence. The first wording said "ثبت شد" — recorded — which is
+/// true of the row in the database and false of the thing the worker cares
+/// about. He would walk away believing he had checked in.
+final class FlaggedPunchWordingTests: XCTestCase {
+    func testEveryLanguageSaysItDidNotCount() {
+        for language in [Language.dari, .pashto, .english] {
+            L.language = language
+            let text = L.t("punch_flagged")
+            XCTAssertFalse(
+                text.hasPrefix("ثبت شد") || text.hasPrefix("ثبت شو")
+                    || text.hasPrefix("Recorded,"),
+                "\(language) leads with 'recorded', which reads as 'you are checked in'"
+            )
+        }
+        L.language = .dari
+    }
+
+    func testItPointsAtTheWayOut() {
+        // Telling somebody it did not count without telling him what to do
+        // leaves him standing there punching again.
+        for (language, needle) in [(Language.dari, "اصلاح"), (.pashto, "سمون"), (.english, "correction")] {
+            L.language = language
+            XCTAssertTrue(
+                L.t("punch_flagged").contains(needle),
+                "\(language) does not mention the correction request"
+            )
+        }
+        L.language = .dari
+    }
+}

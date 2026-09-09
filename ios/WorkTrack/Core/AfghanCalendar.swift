@@ -71,6 +71,35 @@ enum AfghanCalendar {
         return "\(localised) \(name)"
     }
 
+    /// A distance somebody can read at a glance, and act on.
+    ///
+    /// The point of showing a number at all is "you are 340 m away" — close
+    /// enough to walk. Printing the raw metre count assumed the phone was
+    /// somewhere near the site; the first run on a real handset was in Ottawa
+    /// with the site in Kabul and it read "۱۰۴۵۷۲۲۰ متر", an eight-digit run
+    /// with no separators that nobody can parse as ten thousand kilometres.
+    ///
+    /// So: metres while metres are walkable, kilometres past that, and the
+    /// separators follow the script for the same reason `money` does.
+    static func distance(
+        meters: Double,
+        language: Language,
+    ) -> (value: String, isKilometres: Bool) {
+        let kilometres = meters >= 1000
+        let amount = kilometres ? meters / 1000 : meters
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = language.localizesDigits ? "\u{066C}" : ","
+        formatter.decimalSeparator = language.localizesDigits ? "\u{066B}" : "."
+        // One decimal is worth having at 1.4 km and noise at 10,457 km.
+        formatter.maximumFractionDigits = kilometres && amount < 10 ? 1 : 0
+        formatter.minimumFractionDigits = 0
+
+        let number = formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
+        return (language.localizesDigits ? easternDigits(number) : number, kilometres)
+    }
+
     /// Parses a plain `yyyy-MM-dd` from the API. These carry no time and no
     /// zone; reading them as UTC keeps the calendar date the server meant.
     static func parseISODate(_ iso: String) -> Date? {
