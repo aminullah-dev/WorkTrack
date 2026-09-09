@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pay_payslip">فیش معاش</string>
+    <string name="pay_no_payslips_title">فیش معاشی برای سال %1$s نیست</string>
+    <string name="pay_no_payslips_msg">فیش‌های معاش بعد از نهایی شدن معاشات نمایش داده می‌شود.</string>
+    <string name="pay_prev_year">سال قبلی</string>
+    <string name="pay_next_year">سال بعدی</string>
+    <string name="pay_worked_days">%1$s روز کارکرد</string>
+    <string name="pay_lop_days">%1$s روز کسر معاش</string>
+    <string name="pay_net_pay">معاش خالص</string>
+    <string name="pay_gross_minus">ناخالص %1$s − کسرات %2$s</string>
+    <string name="pay_earnings">عواید</string>
+    <string name="pay_deductions">کسرات</string>
+    <string name="pay_attendance_summary">خلاصهٔ حاضری</string>
+    <string name="pay_worked_days_label">روزهای کارکرد</string>
+    <string name="pay_paid_leave_label">روزهای رخصتی با معاش</string>
+    <string name="pay_lop_label">روزهای کسر معاش</string>
+    <string name="pay_all_months">همه ماه‌ها</string>
+    <string name="pay_no_payslips_month_title">فیش معاشی برای %1$s نیست</string>
+</resources>

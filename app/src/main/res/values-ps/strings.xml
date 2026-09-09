@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WorkTrack</string>
+    <string name="nav_home">کور</string>
+    <string name="nav_attendance">حاضري</string>
+    <string name="nav_leave">رخصتي</string>
+    <string name="nav_profile">پروفایل</string>
+    <string name="biometric_lock_title">بند دی</string>
+    <string name="biometric_lock_subtitle">د اپ خلاصولو لپاره خپل ګوته تصدیق کړئ</string>
+    <string name="biometric_lock_unlock">خلاصول</string>
+    <string name="biometric_lock_cancel">لغوه</string>
+</resources>

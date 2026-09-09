@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="leave_apply">Apply</string>
+    <string name="leave_pending_team">Team requests are waiting for you</string>
+    <string name="leave_review">Review</string>
+    <string name="leave_balances">Balances</string>
+    <string name="leave_my_requests">My requests</string>
+    <string name="leave_empty_title">No leave requests yet</string>
+    <string name="leave_empty_msg">Tap Apply to request time off.</string>
+    <string name="leave_balances_after_sync">Balances appear after your first sync.</string>
+    <string name="leave_days_pending">%1$s days pending</string>
+    <string name="leave_days_count">%1$s days</string>
+    <string name="leave_waiting_sync">Waiting to sync…</string>
+    <string name="leave_sync_failed">Sync failed — the server rejected this request</string>
+    <string name="leave_cancel_request">Cancel request</string>
+    <string name="leave_generic_type">Leave</string>
+    <string name="leave_msg_cancelled">Request cancelled</string>
+
+    <string name="leave_status_draft">Draft</string>
+    <string name="leave_status_pending">Pending</string>
+    <string name="leave_status_approved">Approved</string>
+    <string name="leave_status_rejected">Rejected</string>
+    <string name="leave_status_cancelled">Cancelled</string>
+
+    <string name="leave_apply_title">Apply for leave</string>
+    <string name="leave_type_section">Leave type</string>
+    <string name="leave_dates_section">Dates</string>
+    <string name="leave_start_date">Start date</string>
+    <string name="leave_end_date">End date</string>
+    <string name="leave_half_first">Half first day</string>
+    <string name="leave_half_last">Half last day</string>
+    <string name="leave_estimate">≈ %1$s days (Fridays and public holidays are settled on approval)</string>
+    <string name="leave_reason_section">Reason</string>
+    <string name="leave_reason_label">Why do you need this leave?</string>
+    <string name="leave_submit">Submit request</string>
+    <string name="leave_err_type">Choose a leave type</string>
+    <string name="leave_err_start">Choose a start date</string>
+    <string name="leave_err_end">Choose an end date</string>
+    <string name="leave_err_reason">A reason is required</string>
+
+    <string name="leave_approvals_title">Approvals</string>
+    <string name="leave_approvals_empty_title">All caught up</string>
+    <string name="leave_approvals_empty_msg">No leave requests are waiting for your decision.</string>
+    <string name="leave_approve">Approve</string>
+    <string name="leave_reject">Reject</string>
+    <string name="leave_reject_dialog_title">Reject request</string>
+    <string name="leave_reject_dialog_msg">Tell %1$s why this request is being rejected.</string>
+    <string name="leave_reject_reason">Reason</string>
+    <string name="leave_msg_approved">Request approved</string>
+    <string name="leave_msg_rejected">Request rejected</string>
+</resources>

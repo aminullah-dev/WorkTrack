@@ -1,0 +1,947 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "./client";
+import { isoTodayIn } from "../time";
+import type {
+  Account,
+  Advance,
+  AdvanceWrite,
+  AppNotification,
+  EmployeeDocument,
+  PieceRecord,
+  AttendanceOverviewRow,
+  WeeklyAttendance,
+  CompanySettings,
+  CalendarDay,
+  CompanyDeletion,
+  ComponentAssignment,
+  SupportTicket,
+  DayKind,
+  Employee,
+  EmployeeSalary,
+  EmployeeSalaryWrite,
+  EmployeeCreated,
+  EmployeeWrite,
+  Expense,
+  ExpenseCategory,
+  FinanceOverview,
+  JournalEntry,
+  JournalLine,
+  Holiday,
+  HolidayWrite,
+  KioskAccount,
+  License,
+  LicensedDevice,
+  KioskAccountCreated,
+  Kpis,
+  LeaveRequest,
+  DayBoard,
+  MyWork,
+  Project,
+  ProjectWrite,
+  TaskStatus,
+  TaskWrite,
+  WorkTask,
+  WorkTeam,
+  WorkTeamWrite,
+  PayrollRun,
+  SalaryComponent,
+  SalaryComponentWrite,
+  PayrollRunResult,
+  Regularization,
+  RosterRow,
+  RunPayslipRow,
+  Shift,
+  ShiftWrite,
+  TrendPoint,
+  TrialBalance,
+} from "./types";
+
+export function useKpis(date?: string) {
+  return useQuery({
+    queryKey: ["kpis", date ?? "today"],
+    queryFn: () => api.get<Kpis>("/analytics/kpis", { date }).then((e) => e.data),
+  });
+}
+
+export function useAttendanceTrend(date?: string) {
+  return useQuery({
+    queryKey: ["attendance-trend", date ?? "today"],
+    queryFn: () =>
+      api
+        .get<{ points: TrendPoint[] }>("/analytics/attendance-trend", { date })
+        .then((e) => e.data.points),
+  });
+}
+
+export function useAttendanceOverview(date?: string, timeZone = "Asia/Kabul") {
+  // The live board must not go stale while a manager watches it: a check-in
+  // made now should appear without a manual reload. Past days never change,
+  // so they are fetched once instead of polled. "Today" is the company's day,
+  // which is not the viewer's when they are in another country.
+  return useQuery({ ...overviewQuery(date, timeZone), select: (d) => d.rows });
+}
+
+interface OverviewResponse {
+  date: string;
+  dayKind: DayKind;
+  holidayName: string | null;
+  rows: AttendanceOverviewRow[];
+}
+
+/**
+ * Shared so the rows and the day kind come from one request. React Query keys
+ * them the same, and each hook picks its slice with `select`.
+ */
+function overviewQuery(date: string | undefined, timeZone: string) {
+  const isLive = date === undefined || date === isoTodayIn(timeZone);
+  return {
+    queryKey: ["attendance-overview", date ?? "today"] as const,
+    queryFn: () =>
+      api.get<OverviewResponse>("/attendance/overview", { date }).then((e) => e.data),
+    refetchInterval: isLive ? (60_000 as const) : (false as const),
+    refetchIntervalInBackground: false,
+  };
+}
+
+/**
+ * Whether the board's day is worked at all. Without this a Friday or a public
+ * holiday renders as a full page of ABSENT with nothing explaining why.
+ */
+export function useAttendanceDay(date?: string, timeZone = "Asia/Kabul") {
+  return useQuery({
+    ...overviewQuery(date, timeZone),
+    select: (d) => ({ date: d.date, kind: d.dayKind, holidayName: d.holidayName }),
+  });
+}
+
+/** One week of attendance for the whole team (manager's weekly review). */
+export function useWeeklyAttendance(date?: string, timeZone = "Asia/Kabul") {
+  const isLive = date === undefined || date === isoTodayIn(timeZone);
+  return useQuery({
+    queryKey: ["attendance-weekly", date ?? "today"],
+    queryFn: () =>
+      api.get<WeeklyAttendance>("/attendance/weekly", { date }).then((e) => e.data),
+    refetchInterval: isLive ? 60_000 : false,
+    refetchIntervalInBackground: false,
+  });
+}
+
+export function useEmployees(params: { cursor?: string; branchId?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["employees", params],
+    queryFn: () =>
+      api.get<Employee[]>("/employees", {
+        cursor: params.cursor,
+        branchId: params.branchId,
+        status: params.status,
+        limit: 50,
+      }),
+  });
+}
+
+export function useCreateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: EmployeeWrite) =>
+      api.post<EmployeeCreated>("/employees", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function useUpdateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; body: EmployeeWrite }) =>
+      api.put<Employee>(`/employees/${args.id}`, args.body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function useResetEmployeePassword() {
+  return useMutation({
+    mutationFn: (args: { id: string; password?: string }) =>
+      api
+        .post<{ tempPassword: string }>(
+          `/employees/${args.id}/reset-password`,
+          args.password ? { password: args.password } : {},
+        )
+        .then((e) => e.data),
+  });
+}
+
+/** Admin: clear an employee's face enrollment so they can re-enroll. */
+export function useResetEmployeeFace() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (employeeId: string) =>
+      api.del<{ faceEnrolled: boolean }>(`/employees/${employeeId}/face`).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function usePayrollRuns() {
+  return useQuery({
+    queryKey: ["payroll", "runs"],
+    queryFn: () => api.get<PayrollRun[]>("/payroll/runs").then((e) => e.data),
+  });
+}
+
+export function useRunPayslips(runId: string | null) {
+  return useQuery({
+    enabled: runId !== null,
+    queryKey: ["payroll", "run", runId],
+    queryFn: () =>
+      api
+        .get<{ runId: string; payslips: RunPayslipRow[] }>(`/payroll/runs/${runId}/payslips`)
+        .then((e) => e.data.payslips),
+  });
+}
+
+export function useRunPayroll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { periodYear: number; periodMonth: number }) =>
+      api.post<PayrollRunResult>("/payroll/runs", args).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["payroll"] }),
+  });
+}
+
+// -------------------------------------------------------------------- advances
+
+export function useAdvances(employeeId: string | null) {
+  return useQuery({
+    queryKey: ["advances", employeeId ?? "all"],
+    queryFn: () =>
+      api
+        .get<Advance[]>(`/advances${employeeId ? `?employeeId=${encodeURIComponent(employeeId)}` : ""}`)
+        .then((e) => e.data),
+  });
+}
+
+export function useCreateAdvance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AdvanceWrite) => api.post<Advance>("/advances", body).then((e) => e.data),
+    // Payroll reads outstanding advances, so a new one changes what the next
+    // run will deduct.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["advances"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+export function useCancelAdvance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<{ id: string }>(`/advances/${id}/cancel`, {}).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["advances"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+// ------------------------------------------------------------------ documents
+
+export function useEmployeeDocuments(employeeId: string | null) {
+  return useQuery({
+    enabled: employeeId !== null,
+    queryKey: ["documents", employeeId],
+    queryFn: () =>
+      api
+        .get<EmployeeDocument[]>(`/documents?employeeId=${encodeURIComponent(employeeId ?? "")}`)
+        .then((e) => e.data),
+  });
+}
+
+export function useExpiringDocuments() {
+  return useQuery({
+    queryKey: ["documents", "expiring"],
+    queryFn: () => api.get<EmployeeDocument[]>("/documents/expiring").then((e) => e.data),
+  });
+}
+
+export function useAddDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<EmployeeDocument>("/documents", body).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useDeleteDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`/documents/${id}`).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+// -------------------------------------------------------------- notifications
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: () =>
+      api
+        .get<{ items: AppNotification[]; unread: number }>("/notifications")
+        .then((e) => e.data),
+    // A decision made elsewhere should reach the screen without a reload. Sixty
+    // seconds is often enough for something nobody is staring at, and cheap.
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/notifications/${id}/read`, {}),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post("/notifications/read-all", {}),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+// ------------------------------------------------------------------ piecework
+
+export function usePieceRecords() {
+  return useQuery({
+    queryKey: ["pieceWork"],
+    queryFn: () => api.get<PieceRecord[]>("/piece-work").then((e) => e.data),
+  });
+}
+
+export function useRecordPieces() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { employeeId: string; date: string; quantity: number; note?: string | null }) =>
+      api.post<PieceRecord>("/piece-work", body).then((e) => e.data),
+    // A piece count IS the wage for anybody on that model, so payroll's view
+    // of the month changes with it.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["pieceWork"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+export function useDeletePieceRecord() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`/piece-work/${id}`).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["pieceWork"] });
+      void qc.invalidateQueries({ queryKey: ["payroll"] });
+    },
+  });
+}
+
+// --------------------------------------------------------------------- finance
+
+export function useFinanceOverview(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "overview"],
+    queryFn: () => api.get<FinanceOverview>("/finance/overview").then((e) => e.data),
+  });
+}
+
+export function useExpenses(status?: string) {
+  return useQuery({
+    queryKey: ["finance", "expenses", status ?? "all"],
+    queryFn: () =>
+      api.get<Expense[]>("/finance/expenses", { status }).then((e) => e.data),
+  });
+}
+
+// --------------------------------------------------------------- salary setup
+
+/**
+ * An employee's salary. Payroll skips anyone without one, so this is what
+ * stands between a company and its first payslip.
+ */
+export function useEmployeeSalary(employeeId: string | null) {
+  return useQuery({
+    queryKey: ["employee-salary", employeeId],
+    enabled: Boolean(employeeId),
+    queryFn: () =>
+      api.get<EmployeeSalary | null>(`/payroll/employees/${employeeId}/salary`).then((e) => e.data),
+  });
+}
+
+export function useSetEmployeeSalary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: EmployeeSalaryWrite }) =>
+      api.put<EmployeeSalary>(`/payroll/employees/${id}/salary`, body).then((e) => e.data),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-salary", v.id] });
+    },
+  });
+}
+
+export function useSalaryComponents() {
+  return useQuery({
+    queryKey: ["salary-components"],
+    queryFn: () => api.get<SalaryComponent[]>("/payroll/components").then((e) => e.data),
+  });
+}
+
+export function useSaveSalaryComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: SalaryComponentWrite }) =>
+      id
+        ? api.put<SalaryComponent>(`/payroll/components/${id}`, body).then((e) => e.data)
+        : api.post<SalaryComponent>("/payroll/components", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["salary-components"] });
+    },
+  });
+}
+
+/** Issues this company has raised with Linumic. */
+export function useSupportTickets() {
+  return useQuery({
+    queryKey: ["support-tickets"],
+    queryFn: () => api.get<SupportTicket[]>("/support/tickets").then((e) => e.data),
+  });
+}
+
+export function useRaiseSupportTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { subject: string; detail?: string }) =>
+      api.post<{ id: string }>("/support/tickets", body, false).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["support-tickets"] });
+    },
+  });
+}
+
+/** Which components one employee gets, and at what amount. */
+export function useEmployeeComponents(employeeId: string | null) {
+  return useQuery({
+    enabled: Boolean(employeeId),
+    queryKey: ["employee-components", employeeId],
+    queryFn: () =>
+      api
+        .get<ComponentAssignment[]>(`/payroll/employees/${employeeId}/components`)
+        .then((e) => e.data),
+  });
+}
+
+export function useSetEmployeeComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      employeeId,
+      componentId,
+      body,
+    }: {
+      employeeId: string;
+      componentId: string;
+      body: { value: number | null; active: boolean };
+    }) =>
+      api
+        .put<ComponentAssignment>(
+          `/payroll/employees/${employeeId}/components/${componentId}`,
+          body,
+        )
+        .then((e) => e.data),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-components", v.employeeId] });
+    },
+  });
+}
+
+/** Returns the employee to whatever the component itself does. */
+export function useClearEmployeeComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeId, componentId }: { employeeId: string; componentId: string }) =>
+      api.del<void>(`/payroll/employees/${employeeId}/components/${componentId}`),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["employee-components", v.employeeId] });
+    },
+  });
+}
+
+export function useCreateExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      category: ExpenseCategory;
+      vendor: string;
+      description: string;
+      amount: number;
+      date: string;
+    }) => api.post<Expense>("/finance/expenses", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useDecideExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; action: "APPROVE" | "REJECT" | "PAY" }) =>
+      api
+        .post<Expense>(`/finance/expenses/${args.id}/decide`, { action: args.action })
+        .then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useAccounts(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "accounts"],
+    queryFn: () => api.get<Account[]>("/finance/accounts").then((e) => e.data),
+  });
+}
+
+export function useJournal(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "journal"],
+    queryFn: () => api.get<JournalEntry[]>("/finance/journal").then((e) => e.data),
+  });
+}
+
+export function useCreateJournalEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { date: string; memo: string; lines: JournalLine[] }) =>
+      api.post<{ id: string }>("/finance/journal", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useTrialBalance(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["finance", "trial-balance"],
+    queryFn: () => api.get<TrialBalance>("/finance/trial-balance").then((e) => e.data),
+  });
+}
+
+export function usePendingApprovals() {
+  return useQuery({
+    queryKey: ["leave", "approvals"],
+    queryFn: () =>
+      api.get<LeaveRequest[]>("/leave/requests", { scope: "approvals" }).then((e) => e.data),
+  });
+}
+
+export function useDecideLeave() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; decision: "APPROVE" | "REJECT"; note?: string | null }) =>
+      api
+        .post<LeaveRequest>(`/leave/requests/${args.id}/decide`, {
+          decision: args.decision,
+          note: args.note ?? null,
+        })
+        .then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave", "approvals"] }),
+  });
+}
+
+// -------------------------------------------------------------- shifts & roster
+
+export function useShifts() {
+  return useQuery({
+    queryKey: ["shifts"],
+    queryFn: () => api.get<Shift[]>("/shifts").then((e) => e.data),
+  });
+}
+
+export function useSaveShift() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id?: string; body: ShiftWrite }) =>
+      (args.id
+        ? api.put<Shift>(`/shifts/${args.id}`, args.body)
+        : api.post<Shift>("/shifts", args.body)
+      ).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shifts"] }),
+  });
+}
+
+export function useRoster(date: string) {
+  return useQuery({
+    queryKey: ["roster", date],
+    queryFn: () =>
+      api
+        .get<{ date: string; rows: RosterRow[] }>("/shifts/roster", { date })
+        .then((e) => e.data.rows),
+  });
+}
+
+export function useAssignRoster() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      employeeIds: string[];
+      shiftId: string;
+      from: string;
+      to?: string;
+      branchId?: string | null;
+    }) => api.post<{ created: number }>("/shifts/roster/assign", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roster"] }),
+  });
+}
+
+// ----------------------------------------------------------------------- kiosk
+
+/** Current rotating kiosk token; refetched well before the 30s slot expires. */
+export function useKioskToken(kioskId?: string) {
+  return useQuery({
+    queryKey: ["kiosk-token", kioskId ?? "default"],
+    queryFn: () =>
+      api
+        .get<{ token: string; kioskId: string; companyName: string; rotateSeconds: number }>(
+          "/kiosk/token",
+          { kioskId },
+        )
+        .then((e) => e.data),
+    refetchInterval: 20_000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+  });
+}
+
+export function useKioskAccounts(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["kiosk-accounts"],
+    queryFn: () => api.get<KioskAccount[]>("/kiosk/accounts").then((e) => e.data),
+  });
+}
+
+export function useCreateKioskAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { label: string; branchId?: string | null }) =>
+      api.post<KioskAccountCreated>("/kiosk/accounts", body).then((e) => e.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kiosk-accounts"] }),
+  });
+}
+
+export function useResetKioskAccount() {
+  return useMutation({
+    mutationFn: (kioskId: string) =>
+      api
+        .post<{ kioskId: string; password: string }>(`/kiosk/accounts/${kioskId}/reset`, {})
+        .then((e) => e.data),
+  });
+}
+
+// -------------------------------------------------------------------- settings
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api.get<CompanySettings>("/settings").then((e) => e.data),
+  });
+}
+
+export function useUpdateSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Partial<CompanySettings>) =>
+      api.put<CompanySettings>("/settings", patch).then((e) => e.data),
+    onSuccess: (data) => {
+      qc.setQueryData(["settings"], data);
+      void qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function usePendingRegularizations(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["regularizations", "approvals"],
+    queryFn: () =>
+      api
+        .get<Regularization[]>("/attendance/regularizations", { scope: "approvals" })
+        .then((e) => e.data),
+  });
+}
+
+export function useDecideRegularization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; decision: "APPROVE" | "REJECT"; note?: string | null }) =>
+      api
+        .post<Regularization>(`/attendance/regularizations/${args.id}/decide`, {
+          decision: args.decision,
+          note: args.note ?? null,
+        })
+        .then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["regularizations", "approvals"] });
+      void qc.invalidateQueries({ queryKey: ["attendance-overview"] });
+    },
+  });
+}
+
+// ------------------------------------------------------------ device licence
+
+export function useLicense(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["license"],
+    queryFn: () => api.get<License>("/devices/license").then((e) => e.data),
+  });
+}
+
+// There is no useSaveLicence: the licence is what the customer buys, so the
+// server has no endpoint to write it. The vendor issues licences with
+// backend/functions/src/scripts/set-license.ts.
+
+export function useDevices(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["devices"],
+    queryFn: () => api.get<LicensedDevice[]>("/devices").then((e) => e.data),
+  });
+}
+
+export function useSetDeviceStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ deviceId, action }: { deviceId: string; action: "revoke" | "restore" }) =>
+      api.post<LicensedDevice>(`/devices/${deviceId}/${action}`, {}).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["devices"] });
+    },
+  });
+}
+
+// ------------------------------------------------------------ working calendar
+
+export function useHolidays(from?: string, to?: string) {
+  const qs = from && to ? `?from=${from}&to=${to}` : "";
+  return useQuery({
+    queryKey: ["holidays", from ?? null, to ?? null],
+    queryFn: () => api.get<Holiday[]>(`/calendar/holidays${qs}`).then((e) => e.data),
+  });
+}
+
+/** Every date in a range with whether it is worked, a weekend, or a holiday. */
+export function useCalendarDays(from: string, to: string, enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["calendar-days", from, to],
+    queryFn: () =>
+      api.get<CalendarDay[]>(`/calendar/days?from=${from}&to=${to}`).then((e) => e.data),
+  });
+}
+
+export function useSaveHoliday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, ...body }: HolidayWrite & { date: string }) =>
+      api.put<Holiday>(`/calendar/holidays/${date}`, body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+export function useDeleteHoliday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (date: string) => api.del(`/calendar/holidays/${date}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+/** Generates the fixed Solar Hijri holidays for a year. */
+export function useSeedHolidays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (year: number) =>
+      api.post<{ year: number; added: number }>("/calendar/holidays/seed", { year }).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["holidays"] });
+      void qc.invalidateQueries({ queryKey: ["calendar-days"] });
+    },
+  });
+}
+
+// --------------------------------------------------------- closing the account
+
+export function useCompanyDeletion(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ["company-deletion"],
+    queryFn: () => api.get<CompanyDeletion>("/company/deletion").then((e) => e.data),
+  });
+}
+
+export function useRequestCompanyDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { confirmName: string; reason?: string | null }) =>
+      api.post<CompanyDeletion>("/company/deletion", body).then((e) => e.data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["company-deletion"] }),
+  });
+}
+
+export function useCancelCompanyDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.del<CompanyDeletion>("/company/deletion"),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["company-deletion"] }),
+  });
+}
+
+// ---------------------------------------------------------------- work
+
+/** Everything the work board reads invalidates together: one plan, one cache. */
+function invalidateWork(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ["work-tasks"] });
+  void qc.invalidateQueries({ queryKey: ["work-board"] });
+  void qc.invalidateQueries({ queryKey: ["my-work"] });
+}
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: () => api.get<Project[]>("/work/projects").then((e) => e.data),
+  });
+}
+
+export function useSaveProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: ProjectWrite }) =>
+      id
+        ? api.put<Project>(`/work/projects/${id}`, body).then((e) => e.data)
+        : api.post<Project>("/work/projects", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+      invalidateWork(qc);
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/projects/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useWorkTeams() {
+  return useQuery({
+    queryKey: ["work-teams"],
+    queryFn: () => api.get<WorkTeam[]>("/work/teams").then((e) => e.data),
+  });
+}
+
+export function useSaveWorkTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: WorkTeamWrite }) =>
+      id
+        ? api.put<WorkTeam>(`/work/teams/${id}`, body).then((e) => e.data)
+        : api.post<WorkTeam>("/work/teams", body).then((e) => e.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["work-teams"] });
+    },
+  });
+}
+
+export function useDeleteWorkTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/teams/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["work-teams"] });
+    },
+  });
+}
+
+/** Tasks overlapping a date window, optionally narrowed to a project or person. */
+export function useWorkTasks(
+  from: string,
+  to: string,
+  filter: { projectId?: string; employeeId?: string } = {},
+) {
+  return useQuery({
+    queryKey: ["work-tasks", from, to, filter.projectId ?? "", filter.employeeId ?? ""],
+    queryFn: () =>
+      api
+        .get<WorkTask[]>("/work/tasks", {
+          from,
+          to,
+          projectId: filter.projectId,
+          employeeId: filter.employeeId,
+        })
+        .then((e) => e.data),
+  });
+}
+
+/** One day, grouped by person — the morning question, answered. */
+export function useDayBoard(date: string) {
+  return useQuery({
+    queryKey: ["work-board", date],
+    queryFn: () => api.get<DayBoard>("/work/board", { date }).then((e) => e.data),
+  });
+}
+
+/** The signed-in manager's own assignments — the same view their staff get. */
+export function useMyWork() {
+  return useQuery({
+    queryKey: ["my-work"],
+    queryFn: () => api.get<MyWork>("/work/mine").then((e) => e.data),
+  });
+}
+
+export function useSaveTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: TaskWrite | Partial<TaskWrite> }) =>
+      id
+        ? api.patch<WorkTask>(`/work/tasks/${id}`, body).then((e) => e.data)
+        : api.post<WorkTask>("/work/tasks", body).then((e) => e.data),
+    onSuccess: () => invalidateWork(qc),
+  });
+}
+
+export function useDeleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<void>(`/work/tasks/${id}`),
+    onSuccess: () => invalidateWork(qc),
+  });
+}
+
+export function useSetTaskStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, note }: { id: string; status: TaskStatus; note?: string }) =>
+      api
+        .post<WorkTask>(`/work/tasks/${id}/status`, { status, note }, false)
+        .then((e) => e.data),
+    onSuccess: () => invalidateWork(qc),
+  });
+}

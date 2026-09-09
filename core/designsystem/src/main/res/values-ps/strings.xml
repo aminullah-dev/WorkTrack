@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">بیا هڅه</string>
+    <string name="ds_back">شاته</string>
+    <string name="ds_ok">سمه ده</string>
+    <string name="ds_cancel">لغوه</string>
+
+    <string name="ds_err_network">تاسو آفلاین یاست. بدلونونه خوندي شول او په خپلکاره توګه به همغږي شي.</string>
+    <string name="ds_err_unauthenticated">ستاسو ناسته پای ته ورسېده. مهرباني وکړئ بیا ننوځئ.</string>
+    <string name="ds_err_permission">تاسو د دې کار اجازه نه لرئ.</string>
+    <string name="ds_err_not_found">توکی ونه موندل شو.</string>
+    <string name="ds_err_unexpected">ستونزه رامنځته شوه. مهرباني وکړئ بیا هڅه وکړئ.</string>
+    <string name="ds_err_server">د سرور تېروتنه وشوه (%1$s).</string>
+    <string name="ds_err_validation">ورکړل شوي معلومات سم نه دي.</string>
+
+    <string name="ds_err_invalid_credentials">برېښنالیک یا پټنوم سم نه دی.</string>
+    <string name="ds_err_mock_location">جعلي موقعیت د حاضرۍ لپاره مجاز نه دی.</string>
+    <string name="ds_err_geofence">تاسو د مجازې کاري ساحې بهر یاست.</string>
+    <string name="ds_err_leave_balance">ستاسو د رخصتۍ بیلانس بسنه نه کوي.</string>
+    <string name="ds_err_not_synced">صبر وکړئ چې دا غوښتنه لومړی همغږي شي.</string>
+    <string name="ds_err_kiosk_token">د کیوسک QR کوډ سم نه دی؛ بیا یې سکن کړئ.</string>
+    <string name="ds_err_invalid_state">دا غوښتنه له مخکې پای ته رسېدلې ده.</string>
+
+    <string-array name="ds_shamsi_months">
+        <item>وری</item>
+        <item>غويی</item>
+        <item>غبرګولی</item>
+        <item>چنګاښ</item>
+        <item>زمری</item>
+        <item>وږی</item>
+        <item>تله</item>
+        <item>لړم</item>
+        <item>ليندۍ</item>
+        <item>مرغومی</item>
+        <item>سلواغه</item>
+        <item>کب</item>
+    </string-array>
+
+    <string-array name="ds_weekdays">
+        <item>دوشنبه</item>
+        <item>درېشنبه</item>
+        <item>څلورشنبه</item>
+        <item>پينځشنبه</item>
+        <item>جمعه</item>
+        <item>شنبه</item>
+        <item>یکشنبه</item>
+    </string-array>
+</resources>

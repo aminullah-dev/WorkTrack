@@ -1,0 +1,23 @@
+{
+  "displayName": "Attendance integrity — recorded punches missing from the board",
+  "documentation": {
+    "content": "The nightly audit (attendanceIntegrityAudit) found employees with punches for a day whose attendanceDays projection is missing or older than those punches.\n\nThis is the failure that went unnoticed for weeks: punches stored, projection never written, staff showing as absent.\n\nWhat to do:\n1. Read the finding: firebase functions:log --only attendanceIntegrityAudit --project worktrack-prod\n2. Look for the underlying error in the api function around the punch times — a FAILED_PRECONDITION means a Firestore index is missing again.\n3. Repair the affected days once the cause is fixed:\n   cd backend/functions && npm run build\n   GOOGLE_CLOUD_PROJECT=worktrack-prod node lib/scripts/backfill-attendance.js        # dry run\n   GOOGLE_CLOUD_PROJECT=worktrack-prod node lib/scripts/backfill-attendance.js --apply",
+    "mimeType": "text/markdown"
+  },
+  "conditions": [
+    {
+      "displayName": "ATTENDANCE_INTEGRITY logged at error level",
+      "conditionMatchedLog": {
+        "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"attendanceintegrityaudit\" AND severity>=ERROR AND (textPayload:\"ATTENDANCE_INTEGRITY\" OR jsonPayload.message:\"ATTENDANCE_INTEGRITY\")"
+      }
+    }
+  ],
+  "combiner": "OR",
+  "alertStrategy": {
+    "notificationRateLimit": {
+      "period": "3600s"
+    },
+    "autoClose": "604800s"
+  },
+  "enabled": true
+}

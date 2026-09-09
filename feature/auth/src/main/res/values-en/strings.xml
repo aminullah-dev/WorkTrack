@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_tagline">Smart workforce management for Afghanistan</string>
+    <string name="auth_email">Work email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_show_password">Show password</string>
+    <string name="auth_hide_password">Hide password</string>
+    <string name="auth_email_invalid">Enter a valid email address</string>
+    <string name="auth_password_short">Password must be at least 8 characters</string>
+</resources>

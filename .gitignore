@@ -1,0 +1,47 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Secrets / environment-specific configuration (never commit)
+app/google-services.json
+app/src/demo/google-services.json
+backend/.firebaserc
+backend/functions/.env*
+backend/functions/.secret.local
+web/.env.local
+*.keystore
+*.jks
+# Holds the release signing password.
+keystore.properties
+
+# Node
+node_modules/
+backend/functions/lib/
+npm-debug.log*
+
+# Third-party Claude skills (installed locally, not vendored)
+.claude/skills/
+
+# Firebase local artifacts: emulator logs and the hosting upload cache.
+# Regenerated on every run/deploy, and machine-specific.
+.firebase/
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
+
+# Release build output — APKs and baseline profiles. Large, regenerated
+# by every build, and never worth keeping in history.
+app/release/
+
+# Kotlin compiler scratch and error logs.
+.kotlin/

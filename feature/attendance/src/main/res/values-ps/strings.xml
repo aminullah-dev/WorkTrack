@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="att_punch_title">د حاضرۍ ثبت</string>
+    <string name="att_location_permission_needed">د GPS حاضرۍ لپاره د موقعیت اجازه اړینه ده</string>
+    <string name="att_getting_location">ستاسو موقعیت ترلاسه کېږي…</string>
+    <string name="att_no_geofence">کاري ساحه نه ده ټاکل شوې — له هر ځایه حاضري ثبتولی شئ</string>
+    <string name="att_inside_fence">د %1$s دننه</string>
+    <string name="att_outside_fence">له کاري ساحې بهر (%1$s متره لرې)</string>
+    <string name="att_accuracy">کره‌والی ±%1$s متره</string>
+    <string name="att_scan_qr">د کیوسک QR سکن کړئ</string>
+    <string name="att_clock_in">ورتګ ثبت کړئ</string>
+    <string name="att_clock_out">وتل ثبت کړئ</string>
+    <string name="att_punch_in_recorded">ورتګ ثبت شو — په خپلکاره توګه همغږي کېږي</string>
+    <string name="att_punch_out_recorded">وتل ثبت شول — په خپلکاره توګه همغږي کېږي</string>
+    <string name="att_loc_unavailable_permission">پرته له موقعیت اجازې GPS حاضري نه کېږي. د کیوسک QR وکاروئ.</string>
+    <string name="att_loc_unavailable_no_fix">GPS موقعیت ترلاسه نه شو. خلاصې فضا ته ولاړ شئ او بیا هڅه وکړئ.</string>
+
+    <string name="att_qr_title">د کیوسک QR سکن</string>
+    <string name="att_qr_camera_permission_title">د کامرې اجازه اړینه ده</string>
+    <string name="att_qr_camera_permission_msg">د کیوسک QR کوډ سکن لپاره کامرې ته اجازه ورکړئ.</string>
+    <string name="att_qr_hint">کامره د کیوسک پردې ته ونیسئ</string>
+
+    <string name="att_selfie_title">د عکس تایید</string>
+    <string name="att_selfie_hint">خپل مخ د چوکاټ دننه ونیسئ</string>
+    <string name="att_selfie_ready">مخ وپېژندل شو — عکس اخیستلی شئ</string>
+    <string name="att_selfie_capture">عکس واخلئ او حاضري ثبت کړئ</string>
+
+    <string name="att_history_title">د حاضرۍ تاریخچه</string>
+    <string name="att_history_empty_title">ریکارډ نشته</string>
+    <string name="att_history_empty_msg">د دې میاشتې حاضري د لومړي همغږي کولو وروسته ښکاري.</string>
+    <string name="att_prev_month">پخوانۍ میاشت</string>
+    <string name="att_next_month">راتلونکې میاشت</string>
+    <string name="att_worked_short">کار %1$s ساعته %2$s دقیقې</string>
+    <string name="att_overtime_short">اضافه کار %1$s دقیقې</string>
+    <string name="att_late_by">%1$s دقیقې ناوخته</string>
+
+    <string name="att_status_present">حاضر</string>
+    <string name="att_status_absent">غیرحاضر</string>
+    <string name="att_status_half_day">نیمه ورځ</string>
+    <string name="att_status_leave">رخصتي</string>
+    <string name="att_status_holiday">عمومي رخصتي</string>
+    <string name="att_status_week_off">اونیزه رخصتي</string>
+    <string name="att_status_pending">په تمه</string>
+
+    <string name="reg_request">د سمون غوښتنه</string>
+    <string name="reg_dialog_title">د حاضرۍ سمون</string>
+    <string name="reg_in_time">سم شوی ورتګ</string>
+    <string name="reg_out_time">سم شوی وتل</string>
+    <string name="reg_set_time">وخت وټاکئ</string>
+    <string name="reg_reason">دلیل</string>
+    <string name="reg_reason_hint">لکه: هېر مې کړل چې وتل ثبت کړم</string>
+    <string name="reg_submit">غوښتنه ولېږئ</string>
+    <string name="reg_cancel">لغوه</string>
+    <string name="reg_submitted">د سمون غوښتنه ثبت شوه — د مدیر له تایید وروسته پلي کېږي</string>
+    <string name="reg_err_times">لږ تر لږه د ورتګ یا وتلو وخت وټاکئ</string>
+    <string name="reg_err_reason">دلیل ولیکئ</string>
+    <string name="att_face_enroll_title">د مخ ثبتول</string>
+    <string name="att_face_enroll_hint">خپل مخ د دایرې دننه ونیسئ</string>
+    <string name="att_face_enroll_ready">مخ وپېژندل شو — تڼۍ کېکاږئ</string>
+    <string name="att_face_enroll_capture">زما مخ ثبت کړه</string>
+    <string name="att_face_enroll_saving">ثبتېږي…</string>
+    <string name="att_face_enroll_done">ستاسو مخ په بریالیتوب سره ثبت شو</string>
+    <string name="att_face_enroll_error">ستونزه رامنځته شوه، بیا هڅه وکړئ</string>
+    <string name="att_face_enroll_no_model">د مخ ماډل پدې وسیله نشته</string>
+    <string name="att_face_enroll_already">مخ دمخه ثبت شوی دی. له مدیر څخه وغواړئ چې بیا یې تنظیم کړي.</string>
+    <string name="att_face_verify_title">د مخ له لارې ننوتل</string>
+    <string name="att_face_verify_capture">تصدیق او ثبت</string>
+    <string name="att_face_verify_done">مخ تصدیق شو</string>
+    <string name="att_face_verify_no_match">دا مخ ستاسو له ثبت شوي مخ سره سمون نه خوري</string>
+    <string name="att_face_verify_not_enrolled">لا تر اوسه مخ نه دی ثبت شوی — لومړی خپل مخ ثبت کړئ</string>
+    <string name="att_punch_location_lost">موقعیت نور شتون نلري — حاضري ثبت نه شوه</string>
+</resources>

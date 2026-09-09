@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Lint suggests merging mipmap-anydpi-v26 into mipmap-anydpi because minSdk is 26,
+         but AAPT2 only links <adaptive-icon> resources from a -v26 qualified folder;
+         renaming the folder breaks resource linking (mipmap/ic_launcher not found). -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+</lint>

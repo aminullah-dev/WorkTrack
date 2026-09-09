@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pay_payslip">Payslip</string>
+    <string name="pay_no_payslips_title">No payslips for %1$s</string>
+    <string name="pay_no_payslips_msg">Payslips appear here once payroll is finalized.</string>
+    <string name="pay_prev_year">Previous year</string>
+    <string name="pay_next_year">Next year</string>
+    <string name="pay_worked_days">Worked %1$s days</string>
+    <string name="pay_lop_days">LOP %1$s days</string>
+    <string name="pay_net_pay">Net pay</string>
+    <string name="pay_gross_minus">Gross %1$s − Deductions %2$s</string>
+    <string name="pay_earnings">Earnings</string>
+    <string name="pay_deductions">Deductions</string>
+    <string name="pay_attendance_summary">Attendance summary</string>
+    <string name="pay_worked_days_label">Worked days</string>
+    <string name="pay_paid_leave_label">Paid leave days</string>
+    <string name="pay_lop_label">Loss-of-pay days</string>
+    <string name="pay_all_months">All months</string>
+    <string name="pay_no_payslips_month_title">No payslip for %1$s</string>
+</resources>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="leave_apply">درخواست</string>
+    <string name="leave_pending_team">درخواست‌های تیم منتظر شماست</string>
+    <string name="leave_review">بررسی</string>
+    <string name="leave_balances">بیلانس‌ها</string>
+    <string name="leave_my_requests">درخواست‌های من</string>
+    <string name="leave_empty_title">هنوز درخواستی ندارید</string>
+    <string name="leave_empty_msg">برای درخواست رخصتی، دکمهٔ درخواست را بزنید.</string>
+    <string name="leave_balances_after_sync">بیلانس‌ها بعد از اولین همگام‌سازی نمایش داده می‌شود.</string>
+    <string name="leave_days_pending">%1$s روز در انتظار</string>
+    <string name="leave_days_count">%1$s روز</string>
+    <string name="leave_waiting_sync">در انتظار همگام‌سازی…</string>
+    <string name="leave_sync_failed">همگام‌سازی ناکام شد — سرور این درخواست را رد کرد</string>
+    <string name="leave_cancel_request">لغو درخواست</string>
+    <string name="leave_generic_type">رخصتی</string>
+    <string name="leave_msg_cancelled">درخواست لغو شد</string>
+
+    <string name="leave_status_draft">مسوده</string>
+    <string name="leave_status_pending">در انتظار</string>
+    <string name="leave_status_approved">تایید شده</string>
+    <string name="leave_status_rejected">رد شده</string>
+    <string name="leave_status_cancelled">لغو شده</string>
+
+    <string name="leave_apply_title">درخواست رخصتی</string>
+    <string name="leave_type_section">نوع رخصتی</string>
+    <string name="leave_dates_section">تاریخ‌ها</string>
+    <string name="leave_start_date">تاریخ شروع</string>
+    <string name="leave_end_date">تاریخ ختم</string>
+    <string name="leave_half_first">نیم روز اول</string>
+    <string name="leave_half_last">نیم روز آخر</string>
+    <string name="leave_estimate">≈ %1$s روز (جمعه‌ها و رخصتی‌های عمومی هنگام تایید حساب می‌شود)</string>
+    <string name="leave_reason_section">دلیل</string>
+    <string name="leave_reason_label">چرا به این رخصتی نیاز دارید؟</string>
+    <string name="leave_submit">ارسال درخواست</string>
+    <string name="leave_err_type">نوع رخصتی را انتخاب کنید</string>
+    <string name="leave_err_start">تاریخ شروع را انتخاب کنید</string>
+    <string name="leave_err_end">تاریخ ختم را انتخاب کنید</string>
+    <string name="leave_err_reason">نوشتن دلیل لازم است</string>
+
+    <string name="leave_approvals_title">تاییدی‌ها</string>
+    <string name="leave_approvals_empty_title">همه بررسی شده</string>
+    <string name="leave_approvals_empty_msg">هیچ درخواست رخصتی منتظر فیصلهٔ شما نیست.</string>
+    <string name="leave_approve">تایید</string>
+    <string name="leave_reject">رد</string>
+    <string name="leave_reject_dialog_title">رد درخواست</string>
+    <string name="leave_reject_dialog_msg">به %1$s بگویید چرا این درخواست رد می‌شود.</string>
+    <string name="leave_reject_reason">دلیل</string>
+    <string name="leave_msg_approved">درخواست تایید شد</string>
+    <string name="leave_msg_rejected">درخواست رد شد</string>
+</resources>

@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// WorkTrack: ALL reads and writes go through the REST API (Admin SDK), which
+// enforces tenant isolation and RBAC. Client SDKs have no direct Firestore
+// access — these rules are the defense-in-depth backstop, not the auth layer.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

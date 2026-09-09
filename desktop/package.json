@@ -1,0 +1,44 @@
+{
+  "name": "worktrack-desktop",
+  "version": "1.0.0",
+  "description": "WorkTrack company portal — desktop shell for the manager web portal",
+  "author": "WorkTrack",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "af.worktrack.portal",
+    "productName": "WorkTrack",
+    "files": [
+      "main.js",
+      "error.html"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "WorkTrack-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}

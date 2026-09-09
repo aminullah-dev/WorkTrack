@@ -1,0 +1,217 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { auth } from "../firebase";
+import { api, ApiError } from "../api/client";
+import type { CompanyFeatures, Me } from "../api/types";
+
+type Status = "loading" | "signedOut" | "signedIn" | "kiosk" | "vendor";
+
+interface AuthContextValue {
+  status: Status;
+  me: Me | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  /** Re-fetch /me so feature flags / roles reflect server-side changes (e.g.
+   *  after saving company settings) without a full page reload. */
+  refreshMe: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+/**
+ * Roles allowed into the portal.
+ *
+ * EMPLOYEE is here so somebody whose phone cannot run the app — an iPhone, or
+ * no smartphone at all — can still see the work assigned to them. They get one
+ * page: their own. Every other route is hidden by permission, and the server
+ * refuses them regardless, so this widens the door, not what is behind it.
+ *
+ * KIOSK stays out: a kiosk login is a shared device bolted to a wall, and the
+ * portal is not what it is for.
+ */
+const PORTAL_ROLES = new Set([
+  "EMPLOYEE",
+  "SUPER_ADMIN",
+  "COMPANY_ADMIN",
+  "HR_ADMIN",
+  "PAYROLL_ADMIN",
+  "FINANCE_ADMIN",
+  "BRANCH_MANAGER",
+  "TEAM_LEAD",
+  "AUDITOR",
+]);
+
+export class NoManagerAccessError extends Error {}
+
+/** Firebase custom claim `r` (roles) is untyped — coerce to a string array. */
+function asRoles(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.map(String) : [];
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [status, setStatus] = useState<Status>("loading");
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    // Resolve the session on load and whenever Firebase auth state changes
+    // (e.g. token restored from persistence). GET /me gives roles + tenant.
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setMe(null);
+        setStatus("signedOut");
+        return;
+      }
+      try {
+        // A dedicated kiosk device account has no employee record; route it
+        // straight to the full-screen kiosk display from its token claims.
+        const claims = await user.getIdTokenResult();
+        // Linumic staff. They have no employee record and no company, so /me
+        // would refuse them — the console is a different application that
+        // happens to be served from the same bundle.
+        if (claims.claims.vendor === true) {
+          setMe(null);
+          setStatus("vendor");
+          return;
+        }
+        if (asRoles(claims.claims.r).includes("KIOSK")) {
+          setMe(null);
+          setStatus("kiosk");
+          return;
+        }
+        const { data } = await api.get<Me>("/me");
+        if (!data.roles.some((r) => PORTAL_ROLES.has(r))) {
+          await firebaseSignOut(auth);
+          setMe(null);
+          setStatus("signedOut");
+          return;
+        }
+        setMe(data);
+        setStatus("signedIn");
+      } catch (err) {
+        // A valid Firebase user with no /me (not provisioned) is signed out.
+        if (err instanceof ApiError) await firebaseSignOut(auth);
+        setMe(null);
+        setStatus("signedOut");
+      }
+    });
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      status,
+      me,
+      signIn: async (email, password) => {
+        const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const claims = await cred.user.getIdTokenResult();
+        if (claims.claims.vendor === true) {
+          setMe(null);
+          setStatus("vendor");
+          return;
+        }
+        if (asRoles(claims.claims.r).includes("KIOSK")) {
+          setMe(null);
+          setStatus("kiosk");
+          return;
+        }
+        const { data } = await api.get<Me>("/me");
+        if (!data.roles.some((r) => PORTAL_ROLES.has(r))) {
+          await firebaseSignOut(auth);
+          throw new NoManagerAccessError();
+        }
+        setMe(data);
+        setStatus("signedIn");
+      },
+      signOut: async () => {
+        await firebaseSignOut(auth);
+        setMe(null);
+        setStatus("signedOut");
+      },
+      refreshMe: async () => {
+        // Best-effort refresh; keep the current session on failure. Only applies
+        // to an already-signed-in manager, so the role gate is a safety no-op.
+        const { data } = await api.get<Me>("/me");
+        if (data.roles.some((r) => PORTAL_ROLES.has(r))) setMe(data);
+      },
+    }),
+    [status, me],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+}
+
+/** Client-side permission check mirroring the server RBAC catalog (UX only). */
+export function useHasPermission(): (permission: string) => boolean {
+  const { me } = useAuth();
+  return (permission: string) => {
+    if (!me) return false;
+    if (me.roles.includes("COMPANY_ADMIN") || me.roles.includes("SUPER_ADMIN")) return true;
+    return (ROLE_PERMISSIONS[permission] ?? []).some((role) => me.roles.includes(role));
+  };
+}
+
+// Which roles grant each permission the portal gates on (subset of the server
+// catalog in backend/functions/src/middleware/rbac.ts). COMPANY_ADMIN and
+// SUPER_ADMIN bypass this map entirely (they hold "*").
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  "employees:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
+  "employees:write": ["HR_ADMIN"],
+  "attendance:read": ["HR_ADMIN", "PAYROLL_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
+  "attendance:approve": ["HR_ADMIN", "BRANCH_MANAGER"],
+  "leave:approve": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  "payroll:read": ["HR_ADMIN", "PAYROLL_ADMIN", "FINANCE_ADMIN", "AUDITOR"],
+  "payroll:run": ["PAYROLL_ADMIN", "FINANCE_ADMIN"],
+  "payroll:approve": ["PAYROLL_ADMIN", "FINANCE_ADMIN"],
+  "finance:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "expenses:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "expenses:write": ["FINANCE_ADMIN"],
+  "expenses:approve": ["FINANCE_ADMIN"],
+  "ledger:read": ["FINANCE_ADMIN", "AUDITOR"],
+  "ledger:write": ["FINANCE_ADMIN"],
+  "rosters:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  "work:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR"],
+  "work:write": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD"],
+  // Everyone who is somebody's employee — which is everyone who does the work,
+  // their team lead included.
+  "self:tasks": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "EMPLOYEE"],
+  "rosters:write": ["HR_ADMIN", "BRANCH_MANAGER"],
+  "kiosk:issue": ["HR_ADMIN", "BRANCH_MANAGER"],
+  // settings:write is intentionally empty — only COMPANY_ADMIN/SUPER_ADMIN (the
+  // dedicated admin) may edit configuration, via the "*" bypass above.
+  "settings:write": [],
+};
+
+const DEFAULT_FEATURES: CompanyFeatures = {
+  shifts: true,
+  leave: true,
+  payroll: true,
+  regularization: true,
+  announcements: true,
+  geofencing: true,
+  qrKiosk: true,
+  faceRecognition: true,
+  finance: true,
+};
+
+/** Company feature flags (module toggles). Unknown → enabled, so nothing hides
+ *  for a session created before the flags existed. */
+export function useFeatures(): CompanyFeatures {
+  const { me } = useAuth();
+  return { ...DEFAULT_FEATURES, ...(me?.features ?? {}) };
+}

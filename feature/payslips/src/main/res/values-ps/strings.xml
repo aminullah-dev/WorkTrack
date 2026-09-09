@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pay_payslip">د معاش فیش</string>
+    <string name="pay_no_payslips_title">د %1$s کال لپاره د معاش فیش نشته</string>
+    <string name="pay_no_payslips_msg">د معاش فیشونه د معاشاتو له نهایي کېدو وروسته ښکاري.</string>
+    <string name="pay_prev_year">پخوانی کال</string>
+    <string name="pay_next_year">راتلونکی کال</string>
+    <string name="pay_worked_days">%1$s ورځې کار</string>
+    <string name="pay_lop_days">%1$s ورځې د معاش کسر</string>
+    <string name="pay_net_pay">خالص معاش</string>
+    <string name="pay_gross_minus">ناخالص %1$s − کسرات %2$s</string>
+    <string name="pay_earnings">عواید</string>
+    <string name="pay_deductions">کسرات</string>
+    <string name="pay_attendance_summary">د حاضرۍ لنډیز</string>
+    <string name="pay_worked_days_label">د کار ورځې</string>
+    <string name="pay_paid_leave_label">له معاش سره د رخصتۍ ورځې</string>
+    <string name="pay_lop_label">د معاش کسر ورځې</string>
+    <string name="pay_all_months">ټولې میاشتې</string>
+    <string name="pay_no_payslips_month_title">د %1$s لپاره د معاش فیش نشته</string>
+</resources>

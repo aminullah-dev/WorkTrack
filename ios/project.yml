@@ -1,0 +1,132 @@
+# XcodeGen spec. The .xcodeproj is GENERATED from this file and is not in git —
+# a pbxproj is a merge-conflict machine that nobody can review, and this is the
+# same file in a form a person can read.
+#
+#   cd ios && xcodegen generate && open WorkTrack.xcodeproj
+#
+name: WorkTrack
+options:
+  bundleIdPrefix: app.worktrack
+  deploymentTarget:
+    iOS: "16.0"          # iPhone 8 and later — secondhand phones matter here
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "2"
+    SWIFT_VERSION: "5.9"
+    # Simulator builds are signed ad-hoc ("-"). That is not cosmetic: the
+    # Keychain refuses an app with no entitlements and SecItemAdd fails with
+    # -34018, which showed up as the app asking for the password on every
+    # launch, silently, because nothing checked the status. Keep the simulator
+    # on manual ad-hoc signing; it needs no account and no network.
+    CODE_SIGN_IDENTITY[sdk=iphonesimulator*]: "-"
+    CODE_SIGN_STYLE[sdk=iphonesimulator*]: Manual
+    CODE_SIGNING_REQUIRED: "YES"
+    CODE_SIGNING_ALLOWED: "YES"
+
+    # Building for a real iPhone, and TestFlight, need the Apple Developer
+    # team — this is the WorkTrack membership's Team ID.
+    DEVELOPMENT_TEAM: "27RXPRW77S"
+    CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Development"
+    CODE_SIGN_STYLE[sdk=iphoneos*]: Automatic
+    #
+    # Automatic signing gets the certificate and profile from Apple, so the
+    # machine has to be signed in first: Xcode -> Settings -> Accounts -> "+".
+    # Without it the build stops with "No Accounts: Add a new account in
+    # Accounts settings", which is about THIS Mac, not about the Team ID being
+    # wrong. Then:
+    #   xcodebuild -workspace WorkTrack.xcworkspace -scheme WorkTrack \
+    #     -destination 'generic/platform=iOS' -allowProvisioningUpdates
+    #
+    # A Team ID is an identifier, not a secret — it is printed in every
+    # provisioning profile and every App Store URL — so unlike the Android
+    # keystore it belongs in the repository. What must never be committed is
+    # the signing certificate's private key and the App Store Connect API key.
+
+targets:
+  WorkTrack:
+    type: application
+    platform: iOS
+    sources:
+      - path: WorkTrack
+      # The model is a bundle RESOURCE, not source. Same file as the Android
+      # app's asset — see Face/FaceEmbedder.swift for why that matters.
+      - path: WorkTrack/Face/mobilefacenet.tflite
+        buildPhase: resources
+    info:
+      path: WorkTrack/Info.plist
+      properties:
+        CFBundleDisplayName: WorkTrack
+        # WorkTrack/Info.plist is GENERATED from this block on every `xcodegen
+        # generate`, so editing the plist to bump a version is silently undone
+        # — it looks applied, and the next generate restores XcodeGen's own
+        # defaults of 1.0 and 1. Declare it here, once, and let the plist point
+        # at the build settings above.
+        #
+        # CFBundleVersion must go UP on every upload: Apple refuses a build
+        # number App Store Connect has already seen, and the refusal comes
+        # after the whole archive-export-upload cycle has run.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        # TestFlight and the App Store ask, on every single build, whether the
+        # app uses encryption beyond what Apple exempts. This app talks HTTPS
+        # to its own backend and does nothing else cryptographic — no bundled
+        # cipher, no key exchange of its own — which is exactly the exempt
+        # case. Answering here rather than in a web form each time keeps the
+        # answer honest and version-controlled instead of retyped from memory
+        # by whoever happens to be uploading.
+        ITSAppUsesNonExemptEncryption: false
+        # Dari first, exactly like the portal and the Android app. Without this
+        # the app inherits the phone's language and an Afghan user with an
+        # English phone gets an English, left-to-right layout.
+        CFBundleDevelopmentRegion: fa
+        CFBundleLocalizations: [fa, ps, en]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        # Asked for at the moment somebody punches, and only then. There is no
+        # background tracking in this app and no plan for any, so "when in use"
+        # is the whole claim.
+        NSCameraUsageDescription: "برای تایید حاضری با چهره، دوربین فقط در همان لحظه استفاده می‌شود. عکس شما جایی ذخیره یا ارسال نمی‌شود."
+        NSLocationWhenInUseUsageDescription: "برای ثبت حاضری، موقعیت شما یک بار در همان لحظه خوانده می‌شود تا معلوم شود در ساحهٔ کاری هستید."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.worktrack
+        GENERATE_INFOPLIST_FILE: NO
+        # The clock mark from the Android launcher, same colour — one product,
+        # recognisable on a desk with both phones on it. See make-appicon.py.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+        # iPhone only — a statement of what was actually built and checked, not
+        # a limitation. Every screen here is a worker's screen, laid out and
+        # verified at phone width; a manager who wants a big screen opens the
+        # portal, which is why it was opened to employees in a browser at all.
+        #
+        # It belongs at TARGET level: XcodeGen writes its own
+        # TARGETED_DEVICE_FAMILY = 1,2 per target for an iOS platform, and that
+        # outranks anything set in the project's base settings, silently.
+        #
+        # Claiming iPad costs more than a stretched layout — Apple refuses a
+        # portrait-only iPad app outright ("you need to include all four
+        # orientations to support iPad multitasking", error 90474, which is how
+        # this surfaced). Satisfying it would mean shipping landscape layouts
+        # nobody has ever looked at.
+        TARGETED_DEVICE_FAMILY: "1"
+
+  WorkTrackTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: WorkTrackTests
+    settings:
+      base:
+        # The test bundle is signed too now, so it needs its own Info.plist;
+        # let Xcode generate one rather than hand-keeping a second file.
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.worktrack.tests
+    dependencies:
+      - target: WorkTrack
