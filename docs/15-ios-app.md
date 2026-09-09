@@ -242,7 +242,9 @@ similarity گزارش‌شدهٔ سرور بالای ۰٫۸ باشد. زیر آ�
 ```bash
 cd ios
 # CURRENT_PROJECT_VERSION را در project.yml یک عدد بالا ببرید — اپل build با
-# شمارهٔ تکراری را رد می‌کند.
+# شمارهٔ تکراری را رد می‌کند، و ردش بعد از تمام‌شدن archive و export و آپلود
+# می‌آید. دست به WorkTrack/Info.plist نزنید: آن فایل از روی project.yml ساخته
+# می‌شود و هر تغییری در آن با اجرای بعدی xcodegen بی‌صدا پاک می‌شود.
 xcodegen generate && pod install
 xcodebuild -workspace WorkTrack.xcworkspace -scheme WorkTrack \
   -configuration Release -destination 'generic/platform=iOS' \

@@ -14,8 +14,8 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "2"
     SWIFT_VERSION: "5.9"
     # Simulator builds are signed ad-hoc ("-"). That is not cosmetic: the
     # Keychain refuses an app with no entitlements and SecItemAdd fails with
@@ -60,6 +60,17 @@ targets:
       path: WorkTrack/Info.plist
       properties:
         CFBundleDisplayName: WorkTrack
+        # WorkTrack/Info.plist is GENERATED from this block on every `xcodegen
+        # generate`, so editing the plist to bump a version is silently undone
+        # — it looks applied, and the next generate restores XcodeGen's own
+        # defaults of 1.0 and 1. Declare it here, once, and let the plist point
+        # at the build settings above.
+        #
+        # CFBundleVersion must go UP on every upload: Apple refuses a build
+        # number App Store Connect has already seen, and the refusal comes
+        # after the whole archive-export-upload cycle has run.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         # TestFlight and the App Store ask, on every single build, whether the
         # app uses encryption beyond what Apple exempts. This app talks HTTPS

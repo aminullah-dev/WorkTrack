@@ -4,15 +4,35 @@ import Foundation
 ///
 /// Two environments exist and they must never be confused: the demo tenant
 /// publishes its own password, so a build pointing at it must not be handed to
-/// a real company. The Android app makes this a build type; here it is one
-/// switch, read once.
+/// a real company.
 enum Backend {
     case demo
     case production
 
-    /// Development points at the demo: it is seeded, it is safe to write to,
-    /// and its password is public by design.
+    /// Tied to the build configuration, not to a constant somebody remembers
+    /// to flip.
+    ///
+    /// It used to be a hand-edited constant, and the failure mode was silent
+    /// and total: the first build uploaded to TestFlight was a Release build
+    /// still set to `.demo`, so it looked and behaved exactly like the real
+    /// app while writing to the demo tenant. Nothing on screen said so. Sent
+    /// to the App Store, every customer would have been keeping their
+    /// attendance and payroll in a database whose password is published on
+    /// purpose.
+    ///
+    /// A Release build is the only kind that reaches anybody — archive,
+    /// TestFlight, App Store — so Release means production and there is no
+    /// step left to forget. Development stays on the demo tenant: it is
+    /// seeded, safe to write to, and its password is public by design.
+    ///
+    /// A demo build for customers to try, if it is ever wanted, belongs in a
+    /// separate app the way Android does it with `applicationIdSuffix
+    /// ".demo"` — two apps side by side, not one app in two moods.
+    #if DEBUG
     static let current: Backend = .demo
+    #else
+    static let current: Backend = .production
+    #endif
 
     var apiBaseURL: URL {
         switch self {
@@ -26,7 +46,7 @@ enum Backend {
     var firebaseAPIKey: String {
         switch self {
         case .demo: return "AIzaSyA1Kb5qR8UKXLTkpR3o0Qz7xPUT9i7wAxo"
-        case .production: return ""   // filled in when a production build is cut
+        case .production: return "AIzaSyBhGGgbBqhdsJYpM9FpQld28jyhvEfqWPA"
         }
     }
 }
