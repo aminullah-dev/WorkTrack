@@ -31,6 +31,15 @@ export interface CompanyPolicies {
 export interface CompanyProfile {
   currency: string;
   timezone: string;
+  /**
+   * What kind of work this company does — see services/businessTypes.ts.
+   *
+   * It lives here so a company can correct it themselves: businesses change,
+   * and the answer given in a hurry on signup day is often not the right one.
+   * Nothing branches on it. It shaped the defaults once, at signup, and every
+   * one of those settings is editable on this same page afterwards.
+   */
+  businessType?: string | null;
 }
 
 export interface CompanySettings {
@@ -60,6 +69,7 @@ export const DEFAULT_SETTINGS: CompanySettings = {
   profile: {
     currency: "AFN",
     timezone: "Asia/Kabul",
+    businessType: null,
   },
 };
 
@@ -108,6 +118,10 @@ export const settingsUpdateSchema = z.object({
         .min(1)
         .max(64)
         .refine(isUsableTimezone, "Not a timezone this server recognises"),
+      // Not an enum on purpose: the catalogue will grow, and a company holding
+      // a type we later retire should keep working rather than be unable to
+      // save its own settings. Unknown values simply stop meaning anything.
+      businessType: z.string().max(40).nullable(),
     })
     .partial()
     .optional(),

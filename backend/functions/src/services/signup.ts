@@ -5,6 +5,7 @@ import { db, nowTimestamp, tenant } from "../lib/firestore";
 import { ulid } from "../lib/ids";
 import { solarHolidaysFor } from "./calendar";
 import { currentShamsiMonth } from "../lib/shamsi";
+import { findBusinessType, settingsForBusinessType } from "./businessTypes";
 
 export const companySignupSchema = z.object({
   companyName: z.string().min(2).max(120),
@@ -14,6 +15,12 @@ export const companySignupSchema = z.object({
   password: z.string().min(8).max(100),
   timezone: z.string().default("Asia/Kabul"),
   currency: z.string().length(3).default("AFN"),
+  /**
+   * What kind of work the company does. Optional, and an unrecognised value is
+   * ignored rather than refused — nobody should fail to sign up because of a
+   * dropdown, and the list will change.
+   */
+  businessType: z.string().max(40).nullish(),
 });
 
 export type CompanySignup = z.infer<typeof companySignupSchema>;
@@ -98,23 +105,12 @@ export async function provisionCompany(input: CompanySignup): Promise<SignupResu
       status: "ACTIVE",
       plan: "FREE",
       settings: {
-        features: {
-          shifts: true,
-          leave: true,
-          payroll: true,
-          regularization: true,
-          announcements: true,
-          geofencing: true,
-          qrKiosk: true,
-          faceRecognition: false,
+        ...settingsForBusinessType(input.businessType),
+        profile: {
+          currency: input.currency,
+          timezone: input.timezone,
+          businessType: findBusinessType(input.businessType)?.id ?? null,
         },
-        policies: {
-          standardDailyMinutes: 480,
-          weekendDays: [5],
-          lateGraceMinutes: 10,
-          overtimeEnabled: true,
-        },
-        profile: { currency: input.currency, timezone: input.timezone },
       },
       createdAt: now,
       updatedAt: now,

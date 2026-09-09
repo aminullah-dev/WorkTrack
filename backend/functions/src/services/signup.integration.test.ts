@@ -59,6 +59,41 @@ describe.skipIf(!EMULATOR)("company signup", () => {
     expect(leaveTypes.size).toBe(2);
   });
 
+  it("sets a construction company up for construction", async () => {
+    // The whole point of asking: a firm with several sites gets fences on,
+    // and a grace wide enough that arriving at a site is not arriving late.
+    const { companyId } = await provisionCompany(signup({ businessType: "CONSTRUCTION" }));
+
+    const settings = (await db.collection("companies").doc(companyId).get()).data()!.settings;
+    expect(settings.features.geofencing).toBe(true);
+    expect(settings.policies.lateGraceMinutes).toBe(20);
+    expect(settings.profile.businessType).toBe("CONSTRUCTION");
+  });
+
+  it("does not fence a tailoring workshop, or point a camera at it", async () => {
+    const { companyId } = await provisionCompany(signup({ businessType: "TAILORING" }));
+
+    const settings = (await db.collection("companies").doc(companyId).get()).data()!.settings;
+    expect(settings.features.geofencing).toBe(false);
+    expect(settings.features.faceRecognition).toBe(false);
+    // Everything the preset was silent about is untouched.
+    expect(settings.features.payroll).toBe(true);
+    expect(settings.policies.weekendDays).toEqual([5]);
+  });
+
+  it("still provisions a workspace when the type is unknown or absent", async () => {
+    // Nobody fails to sign up because of a dropdown.
+    const plain = await provisionCompany(signup());
+    const odd = await provisionCompany(signup({ businessType: "A_TYPE_WE_RETIRED" }));
+
+    for (const { companyId } of [plain, odd]) {
+      const settings = (await db.collection("companies").doc(companyId).get()).data()!.settings;
+      expect(settings.features.geofencing).toBe(true);
+      expect(settings.policies.standardDailyMinutes).toBe(480);
+      expect(settings.profile.businessType).toBeNull();
+    }
+  });
+
   it("creates the login unverified and gated", async () => {
     const input = signup();
 

@@ -113,6 +113,8 @@ export const api = {
 /** Public (unauthenticated) endpoints — no bearer token attached. */
 export async function signupCompany(body: {
   companyName: string;
+  /** Optional; an unrecognised value is ignored by the server, never refused. */
+  businessType?: string;
   adminFirstName: string;
   adminLastName: string;
   email: string;

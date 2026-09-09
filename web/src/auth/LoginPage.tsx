@@ -8,6 +8,7 @@ import {
 import { auth } from "../firebase";
 import { NoManagerAccessError, useAuth } from "./AuthProvider";
 import { ApiError, signupCompany } from "../api/client";
+import { BUSINESS_TYPES } from "../api/businessTypes";
 import { useI18n } from "../i18n/LocaleProvider";
 import { LOCALES } from "../i18n/strings";
 import { ThemeToggle } from "../ui/ThemeProvider";
@@ -20,6 +21,7 @@ export function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
 
   const [companyName, setCompanyName] = useState("");
+  const [businessType, setBusinessType] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -69,6 +71,9 @@ export function LoginPage() {
         // account until the address is proven.
         await signupCompany({
           companyName,
+          // Empty means "did not say", which the server reads as the product
+          // defaults rather than as an error.
+          businessType: businessType || undefined,
           adminFirstName: firstName,
           adminLastName: lastName,
           email,
@@ -164,6 +169,27 @@ export function LoginPage() {
           {isSignup && (
           <>
             <Field label={t("signup_company")} value={companyName} onChange={setCompanyName} required />
+            {/* One question, asked once. It only chooses starting values —
+                every one of them is on the settings page afterwards, and this
+                answer can be changed there too. */}
+            <div className="field">
+              <label>{t("signup_business_type")}</label>
+              <select
+                className="select"
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value)}
+              >
+                <option value="">{t("signup_business_type_skip")}</option>
+                {BUSINESS_TYPES.map((id) => (
+                  <option key={id} value={id}>
+                    {t(`biz_${id.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+              <span className="sub" style={{ fontSize: ".85em" }}>
+                {t("signup_business_type_hint")}
+              </span>
+            </div>
             <div style={{ display: "flex", gap: 12 }}>
               <Field label={t("signup_admin_first")} value={firstName} onChange={setFirstName} required />
               <Field label={t("signup_admin_last")} value={lastName} onChange={setLastName} required />
