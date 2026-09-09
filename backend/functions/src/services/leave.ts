@@ -4,6 +4,7 @@ import { ApiError, ErrorCodes } from "../lib/errors";
 import { canDecideAnyRequest } from "../middleware/rbac";
 import { isValidUlid } from "../lib/ids";
 import { audit, db, nowTimestamp, tenant, toIso } from "../lib/firestore";
+import { notify } from "./notifications";
 
 export const leaveCreateSchema = z.object({
   id: z.string().length(26),
@@ -283,6 +284,21 @@ export async function decideLeaveRequest(
   if (decision === "APPROVE") {
     await markLeaveDays(cid, dto);
   }
+
+  // Told, at last. Before this the employee found out by opening the app and
+  // looking, which mostly meant finding out by asking somebody in person.
+  await notify(cid, {
+    employeeId: (dto.employeeId as string) ?? "",
+    kind: "LEAVE_DECIDED",
+    title: decision === "APPROVE" ? "رخصتی شما تأیید شد" : "رخصتی شما رد شد",
+    body:
+      decision === "APPROVE"
+        ? `از ${String(dto.startDate)} تا ${String(dto.endDate)}`
+        : note?.trim()
+          ? note
+          : `از ${String(dto.startDate)} تا ${String(dto.endDate)}`,
+    link: "/leave",
+  });
 
   await audit(cid, {
     actorId: decidedBy,

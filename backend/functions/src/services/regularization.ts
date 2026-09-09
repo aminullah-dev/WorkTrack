@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { isValidUlid } from "../lib/ids";
 import { audit, nowTimestamp, tenant, toIso } from "../lib/firestore";
+import { notify } from "./notifications";
 
 export const regularizationCreateSchema = z.object({
   id: z.string().length(26),
@@ -168,6 +169,14 @@ export async function decideRegularization(
     decisionNote: note,
     currentApproverId: null,
     updatedAt: now,
+  });
+
+  await notify(cid, {
+    employeeId: reg.employeeId,
+    kind: "CORRECTION_DECIDED",
+    title: decision === "APPROVE" ? "اصلاح حاضری تأیید شد" : "اصلاح حاضری رد شد",
+    body: note?.trim() ? note : `برای ${reg.date}`,
+    link: "/attendance",
   });
 
   await audit(cid, {

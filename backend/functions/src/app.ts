@@ -14,6 +14,7 @@ import { announcementsRouter } from "./routes/announcements";
 import { employeesRouter } from "./routes/employees";
 import { analyticsRouter } from "./routes/analytics";
 import { advancesRouter } from "./routes/advances";
+import { notificationsRouter } from "./routes/notifications";
 import { pieceWorkRouter } from "./routes/pieceWork";
 import { payrollRouter } from "./routes/payroll";
 import { financeRouter } from "./routes/finance";
@@ -81,6 +82,7 @@ export function createApp(): express.Express {
   v1.use("/payroll", payrollRouter);
   v1.use("/advances", advancesRouter);
   v1.use("/piece-work", pieceWorkRouter);
+  v1.use("/notifications", notificationsRouter);
   v1.use("/finance", financeRouter);
   v1.use("/announcements", announcementsRouter);
   v1.use("/analytics", analyticsRouter);

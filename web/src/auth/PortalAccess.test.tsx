@@ -32,6 +32,15 @@ window.matchMedia = ((query: string) => ({
 
 const roles = vi.hoisted(() => ({ current: ["EMPLOYEE"] as string[] }));
 
+// The header now carries the notification bell, which queries. This test is
+// about who gets which nav items, so the bell is kept inert rather than given
+// a QueryClient it would only use to fetch nothing.
+vi.mock("../api/hooks", () => ({
+  useNotifications: () => ({ data: { items: [], unread: 0 } }),
+  useMarkNotificationRead: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useMarkAllNotificationsRead: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 const PERMS: Record<string, string[]> = {
   "attendance:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR", "PAYROLL_ADMIN"],
   "employees:read": ["HR_ADMIN", "BRANCH_MANAGER", "TEAM_LEAD", "AUDITOR", "PAYROLL_ADMIN"],

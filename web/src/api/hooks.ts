@@ -5,6 +5,7 @@ import type {
   Account,
   Advance,
   AdvanceWrite,
+  AppNotification,
   PieceRecord,
   AttendanceOverviewRow,
   WeeklyAttendance,
@@ -237,6 +238,37 @@ export function useCancelAdvance() {
       void qc.invalidateQueries({ queryKey: ["advances"] });
       void qc.invalidateQueries({ queryKey: ["payroll"] });
     },
+  });
+}
+
+// -------------------------------------------------------------- notifications
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: () =>
+      api
+        .get<{ items: AppNotification[]; unread: number }>("/notifications")
+        .then((e) => e.data),
+    // A decision made elsewhere should reach the screen without a reload. Sixty
+    // seconds is often enough for something nobody is staring at, and cheap.
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/notifications/${id}/read`, {}),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post("/notifications/read-all", {}),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }
 

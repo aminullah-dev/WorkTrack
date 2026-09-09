@@ -1861,3 +1861,70 @@ table.data tbody tr:hover {
 
   @page { size: A4; margin: 14mm; }
 }
+
+/* ------------------------------------------------------------ notifications */
+.bell-wrap { position: relative; display: inline-flex; }
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.bell:hover { background: var(--surface-2, var(--surface)); }
+
+/* Placed on the leading edge so it never sits under the panel it opens, and
+ * capped at "9+" — an exact count past nine tells nobody anything they act on. */
+.bell-badge {
+  position: absolute;
+  top: -5px; inset-inline-end: -5px;
+  min-width: 17px; height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--red, #c0392b);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+.bell-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: min(340px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(10, 39, 53, .18);
+  z-index: 40;
+  overflow: hidden;
+}
+.bell-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.bell-empty { padding: 22px 14px; text-align: center; color: var(--text-subtle); margin: 0; }
+.bell-list { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+.bell-list li { border-bottom: 1px solid var(--border); }
+.bell-list li:last-child { border-bottom: none; }
+.bell-list button {
+  display: flex; flex-direction: column; gap: 3px;
+  width: 100%; padding: 11px 14px;
+  background: none; border: none; cursor: pointer;
+  text-align: start; color: var(--text); font: inherit;
+}
+.bell-list button:hover { background: var(--surface-2, rgba(0,0,0,.03)); }
+/* The unread marker is a bar on the leading edge rather than a background
+ * tint, which is invisible in dark mode and on a cheap screen. */
+.bell-list li.unread { border-inline-start: 3px solid var(--accent, #004E72); }
+.bell-item-title { font-weight: 600; }
+.bell-item-body { font-size: .88rem; color: var(--text-subtle); }
+.bell-item-when { font-size: .78rem; color: var(--text-subtle); }

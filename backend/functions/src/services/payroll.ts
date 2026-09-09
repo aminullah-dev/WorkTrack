@@ -5,6 +5,7 @@ import { planRepayments } from "./advances";
 import { outstandingFor, reconcileRepayments } from "./advanceStore";
 import { localDateOf } from "./attendance";
 import { expectedWorkingDays, holidaySet } from "./calendar";
+import { notify } from "./notifications";
 import { earnedBasic } from "./payModels";
 import { piecesByEmployee } from "./pieceWork";
 import { componentsForEmployee, listAssignments } from "./salaryAssignments";
@@ -394,6 +395,21 @@ export async function computePayrollRun(
         repaymentPlan.repayments,
       );
     }
+
+    // "Your payslip is ready" — the one notification an employee actually
+    // waits for. Sent per payslip because a run can legitimately produce none
+    // for somebody, and telling them a payslip exists when it does not is
+    // worse than telling them nothing.
+    await notify(cid, {
+      employeeId,
+      kind: "PAYSLIP_READY",
+      title: "فیش معاش شما آماده است",
+      body: `دورهٔ ${periodYear}/${String(periodMonth).padStart(2, "0")}`,
+      link: "/payslips",
+      // Keyed to the run, so recomputing a month replaces this rather than
+      // telling everybody again.
+      dedupeKey: `payslip_${runId}`,
+    });
 
     totalGross += gross;
     totalNet += net;

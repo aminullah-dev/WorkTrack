@@ -687,3 +687,14 @@ export interface PieceRecord {
   quantity: number;
   note: string | null;
 }
+
+/** Something the signed-in person needs to be told. */
+export interface AppNotification {
+  id: string;
+  kind: "LEAVE_DECIDED" | "CORRECTION_DECIDED" | "PAYSLIP_READY" | "APPROVAL_WAITING";
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string | null;
+}

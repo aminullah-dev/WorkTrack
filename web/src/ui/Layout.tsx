@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth, useFeatures, useHasPermission } from "../auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
+import { NotificationBell } from "./NotificationBell";
 import { LOCALES } from "../i18n/strings";
 import { ThemeToggle } from "./ThemeProvider";
 
@@ -130,6 +131,9 @@ export function Layout() {
               <IconBuilding />
               {me?.companyName}
             </span>
+            {/* In the header, not on a page of its own: news you have to
+                navigate to is news you do not get. */}
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </div>
