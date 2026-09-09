@@ -2,12 +2,15 @@ import { Router } from "express";
 import { Timestamp } from "firebase-admin/firestore";
 import type { Query } from "firebase-admin/firestore";
 import { z } from "zod";
-import { ApiError, asyncHandler } from "../lib/errors";
+import { ApiError, ErrorCodes, asyncHandler } from "../lib/errors";
 import { audit, db, nowTimestamp, tenant, toIso } from "../lib/firestore";
 import { ulid } from "../lib/ids";
 import { authOf } from "../middleware/auth";
 import { requirePermission } from "../middleware/rbac";
 import { parseBody } from "../middleware/validate";
+import { getAuth } from "firebase-admin/auth";
+import { roleChangeRefusal, type EmploymentStatus } from "../services/employeeAccount";
+import { syncEmployeeLogin } from "../services/employeeSync";
 import { nextEmployeeCode } from "../services/employees";
 import { clearFace } from "../services/face";
 import {
@@ -32,6 +35,18 @@ interface EmployeeDoc {
   employmentType: string;
   joinDate: string;
   status: string;
+  /**
+   * A COPY of the role, for display and filtering only.
+   *
+   * The custom claim on the login is what the server enforces; nothing reads
+   * this to decide anything. It exists because the portal could not show a
+   * role at all otherwise — claims are not readable per row in a list — and a
+   * role nobody can see is a role nobody can correct. Both are written in the
+   * same handler, so they move together. Absent on employees created before
+   * this shipped, which is why the portal treats absent as "unknown" rather
+   * than as EMPLOYEE.
+   */
+  role?: string | null;
   faceEmbedding?: unknown;
   updatedAt: Timestamp;
 }
@@ -50,6 +65,7 @@ function employeeToDto(id: string, companyId: string, doc: EmployeeDoc): Record<
     departmentId: doc.departmentId ?? null,
     positionId: doc.positionId ?? null,
     managerId: doc.managerId ?? null,
+    role: doc.role ?? null,
     employmentType: doc.employmentType,
     joinDate: doc.joinDate,
     status: doc.status,
@@ -142,7 +158,11 @@ const employeeWriteSchema = z.object({
   joinDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.enum(["ACTIVE", "ON_LEAVE", "SUSPENDED", "EXITED"]).default("ACTIVE"),
   // Login provisioning (create only): give the new employee a mobile-app login.
-  role: z.enum(ASSIGNABLE_ROLES).default("EMPLOYEE"),
+  // No default. A default here is indistinguishable from a deliberate choice
+  // once it reaches the handler, and the update path reads it as one: an edit
+  // to somebody's phone number would have demoted a team lead to EMPLOYEE
+  // without anybody asking for it. Create supplies the default itself.
+  role: z.enum(ASSIGNABLE_ROLES).optional(),
   createLogin: z.boolean().default(true),
   initialPassword: z.string().min(8).max(100).optional(),
 });
@@ -151,9 +171,11 @@ function toDoc(
   payload: z.infer<typeof employeeWriteSchema>,
   avatarUrl: string | null,
   employeeCode: string,
+  role: string | null,
 ): EmployeeDoc {
   return {
     employeeCode,
+    role,
     firstName: payload.firstName,
     lastName: payload.lastName,
     email: payload.email,
@@ -188,7 +210,7 @@ employeesRouter.post(
         employeeId: id,
         email: payload.email,
         displayName: `${payload.firstName} ${payload.lastName}`.trim(),
-        role: payload.role,
+        role: payload.role ?? "EMPLOYEE",
         branchIds: payload.branchId ? [payload.branchId] : [],
         password: payload.initialPassword,
       });
@@ -205,7 +227,7 @@ employeesRouter.post(
         const snap = await tx.get(employees.select("employeeCode"));
         code = nextEmployeeCode(snap.docs.map((d) => d.get("employeeCode") as string));
       }
-      const created = toDoc(payload, null, code);
+      const created = toDoc(payload, null, code, payload.role ?? "EMPLOYEE");
       tx.create(employees.doc(id), created);
       return created;
     });
@@ -269,16 +291,65 @@ employeesRouter.put(
       payload,
       existingDoc.avatarUrl ?? null,
       payload.employeeCode?.trim() || existingDoc.employeeCode,
+      // Filled in below once the role change has been allowed; an edit that
+      // does not mention a role must not disturb the one on record.
+      existingDoc.role ?? null,
     );
+
+    // The login this record belongs to. Everything below decides what may
+    // change about it; syncEmployeeLogin then makes it so, because a record
+    // that disagrees with its own account is worse than one that cannot be
+    // edited at all — it looks like it worked.
+    const account = await getAuth().getUser(req.params.id).catch(() => null);
+    const currentRoles = (account?.customClaims?.r as string[] | undefined) ?? [];
+    // Omitting the role means "leave it alone", the same as the code.
+    const nextRole = payload.role && payload.role !== currentRoles[0] ? payload.role : null;
+
+    if (nextRole) {
+      const refusal = roleChangeRefusal({
+        actorEmployeeId: auth.employeeId,
+        actorRoles: auth.roles,
+        targetEmployeeId: req.params.id,
+        targetCurrentRoles: currentRoles,
+        newRole: nextRole,
+      });
+      if (refusal) {
+        throw new ApiError(403, ErrorCodes.PERMISSION_DENIED, refusal);
+      }
+    }
     // A full set() would otherwise wipe face enrollment; carry it across edits.
     const preserved: Record<string, unknown> = { ...doc };
     if (existingDoc.faceEmbedding !== undefined) preserved.faceEmbedding = existingDoc.faceEmbedding;
     if (existingDoc.faceEnrolledAt !== undefined) preserved.faceEnrolledAt = existingDoc.faceEnrolledAt;
+    // Auth first, Firestore second — the same order the create path uses, and
+    // for the same reason: an email already taken by somebody else must fail
+    // before the record moves, not after.
+    const sync = await syncEmployeeLogin({
+      companyId: auth.companyId,
+      employeeId: req.params.id,
+      email: doc.email,
+      displayName: `${doc.firstName} ${doc.lastName}`.trim(),
+      role: nextRole ?? currentRoles[0] ?? "EMPLOYEE",
+      branchId: doc.branchId ?? null,
+      status: doc.status as EmploymentStatus,
+    });
+    // After the sync, not before: until Auth has accepted the change there is
+    // nothing to record. `preserved` was spread from `doc` further up, so both
+    // have to be told.
+    if (nextRole) {
+      doc.role = nextRole;
+      preserved.role = nextRole;
+    }
+
     await ref.set(preserved);
     await audit(auth.companyId, {
       actorId: auth.employeeId,
       actorRole: auth.roles.join(","),
-      action: "employees.update",
+      // Role and access changes are the ones somebody will need to account for
+      // later, so they are named rather than buried in a document diff.
+      action: sync.changed.length
+        ? `employees.update (${sync.changed.join(", ")})`
+        : "employees.update",
       resourceType: "employees",
       resourceId: req.params.id,
       before: employeeToDto(req.params.id, auth.companyId, existing.data() as EmployeeDoc),

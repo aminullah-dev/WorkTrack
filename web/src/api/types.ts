@@ -122,6 +122,8 @@ export interface Employee {
   id: string;
   companyId: string;
   employeeCode: string;
+  /** Null for employees created before roles were shown; means "unknown", not EMPLOYEE. */
+  role?: string | null;
   firstName: string;
   lastName: string;
   email: string;

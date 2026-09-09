@@ -15,11 +15,12 @@ import { LocaleProvider } from "../i18n/LocaleProvider";
 const state = vi.hoisted(() => ({
   created: [] as Record<string, unknown>[],
   updated: [] as Record<string, unknown>[],
+  list: [] as Record<string, unknown>[],
   permissions: new Set<string>(["employees:write", "employees:read"]),
 }));
 
 vi.mock("../api/hooks", () => ({
-  useEmployees: () => ({ data: { items: [] }, isLoading: false, isError: false, refetch: vi.fn() }),
+  useEmployees: () => ({ data: { data: state.list }, isLoading: false, isError: false, refetch: vi.fn() }),
   useCreateEmployee: () => ({
     mutateAsync: async (body: Record<string, unknown>) => {
       state.created.push(body);
@@ -67,6 +68,76 @@ function codeInput(): HTMLInputElement {
 beforeEach(() => {
   state.created = [];
   state.updated = [];
+  state.list = [];
+});
+
+/** Opens the edit form for one employee already in the list. */
+function openEditForm(over: Record<string, unknown> = {}): void {
+  state.list = [
+    {
+      id: "e_1",
+      companyId: "c1",
+      employeeCode: "E-007",
+      firstName: "Ali",
+      lastName: "Rahimi",
+      email: "ali@example.com",
+      phone: null,
+      branchId: null,
+      departmentId: null,
+      positionId: null,
+      managerId: null,
+      employmentType: "FULL_TIME",
+      joinDate: "2026-01-01",
+      status: "ACTIVE",
+      avatarUrl: null,
+      ...over,
+    },
+  ];
+  render(
+    <LocaleProvider>
+      <EmployeesPage />
+    </LocaleProvider>,
+  );
+  // The row has an explicit edit button; clicking the name does nothing.
+  fireEvent.click(screen.getByRole("button", { name: "ویرایش" }));
+}
+
+/** The role selector, by its label. */
+function roleSelect(): HTMLSelectElement {
+  const field = screen.getByText("نقش").closest(".field") as HTMLElement;
+  return field.querySelector("select") as HTMLSelectElement;
+}
+
+describe("editing somebody", () => {
+  it("shows the role they already have", () => {
+    openEditForm({ role: "TEAM_LEAD" });
+    expect(roleSelect().value).toBe("TEAM_LEAD");
+  });
+
+  it("offers to leave an unknown role alone rather than guessing EMPLOYEE", () => {
+    // Employees created before roles were shown have none on record. Defaulting
+    // the box to EMPLOYEE would demote a branch manager the first time anybody
+    // edited their phone number.
+    openEditForm({ role: null });
+    expect(roleSelect().value).toBe("");
+  });
+
+  it("sends no role when it was left unchanged", async () => {
+    openEditForm({ role: null });
+    fireEvent.submit(document.querySelector("form.modal") as HTMLFormElement);
+
+    await waitFor(() => expect(state.updated).toHaveLength(1));
+    expect(state.updated[0].role).toBeUndefined();
+  });
+
+  it("sends the role when one is chosen", async () => {
+    openEditForm({ role: "EMPLOYEE" });
+    fireEvent.change(roleSelect(), { target: { value: "BRANCH_MANAGER" } });
+    fireEvent.submit(document.querySelector("form.modal") as HTMLFormElement);
+
+    await waitFor(() => expect(state.updated).toHaveLength(1));
+    expect(state.updated[0].role).toBe("BRANCH_MANAGER");
+  });
 });
 
 describe("adding somebody", () => {

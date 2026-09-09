@@ -287,7 +287,13 @@ function EmployeeForm({
     employmentType: employee?.employmentType ?? ("FULL_TIME" as EmploymentType),
     joinDate: employee?.joinDate ?? isoToday(),
     status: employee?.status ?? ("ACTIVE" as EmployeeStatus),
-    role: "EMPLOYEE" as AssignableRole,
+    // On an edit this starts as whatever the employee already is, and "" when
+    // that is unknown — an employee created before roles were shown. Sending
+    // "" omits the field, which the server reads as "leave the role alone",
+    // so an ordinary edit can never demote somebody by accident.
+    role: (isEdit ? ((employee?.role as AssignableRole | undefined) ?? "") : "EMPLOYEE") as
+      | AssignableRole
+      | "",
     createLogin: !isEdit,
     initialPassword: "",
     basicAmount: "",
@@ -323,7 +329,7 @@ function EmployeeForm({
       employmentType: form.employmentType,
       joinDate: form.joinDate,
       status: form.status,
-      role: form.role,
+      role: form.role || undefined,
       createLogin: form.createLogin,
       initialPassword: form.initialPassword || undefined,
     };
@@ -427,6 +433,24 @@ function EmployeeForm({
 
         {isEdit ? (
           <>
+            <div className="field">
+              <label>{t("emp_role")}</label>
+              <select
+                className="select"
+                value={form.role}
+                onChange={(e) => set("role", e.target.value as AssignableRole | "")}
+              >
+                {/* Present when the role is unknown, and selectable on purpose:
+                    choosing it leaves the role exactly as it is. */}
+                <option value="">{t("emp_role_unchanged")}</option>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {t(`role_${r.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.role && <span className="field-error">{fieldErrors.role}</span>}
+            </div>
             <div className="field">
               <label>{t("emp_status")}</label>
               <select
