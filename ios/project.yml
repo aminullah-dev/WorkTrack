@@ -61,6 +61,14 @@ targets:
       properties:
         CFBundleDisplayName: WorkTrack
         UILaunchScreen: {}
+        # TestFlight and the App Store ask, on every single build, whether the
+        # app uses encryption beyond what Apple exempts. This app talks HTTPS
+        # to its own backend and does nothing else cryptographic — no bundled
+        # cipher, no key exchange of its own — which is exactly the exempt
+        # case. Answering here rather than in a web form each time keeps the
+        # answer honest and version-controlled instead of retyped from memory
+        # by whoever happens to be uploading.
+        ITSAppUsesNonExemptEncryption: false
         # Dari first, exactly like the portal and the Android app. Without this
         # the app inherits the phone's language and an Afghan user with an
         # English phone gets an English, left-to-right layout.
