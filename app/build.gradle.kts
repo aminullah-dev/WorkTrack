@@ -76,8 +76,12 @@ android {
         // would find a mismatch today and rightly conclude it had been
         // tampered with. It would also leave two different apps both answering
         // "1.0.1" when support asks which version somebody is running.
-        versionCode = 3
-        versionName = "1.1.0"
+        // 4 / 1.2.0 because the 1.1.0 APKs on the download page were built
+        // against targetSdk 35 with AGP 8.5.2, and this one is targetSdk 36 on
+        // AGP 8.13. Same version number on two materially different binaries
+        // makes a bug report impossible to place.
+        versionCode = 4
+        versionName = "1.2.0"
 
         // Inherited by the release build: Firebase Hosting rewrites /v1/** to
         // the `api` Cloud Function (see backend/firebase.json), a stable URL
