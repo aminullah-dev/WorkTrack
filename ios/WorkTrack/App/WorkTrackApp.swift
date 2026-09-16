@@ -18,6 +18,17 @@ struct WorkTrackApp: App {
                     // visible in the app switcher, which is where a shared
                     // phone gets read over somebody's shoulder.
                     if phase == .background { lock.lockIfNeeded() }
+                    // Coming forward is the moment to ask whether anything
+                    // about this person changed while the app was away — a
+                    // module his company switched on, or an account that has
+                    // since been closed. It used to be asked only at launch,
+                    // so a manager could enable face check-in, tell him to
+                    // look, and nothing would happen.
+                    //
+                    // At launch this fires against `state == .loading` while
+                    // `start()` is still running, and refreshMe() steps aside
+                    // for that.
+                    if phase == .active { Task { await auth.refreshMe() } }
                 }
                 // Dari and Pashto are right-to-left, and the whole layout has
                 // to follow — not just the text. Driven by the app's own
