@@ -36,6 +36,8 @@ final class AuthStore: ObservableObject {
 
     /// Restores a session from the Keychain, or reports signed out.
     func start() async {
+        // A language change re-fires this; re-restoring a live session could sign the worker out.
+        guard state == .loading else { return }
         guard let refresh = Keychain.get(Self.refreshKey) else {
             state = .signedOut
             return

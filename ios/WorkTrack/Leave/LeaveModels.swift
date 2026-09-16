@@ -6,6 +6,15 @@ struct LeaveType: Codable, Identifiable, Equatable {
     let code: String
     let colorHex: String?
     let isPaid: Bool?
+
+    /// Only the untouched Dari names signup seeds are translated; a company's own name stays as typed.
+    var displayName: String {
+        switch (code, name) {
+        case ("ANNUAL", "رخصتی سالانه"): return L.t("leave_type_annual")
+        case ("SICK", "رخصتی مریضی"): return L.t("leave_type_sick")
+        default: return name
+        }
+    }
 }
 
 /// One person's balance for one leave type, for one year.

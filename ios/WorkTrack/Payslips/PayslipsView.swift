@@ -80,7 +80,7 @@ struct PayslipDetailView: View {
 
             Section(L.t("pay_earnings")) {
                 ForEach(slip.earnings) { line in
-                    amount(line.componentName, line.amount)
+                    amount(line.displayName, line.amount)
                 }
                 amount(L.t("pay_gross"), slip.gross, emphasised: true)
             }
@@ -90,7 +90,7 @@ struct PayslipDetailView: View {
                 // adding it again from `incomeTax` listed it twice and made the
                 // column stop adding up.
                 ForEach(slip.deductions) { line in
-                    amount(line.componentName, line.amount)
+                    amount(line.displayName, line.amount)
                 }
                 amount(L.t("pay_total_deductions"), slip.totalDeductions, emphasised: true)
             }
@@ -98,7 +98,7 @@ struct PayslipDetailView: View {
             if !slip.employerCosts.isEmpty {
                 Section {
                     ForEach(slip.employerCosts) { line in
-                        amount(line.componentName, line.amount)
+                        amount(line.displayName, line.amount)
                     }
                 } header: {
                     Text(L.t("pay_employer_cost"))

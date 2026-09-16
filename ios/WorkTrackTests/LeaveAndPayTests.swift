@@ -154,6 +154,40 @@ final class LeaveAndPayTests: XCTestCase {
         XCTAssertTrue(slip.earnings.isEmpty)
     }
 
+    // MARK: names in the chosen language
+
+    override func tearDown() {
+        L.language = .dari
+        super.tearDown()
+    }
+
+    func testBuiltInLeaveTypesFollowTheLanguage() {
+        L.language = .english
+        let annual = LeaveType(id: "annual", name: "رخصتی سالانه", code: "ANNUAL", colorHex: nil, isPaid: true)
+        let sick = LeaveType(id: "sick", name: "رخصتی مریضی", code: "SICK", colorHex: nil, isPaid: true)
+        XCTAssertEqual(annual.displayName, "Annual leave")
+        XCTAssertEqual(sick.displayName, "Sick leave")
+    }
+
+    func testALeaveTypeTheCompanyNamedKeepsItsName() {
+        L.language = .english
+        let renamed = LeaveType(id: "annual", name: "رخصتی تفریحی", code: "ANNUAL", colorHex: nil, isPaid: true)
+        let custom = LeaveType(id: "hajj", name: "رخصتی حج", code: "HAJJ", colorHex: nil, isPaid: true)
+        XCTAssertEqual(renamed.displayName, "رخصتی تفریحی")
+        XCTAssertEqual(custom.displayName, "رخصتی حج")
+    }
+
+    func testPayrollLinesFollowTheLanguageButCompanyComponentsDoNot() {
+        L.language = .english
+        func line(_ code: String, _ name: String) -> PayslipLine {
+            PayslipLine(componentCode: code, componentName: name, type: .earning, amount: 1)
+        }
+        XCTAssertEqual(line("BASIC", "معاش اساسی").displayName, "Basic salary")
+        XCTAssertEqual(line("LOP", "کسر غیرحاضری").displayName, "Absence deduction")
+        XCTAssertEqual(line("TAX", "مالیهٔ معاش").displayName, "Income tax")
+        XCTAssertEqual(line("TRANSPORT", "کمک ترانسپورت").displayName, "کمک ترانسپورت")
+    }
+
     // MARK: money
 
     func testMoneyIsLocalisedAndNamed() {

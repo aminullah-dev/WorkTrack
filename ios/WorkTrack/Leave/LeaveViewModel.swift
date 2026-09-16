@@ -9,7 +9,7 @@ final class LeaveViewModel: ObservableObject {
         let types: [LeaveType]
 
         func typeName(_ id: String) -> String {
-            types.first { $0.id == id }?.name ?? id
+            types.first { $0.id == id }?.displayName ?? id
         }
     }
 
