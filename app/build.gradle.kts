@@ -196,9 +196,24 @@ android {
      * The universal APK is still produced, for the emulator and as a fallback
      * when the target device is unknown.
      */
+    // An App Bundle splits by ABI itself, on Google's servers, so AGP refuses
+    // to build one while these splits are also on — it fails in
+    // buildReleasePreBundle with "Multiple shrunk-resources files found",
+    // which names a symptom and not the cause.
+    //
+    // We still need the three APKs: customers install by sideload from the
+    // download page, and the small per-ABI files matter on Afghan connections.
+    // So the splits stay on for every build EXCEPT a bundle.
+    // `contains`, not `startsWith`: the task that actually trips over this is
+    // `buildReleasePreBundle`, which begins with "build". Matching only the
+    // leading word looks right and silently does nothing.
+    val buildingBundle = gradle.startParameter.taskNames.any {
+        it.contains("bundle", ignoreCase = true)
+    }
+
     splits {
         abi {
-            isEnable = true
+            isEnable = !buildingBundle
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86_64")
             isUniversalApk = true
