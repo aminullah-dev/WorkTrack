@@ -16,7 +16,13 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 configureAndroidCompose(this)
 
                 defaultConfig {
-                    targetSdk = 35
+                    // Google Play's floor for new apps and updates since
+                    // 31 August 2026. Targeting 36 opts the app into Android
+                    // 16's behaviour changes; the one that would have bitten
+                    // us is enforced edge-to-edge, and MainActivity already
+                    // calls enableEdgeToEdge() with a Scaffold that consumes
+                    // the insets, so there is nothing to adapt.
+                    targetSdk = 36
                 }
 
                 buildTypes {

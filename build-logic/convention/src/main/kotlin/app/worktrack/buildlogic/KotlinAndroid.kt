@@ -16,7 +16,11 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
  */
 internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, *, *, *, *, *>) {
     commonExtension.apply {
-        compileSdk = 35
+        // 36 because Google Play has required it of new apps and updates since
+        // 31 August 2026, and we cannot list on Play below it. It also has to
+        // be at least targetSdk, which is set to the same in the application
+        // convention.
+        compileSdk = 36
 
         defaultConfig {
             minSdk = 26
