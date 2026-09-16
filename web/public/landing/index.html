@@ -1,0 +1,527 @@
+<!doctype html>
+<!--
+  WorkTrack landing page — the first thing a potential customer sees.
+
+  Trilingual (Dari / Pashto / English), RTL-first, same styling family as
+  /support/ and /privacy/. Static HTML with zero dependencies so it loads
+  instantly and works offline. Linked from social media, Play Store, App Store.
+-->
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ورک‌ترک — مدیریت هوشمند نیروی کار</title>
+<meta name="description" content="WorkTrack — حاضری هوشمند، مدیریت رخصتی، معاشات، و تشخیص چهره برای شرکت‌های افغانستان.">
+<meta property="og:title" content="ورک‌ترک — مدیریت هوشمند نیروی کار">
+<meta property="og:description" content="حاضری GPS، تشخیص چهره، مدیریت رخصتی و معاشات — طراحی‌شده برای افغانستان.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="img/icon-128.png">
+<link rel="icon" href="img/icon-128.png">
+<style>
+  :root {
+    --navy: #004E72;
+    --dark: #0A2735;
+    --orange: #FF6D41;
+    --ink: #0A2735;
+    --ink-2: #4a5c68;
+    --bg: #F9F9F9;
+    --white: #fff;
+    --line: #e2e6e9;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", Vazirmatn, Tahoma, sans-serif;
+  }
+
+  /* --- NAV --- */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding: 0 20px;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--dark);
+    font-weight: 700; font-size: 1.15rem;
+  }
+  .logo img { width: 36px; height: 36px; border-radius: 8px; }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+  .langs { display: flex; gap: 4px; }
+  .langs button {
+    font: inherit; font-size: .82rem; cursor: pointer;
+    padding: 5px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink-2);
+    transition: all .15s;
+  }
+  .langs button[aria-selected="true"] {
+    background: var(--navy); color: var(--white); border-color: var(--navy);
+  }
+  .btn-login {
+    display: inline-block; text-decoration: none;
+    font: inherit; font-size: .88rem; font-weight: 600;
+    padding: 7px 18px; border-radius: 8px;
+    background: var(--navy); color: var(--white);
+    transition: background .15s;
+  }
+  .btn-login:hover { background: var(--dark); }
+
+  /* --- HERO --- */
+  .hero {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--navy) 100%);
+    color: var(--white);
+    padding: 80px 20px 60px;
+    text-align: center;
+  }
+  .hero-inner { max-width: 800px; margin: 0 auto; }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .hero .subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    opacity: 0.88;
+    margin-bottom: 36px;
+    line-height: 1.7;
+  }
+  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 12px 24px; border-radius: var(--radius);
+    background: var(--white); color: var(--dark);
+    text-decoration: none; font-weight: 600; font-size: .95rem;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .badge:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+  .badge svg { width: 24px; height: 24px; }
+
+  /* --- FEATURES --- */
+  .features { padding: 72px 20px; }
+  .features-inner { max-width: 1100px; margin: 0 auto; }
+  .features h2 {
+    text-align: center; font-size: 1.6rem; margin-bottom: 12px; color: var(--dark);
+  }
+  .features .lead {
+    text-align: center; color: var(--ink-2); margin-bottom: 48px;
+    max-width: 600px; margin-inline: auto;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+  }
+  .feature-card {
+    background: var(--white); border-radius: var(--radius);
+    padding: 28px 24px; border: 1px solid var(--line);
+    transition: box-shadow .2s;
+  }
+  .feature-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--navy), #0078a8);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .feature-icon svg { width: 24px; height: 24px; fill: none; stroke: var(--white); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .feature-card h3 { font-size: 1.08rem; margin-bottom: 6px; color: var(--dark); }
+  .feature-card p { color: var(--ink-2); font-size: .92rem; line-height: 1.65; }
+
+  /* --- SCREENSHOTS --- */
+  .screenshots {
+    background: linear-gradient(180deg, var(--bg) 0%, #eef2f5 100%);
+    padding: 60px 20px 72px;
+    overflow: hidden;
+  }
+  .screenshots h2 {
+    text-align: center; font-size: 1.5rem; margin-bottom: 40px; color: var(--dark);
+  }
+  .phone-row {
+    display: flex; gap: 20px; justify-content: center;
+    flex-wrap: nowrap; overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding: 0 20px 16px;
+  }
+  .phone-frame {
+    flex: 0 0 auto;
+    width: 200px;
+    scroll-snap-align: center;
+  }
+  .phone-frame img {
+    width: 100%; height: auto;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .phone-label {
+    text-align: center; margin-top: 12px;
+    font-size: .85rem; color: var(--ink-2); font-weight: 500;
+  }
+
+  /* --- EMPLOYER --- */
+  .employer {
+    padding: 72px 20px;
+    background: var(--white);
+  }
+  .employer-inner {
+    max-width: 900px; margin: 0 auto;
+    text-align: center;
+  }
+  .employer h2 { font-size: 1.5rem; margin-bottom: 12px; color: var(--dark); }
+  .employer .lead { color: var(--ink-2); margin-bottom: 32px; max-width: 650px; margin-inline: auto; }
+  .portal-features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; text-align: center;
+  }
+  .portal-feat {
+    padding: 20px 16px;
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+  .portal-feat strong { display: block; margin-bottom: 4px; color: var(--dark); }
+  .portal-feat span { font-size: .88rem; color: var(--ink-2); }
+
+  /* --- CTA --- */
+  .cta {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--navy) 100%);
+    color: var(--white); padding: 64px 20px; text-align: center;
+  }
+  .cta h2 { font-size: 1.5rem; margin-bottom: 12px; }
+  .cta p { opacity: .85; margin-bottom: 28px; }
+
+  /* --- FOOTER --- */
+  footer {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--ink-2);
+    font-size: .85rem;
+    border-top: 1px solid var(--line);
+  }
+  footer a { color: var(--navy); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .footer-links { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+
+  /* --- LANG TOGGLE --- */
+  section[hidden] { display: none; }
+  [lang="en"] { direction: ltr; text-align: left; }
+  [lang="en"] .phone-row { direction: ltr; }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 640px) {
+    .hero { padding: 56px 16px 40px; }
+    .phone-frame { width: 160px; }
+    .feature-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="nav-inner">
+    <a href="/landing/" class="logo">
+      <img src="img/icon-128.png" alt="WorkTrack" width="36" height="36">
+      <span class="brand-fa">ورک‌ترک</span>
+      <span class="brand-ps" hidden>ورک‌ټرک</span>
+      <span class="brand-en" hidden>WorkTrack</span>
+    </a>
+    <div class="nav-actions">
+      <div class="langs" role="tablist">
+        <button role="tab" data-lang="fa" aria-selected="true">دری</button>
+        <button role="tab" data-lang="ps" aria-selected="false">پښتو</button>
+        <button role="tab" data-lang="en" aria-selected="false">English</button>
+      </div>
+      <a href="/" class="btn-login login-fa">ورود</a>
+      <a href="/" class="btn-login login-ps" hidden>ننوتل</a>
+      <a href="/" class="btn-login login-en" hidden>Log in</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ DARI ============ -->
+<section lang="fa" dir="rtl" id="content-fa">
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>مدیریت هوشمند نیروی کار<br>برای افغانستان</h1>
+    <p class="subtitle">
+      حاضری با GPS و تشخیص چهره، مدیریت رخصتی، معاشات خودکار —
+      به دری، پشتو و انگلیسی، با تقویم هجری شمسی
+    </p>
+    <div class="hero-cta">
+      <a href="#" class="badge" id="play-badge-fa">
+        <svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>
+        Google Play
+      </a>
+      <a href="#" class="badge" id="apple-badge-fa">
+        <svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>
+        App Store
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="features-inner">
+    <h2>ویژگی‌ها</h2>
+    <p class="lead">هر چیزی که یک شرکت افغانستانی برای مدیریت نیروی کار نیاز دارد — در یک اپلیکیشن</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <h3>حاضری GPS</h3>
+        <p>ثبت ورود و خروج با موقعیت مکانی. جیوفنس تضمین می‌کند که کارمند در محل کار است.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        <h3>تشخیص چهره</h3>
+        <p>ثبت حاضری با چهره — بدون نیاز به اثرانگشت یا کارت. جلوگیری از ثبت حاضری جعلی.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <h3>مدیریت رخصتی</h3>
+        <p>درخواست، تأیید و ردّ رخصتی — با حساب مانده و زنجیرهٔ تأییدیه.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>معاشات خودکار</h3>
+        <p>محاسبهٔ خودکار معاش ماهانه، روزمزد و کارمزد — مالیات، کسرات و فیش معاش.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>امنیت سازمانی</h3>
+        <p>هر شرکت کاملاً جدا. نقش‌ها و دسترسی‌ها — مدیر، سرتیم، کارمند.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>سه‌زبانه</h3>
+        <p>دری، پشتو و انگلیسی. تقویم هجری شمسی با ماه‌های افغانستان. واحد پول افغانی.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screenshots">
+  <h2>یک نگاه به اپلیکیشن</h2>
+  <div class="phone-row" dir="ltr">
+    <div class="phone-frame"><img src="img/screenshot-01-work.png" alt="حاضری" loading="lazy" width="360" height="800"><div class="phone-label">حاضری</div></div>
+    <div class="phone-frame"><img src="img/screenshot-02-checkin.png" alt="ثبت ورود" loading="lazy" width="360" height="800"><div class="phone-label">ثبت ورود</div></div>
+    <div class="phone-frame"><img src="img/screenshot-03-leave.png" alt="رخصتی" loading="lazy" width="360" height="800"><div class="phone-label">رخصتی</div></div>
+    <div class="phone-frame"><img src="img/screenshot-04-profile.png" alt="پروفایل" loading="lazy" width="360" height="800"><div class="phone-label">پروفایل</div></div>
+  </div>
+</div>
+
+<div class="employer">
+  <div class="employer-inner">
+    <h2>برای کارفرمایان</h2>
+    <p class="lead">پورتال مدیریت وب — از هر کامپیوتر، بدون نصب</p>
+    <div class="portal-features">
+      <div class="portal-feat"><strong>داشبورد</strong><span>خلاصهٔ حاضری و رخصتی امروز</span></div>
+      <div class="portal-feat"><strong>کارمندان</strong><span>ثبت‌نام، مدارک و مدیریت حساب</span></div>
+      <div class="portal-feat"><strong>معاشات</strong><span>محاسبه، فیش و فایل اکسل</span></div>
+      <div class="portal-feat"><strong>گزارش‌ها</strong><span>حاضری، رخصتی و مالیات</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>همین حالا شروع کنید</h2>
+  <p>اپلیکیشن را دانلود کنید. کارفرمای شما حساب‌تان را فعال می‌کند.</p>
+  <div class="hero-cta">
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>Google Play</a>
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>App Store</a>
+  </div>
+</div>
+
+</section>
+
+<!-- ============ PASHTO ============ -->
+<section lang="ps" dir="rtl" id="content-ps" hidden>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>د کاري ځواک هوښیار مدیریت<br>د افغانستان لپاره</h1>
+    <p class="subtitle">
+      د GPS او مخ پیژندنې سره حاضري، د رخصتۍ مدیریت، اتوماتیک معاشات —
+      په دري، پښتو او انګلیسي، د لمریز هجري تقویم سره
+    </p>
+    <div class="hero-cta">
+      <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>Google Play</a>
+      <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>App Store</a>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="features-inner">
+    <h2>ځانګړتیاوې</h2>
+    <p class="lead">هر هغه څه چې یوه افغان شرکت د کاري ځواک مدیریت لپاره ورته اړتیا لري — په یو اپلیکیشن کې</p>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>د GPS حاضري</h3><p>د موقعیت سره ننوتل او وتل. جیوفنس ډاډ ورکوي چې کارمند د کار په ځای کې دی.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div><h3>د مخ پیژندنه</h3><p>د مخ سره حاضري — د ګوتو نښان یا کارت ته اړتیا نشته. د جعلي حاضرۍ مخنیوی.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><h3>د رخصتۍ مدیریت</h3><p>غوښتنه، تأیید او ردّ — د پاتې حساب او د تأییدیې زنځیر سره.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><h3>اتوماتیک معاشات</h3><p>د میاشتنۍ معاش، ورځني مزد او کارمزد اتوماتیک محاسبه — مالیات، کسرات او فیش.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>سازماني امنیت</h3><p>هره شرکت بشپړه جلا. رولونه او لاسرسی — مدیر، سرتیم، کارمند.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>درې ژبې</h3><p>دري، پښتو او انګلیسي. د افغانستان د لمریز هجري تقویم. افغانۍ.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="screenshots">
+  <h2>اپلیکیشن ته یوه کتنه</h2>
+  <div class="phone-row" dir="ltr">
+    <div class="phone-frame"><img src="img/screenshot-01-work.png" alt="حاضري" loading="lazy" width="360" height="800"><div class="phone-label">حاضري</div></div>
+    <div class="phone-frame"><img src="img/screenshot-02-checkin.png" alt="ننوتل" loading="lazy" width="360" height="800"><div class="phone-label">ننوتل</div></div>
+    <div class="phone-frame"><img src="img/screenshot-03-leave.png" alt="رخصتي" loading="lazy" width="360" height="800"><div class="phone-label">رخصتي</div></div>
+    <div class="phone-frame"><img src="img/screenshot-04-profile.png" alt="پروفایل" loading="lazy" width="360" height="800"><div class="phone-label">پروفایل</div></div>
+  </div>
+</div>
+
+<div class="employer">
+  <div class="employer-inner">
+    <h2>د کار فرمایانو لپاره</h2>
+    <p class="lead">د ویب مدیریت پورتال — له هر کمپیوټر څخه، د نصب پرته</p>
+    <div class="portal-features">
+      <div class="portal-feat"><strong>ډشبورډ</strong><span>د نن ورځې حاضري او رخصتۍ لنډیز</span></div>
+      <div class="portal-feat"><strong>کارمندان</strong><span>ثبت، اسناد او د حساب مدیریت</span></div>
+      <div class="portal-feat"><strong>معاشات</strong><span>محاسبه، فیش او اکسل فایل</span></div>
+      <div class="portal-feat"><strong>راپورونه</strong><span>حاضري، رخصتي او مالیات</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>همدا اوس پیل کړئ</h2>
+  <p>اپلیکیشن ډاونلوډ کړئ. ستاسو کار فرما ستاسو حساب فعالوي.</p>
+  <div class="hero-cta">
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>Google Play</a>
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>App Store</a>
+  </div>
+</div>
+
+</section>
+
+<!-- ============ ENGLISH ============ -->
+<section lang="en" dir="ltr" id="content-en" hidden>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Smart Workforce Management<br>Built for Afghanistan</h1>
+    <p class="subtitle">
+      GPS attendance with face recognition, leave management, automated payroll —
+      in Dari, Pashto and English, on the Solar Hijri calendar
+    </p>
+    <div class="hero-cta">
+      <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>Google Play</a>
+      <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>App Store</a>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="features-inner">
+    <h2>Features</h2>
+    <p class="lead">Everything an Afghan company needs to manage its workforce — in one app</p>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>GPS Attendance</h3><p>Clock in and out with location. Geofencing ensures the employee is at the work site.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div><h3>Face Recognition</h3><p>Attend with your face — no fingerprint reader or card needed. Prevents buddy punching.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><h3>Leave Management</h3><p>Apply, approve and reject leave — with balance tracking and approval chains.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><h3>Automated Payroll</h3><p>Monthly salary, daily wage and piece-rate — tax, deductions and payslips calculated automatically.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Enterprise Security</h3><p>Every company fully isolated. Roles and permissions — manager, team lead, employee.</p></div>
+      <div class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>Trilingual</h3><p>Dari, Pashto and English. Solar Hijri calendar with Afghan month names. AFN currency.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="screenshots">
+  <h2>A look at the app</h2>
+  <div class="phone-row" dir="ltr">
+    <div class="phone-frame"><img src="img/screenshot-01-work.png" alt="Attendance" loading="lazy" width="360" height="800"><div class="phone-label">Attendance</div></div>
+    <div class="phone-frame"><img src="img/screenshot-02-checkin.png" alt="Check in" loading="lazy" width="360" height="800"><div class="phone-label">Check in</div></div>
+    <div class="phone-frame"><img src="img/screenshot-03-leave.png" alt="Leave" loading="lazy" width="360" height="800"><div class="phone-label">Leave</div></div>
+    <div class="phone-frame"><img src="img/screenshot-04-profile.png" alt="Profile" loading="lazy" width="360" height="800"><div class="phone-label">Profile</div></div>
+  </div>
+</div>
+
+<div class="employer">
+  <div class="employer-inner">
+    <h2>For Employers</h2>
+    <p class="lead">Web management portal — from any computer, no installation needed</p>
+    <div class="portal-features">
+      <div class="portal-feat"><strong>Dashboard</strong><span>Today's attendance and leave at a glance</span></div>
+      <div class="portal-feat"><strong>Employees</strong><span>Register, documents and account management</span></div>
+      <div class="portal-feat"><strong>Payroll</strong><span>Calculate, payslips and Excel export</span></div>
+      <div class="portal-feat"><strong>Reports</strong><span>Attendance, leave and tax reports</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>Get started now</h2>
+  <p>Download the app. Your employer activates your account.</p>
+  <div class="hero-cta">
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M3 20.5V3.5a1 1 0 0 1 1.5-.87l16 8.5a1 1 0 0 1 0 1.74l-16 8.5A1 1 0 0 1 3 20.5z" fill="currentColor" stroke="none"/></svg>Google Play</a>
+    <a href="#" class="badge"><svg viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor" stroke="none"/></svg>App Store</a>
+  </div>
+</div>
+
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-links">
+    <a href="/privacy/"><span class="fl-fa">حریم خصوصی</span><span class="fl-ps" hidden>محرمیت</span><span class="fl-en" hidden>Privacy</span></a>
+    <a href="/support/"><span class="fl-fa">پشتیبانی</span><span class="fl-ps" hidden>ملاتړ</span><span class="fl-en" hidden>Support</span></a>
+    <a href="mailto:contact@linumic.com">contact@linumic.com</a>
+  </div>
+  <div>&copy; <span id="year">2026</span> Linumic</div>
+</footer>
+
+<script>
+(function () {
+  var current = "fa";
+  var sections = { fa: "content-fa", ps: "content-ps", en: "content-en" };
+  var brands  = { fa: "brand-fa", ps: "brand-ps", en: "brand-en" };
+  var logins  = { fa: "login-fa", ps: "login-ps", en: "login-en" };
+  var flClass = { fa: "fl-fa", ps: "fl-ps", en: "fl-en" };
+
+  function show(lang) {
+    current = lang;
+    Object.keys(sections).forEach(function (k) {
+      var el = document.getElementById(sections[k]);
+      if (el) el.hidden = k !== lang;
+    });
+    document.querySelectorAll("[role=tab]").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.lang === lang ? "true" : "false");
+    });
+    document.querySelectorAll("[class^='brand-']").forEach(function (el) {
+      el.hidden = !el.classList.contains(brands[lang]);
+    });
+    document.querySelectorAll("[class^='login-']").forEach(function (el) {
+      el.hidden = !el.classList.contains(logins[lang]);
+    });
+    document.querySelectorAll("[class^='fl-']").forEach(function (el) {
+      el.hidden = !el.classList.contains(flClass[lang]);
+    });
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+  }
+
+  document.querySelectorAll("[role=tab]").forEach(function (btn) {
+    btn.addEventListener("click", function () { show(btn.dataset.lang); });
+  });
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
