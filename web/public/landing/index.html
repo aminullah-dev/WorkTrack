@@ -209,7 +209,7 @@ footer a:hover { text-decoration: underline; }
 .footer-links { display: flex; gap: 20px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
 
 /* --- LANG TOGGLE --- */
-section[hidden] { display: none; }
+[hidden] { display: none !important; }
 
 /* --- RESPONSIVE --- */
 @media (max-width: 640px) {
@@ -589,7 +589,7 @@ section[hidden] { display: none; }
     document.querySelectorAll("[class^='brand-']").forEach(function (el) {
       el.hidden = !el.classList.contains(brands[lang]);
     });
-    document.querySelectorAll("[class^='login-']").forEach(function (el) {
+    document.querySelectorAll(".btn-login").forEach(function (el) {
       el.hidden = !el.classList.contains(logins[lang]);
     });
     document.querySelectorAll("[class^='fl-']").forEach(function (el) {
