@@ -19,7 +19,7 @@ isolated workspace (multi-tenant):
 | Product | Audience | Where |
 |---|---|---|
 | **Company Console** | managers, HR, payroll | web portal (`web/`) — dashboard, employees, attendance, leave, payroll |
-| **Employee App** | employees | Android app (`app/`) — attendance, leave, payslips |
+| **Employee App** | employees | Android (`app/`) + iOS (`ios/`) — attendance, leave, payslips |
 
 To take it live, see **[docs/12-production-deployment.md](docs/12-production-deployment.md)**.
 To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-local-demo-setup.md)**.
@@ -32,7 +32,11 @@ To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-
 | `app/`, `core/`, `feature/` | Android app — Kotlin, Jetpack Compose (M3), MVVM + Clean Architecture, Hilt, Room, WorkManager, offline-first sync |
 | `build-logic/` | Gradle convention plugins shared by all modules |
 | `backend/` | Firebase backend — REST API v1 on Cloud Functions (TypeScript/Express), Firestore rules and indexes |
-| `web/` | Manager portal (web admin) — React + TypeScript + Vite, Dari/Pashto/English, Solar Hijri (see `web/README.md`) |
+| `web/` | Manager portal (web admin) — React + TypeScript + Vite, Dari/Pashto/English, Solar Hijri |
+| `ios/` | iOS app — SwiftUI, XcodeGen + CocoaPods, TensorFlowLite face recognition |
+| `desktop/` | Desktop shell — Electron wrapper around the web portal (Windows) |
+| `delivery/` | Store assets — Play Store icon, feature graphic, screenshots |
+| `scripts/` | One-off admin scripts (licence provisioning, etc.) |
 
 ## Design documentation
 
@@ -52,6 +56,8 @@ To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-
 14. [Operations runbook — diagnosing and repairing a live system](docs/13-operations-runbook.md)
 15. [The hosted demo](docs/14-hosted-demo.md)
 16. [اپلیکیشن iOS — امکان‌سنجی و برنامه](docs/15-ios-app.md)
+17. [Business types and feature gaps](docs/16-business-types-and-gaps.md)
+18. [Google Play submission](docs/17-google-play.md)
 
 ## Android app
 
@@ -76,7 +82,7 @@ Key properties:
 
 ### Building
 
-Prerequisites: JDK 17+, Android SDK 35. The Gradle wrapper is pinned (8.9).
+Prerequisites: JDK 17+, Android SDK 36. The Gradle wrapper is pinned (8.13).
 
 ```bash
 ./gradlew :app:assembleDebug
@@ -131,8 +137,14 @@ npm run serve            # Firebase emulators: functions + firestore + auth
    `{ cid, eid, r: ["EMPLOYEE"], b: [branchIds] }` (Admin SDK).
 4. Sign in from the app — session bootstraps via `GET /v1/me`, then full sync runs.
 
+## Distribution
+
+| Platform | Status | Link |
+|---|---|---|
+| **Google Play** | Closed testing | — |
+| **App Store** | In review | — |
+| **Web portal** | Live | `worktrack-prod.web.app` |
+
 ## Roadmap
 
-P0 (this repository) is the foundation described above. P1–P4 add rosters UI,
-regularization, face verification and kiosk mode, the payroll engine, the React
-web admin, BigQuery analytics, and AI insights — see `docs/09-roadmap.md`.
+See `docs/09-roadmap.md` for the full plan.
