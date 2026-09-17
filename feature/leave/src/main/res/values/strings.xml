@@ -48,4 +48,6 @@
     <string name="leave_reject_reason">دلیل</string>
     <string name="leave_msg_approved">درخواست تایید شد</string>
     <string name="leave_msg_rejected">درخواست رد شد</string>
+    <string name="leave_type_annual">رخصتی سالانه</string>
+    <string name="leave_type_sick">رخصتی مریضی</string>
 </resources>

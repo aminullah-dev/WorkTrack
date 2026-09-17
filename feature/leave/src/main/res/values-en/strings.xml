@@ -48,4 +48,6 @@
     <string name="leave_reject_reason">Reason</string>
     <string name="leave_msg_approved">Request approved</string>
     <string name="leave_msg_rejected">Request rejected</string>
+    <string name="leave_type_annual">Annual leave</string>
+    <string name="leave_type_sick">Sick leave</string>
 </resources>
