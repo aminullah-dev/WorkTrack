@@ -27,6 +27,16 @@ struct PayslipLine: Codable, Identifiable, Equatable {
 
     var id: String { componentCode }
     var isEarning: Bool { type == .earning }
+
+    /// Payroll names these three lines in Dari itself; company components keep their own names.
+    var displayName: String {
+        switch componentCode {
+        case "BASIC": return L.t("pay_basic")
+        case "LOP": return L.t("pay_absence")
+        case "TAX": return L.t("pay_income_tax")
+        default: return componentName
+        }
+    }
 }
 
 /// One month's pay.

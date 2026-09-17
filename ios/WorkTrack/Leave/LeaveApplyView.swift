@@ -17,7 +17,7 @@ struct LeaveApplyView: View {
             Form {
                 Section {
                     Picker(L.t("leave_type"), selection: $typeId) {
-                        ForEach(types) { type in Text(type.name).tag(type.id) }
+                        ForEach(types) { type in Text(type.displayName).tag(type.id) }
                     }
                     DatePicker(
                         L.t("leave_from"), selection: $from, displayedComponents: .date

@@ -43,6 +43,7 @@ struct WorkTrackApp: App {
 
 struct RootView: View {
     @EnvironmentObject private var auth: AuthStore
+    @EnvironmentObject private var app: AppState
     @ObservedObject var lock: AppLock
 
     var body: some View {
@@ -51,7 +52,8 @@ struct RootView: View {
             case .loading:
                 ProgressView()
             case .signedOut:
-                SignInView()
+                // The next person starts on Work, not the last one's tab.
+                SignInView().onAppear { app.tab = .work }
             case .signedIn:
                 // The lock sits OVER a live session. It gates who may look,
                 // not whether the session survives — signing out instead would
@@ -75,6 +77,7 @@ struct RootView: View {
 /// "everything sent" while a punch sat in the other one.
 struct SignedInTabs: View {
     let client: ApiClient
+    @EnvironmentObject private var app: AppState
     @ObservedObject var lock: AppLock
 
     @StateObject private var location = LocationProvider()
@@ -94,20 +97,25 @@ struct SignedInTabs: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $app.tab) {
             MyWorkView(client: client, attendance: attendance, cache: cache)
                 // A checklist, not a hammer. This is an office product that
                 // happens to be used on sites; a tool icon narrows it to
                 // manual trades and reads wrong to every other customer.
                 .tabItem { Label(L.t("tab_work"), systemImage: "checklist") }
+                .tag(AppTab.work)
             AttendanceHistoryView(client: client)
                 .tabItem { Label(L.t("tab_history"), systemImage: "clock.fill") }
+                .tag(AppTab.attendance)
             LeaveView(client: client)
                 .tabItem { Label(L.t("tab_leave"), systemImage: "calendar") }
+                .tag(AppTab.leave)
             PayslipsView(client: client)
                 .tabItem { Label(L.t("tab_pay"), systemImage: "doc.text.fill") }
+                .tag(AppTab.pay)
             ProfileView(attendance: attendance, lock: lock)
                 .tabItem { Label(L.t("tab_profile"), systemImage: "person.crop.circle.fill") }
+                .tag(AppTab.profile)
         }
     }
 }

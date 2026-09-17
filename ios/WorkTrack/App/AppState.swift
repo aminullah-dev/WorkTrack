@@ -5,6 +5,8 @@ import SwiftUI
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var language: Language
+    /// Lives here because a language change rebuilds the tab view.
+    @Published var tab: AppTab = .work
 
     private static let key = "worktrack.language"
 
@@ -21,4 +23,8 @@ final class AppState: ObservableObject {
         L.language = next
         UserDefaults.standard.set(next.rawValue, forKey: Self.key)
     }
+}
+
+enum AppTab: Hashable {
+    case work, attendance, leave, pay, profile
 }

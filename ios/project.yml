@@ -15,7 +15,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "3"
     SWIFT_VERSION: "5.9"
     # Simulator builds are signed ad-hoc ("-"). That is not cosmetic: the
     # Keychain refuses an app with no entitlements and SecItemAdd fails with
