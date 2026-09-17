@@ -17,4 +17,7 @@
     <string name="pay_lop_label">Loss-of-pay days</string>
     <string name="pay_all_months">All months</string>
     <string name="pay_no_payslips_month_title">No payslip for %1$s</string>
+    <string name="pay_basic">Basic salary</string>
+    <string name="pay_absence">Absence deduction</string>
+    <string name="pay_income_tax">Income tax</string>
 </resources>

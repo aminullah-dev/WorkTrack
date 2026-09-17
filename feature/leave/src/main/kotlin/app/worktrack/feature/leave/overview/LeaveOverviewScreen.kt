@@ -50,6 +50,7 @@ import app.worktrack.core.model.LeaveStatus
 import app.worktrack.core.model.LeaveType
 import app.worktrack.core.model.SyncStatus
 import app.worktrack.feature.leave.R
+import app.worktrack.feature.leave.displayName
 
 @Composable
 fun LeaveOverviewRoute(
@@ -183,7 +184,7 @@ private fun BalanceRow(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = type?.name ?: stringResource(R.string.leave_generic_type),
+                        text = type?.displayName() ?: stringResource(R.string.leave_generic_type),
                         style = MaterialTheme.typography.labelMedium,
                     )
                     if (balance.pendingDays > 0) {
@@ -220,7 +221,7 @@ private fun RequestCard(
                 Column(Modifier.weight(1f)) {
                     type?.let {
                         ColorDotChip(
-                            text = it.name,
+                            text = it.displayName(),
                             dotColor = parseHexColor(it.colorHex),
                         )
                     }

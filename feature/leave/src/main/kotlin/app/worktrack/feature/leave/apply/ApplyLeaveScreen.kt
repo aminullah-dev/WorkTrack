@@ -42,6 +42,7 @@ import app.worktrack.core.designsystem.l10n.formatShamsiDate
 import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.designsystem.l10n.localizedMessage
 import app.worktrack.feature.leave.R
+import app.worktrack.feature.leave.displayName
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -72,7 +73,7 @@ fun ApplyLeaveRoute(
     ) { padding ->
         ApplyLeaveScreen(
             state = state,
-            typeNames = types.associate { it.id to it.name },
+            typeNames = types.associate { it.id to it.displayName() },
             onTypeSelect = viewModel::onTypeSelect,
             onStartDate = viewModel::onStartDate,
             onEndDate = viewModel::onEndDate,

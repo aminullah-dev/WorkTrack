@@ -30,6 +30,7 @@ import app.worktrack.core.designsystem.l10n.localizedDigits
 import app.worktrack.core.model.PayComponentType
 import app.worktrack.core.model.Payslip
 import app.worktrack.feature.payslips.R
+import app.worktrack.feature.payslips.displayName
 
 @Composable
 fun PayslipDetailRoute(
@@ -99,11 +100,11 @@ private fun PayslipDetail(payslip: Payslip, modifier: Modifier = Modifier) {
 
         if (earnings.isNotEmpty()) {
             SectionHeader(stringResource(R.string.pay_earnings))
-            LinesCard(lines = earnings.map { it.componentName to it.amount }, currency = payslip.currency)
+            LinesCard(lines = earnings.map { it.displayName() to it.amount }, currency = payslip.currency)
         }
         if (deductions.isNotEmpty()) {
             SectionHeader(stringResource(R.string.pay_deductions))
-            LinesCard(lines = deductions.map { it.componentName to it.amount }, currency = payslip.currency)
+            LinesCard(lines = deductions.map { it.displayName() to it.amount }, currency = payslip.currency)
         }
 
         SectionHeader(stringResource(R.string.pay_attendance_summary))
