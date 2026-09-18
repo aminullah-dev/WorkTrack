@@ -13,6 +13,7 @@ import { roleChangeRefusal, type EmploymentStatus } from "../services/employeeAc
 import { syncEmployeeLogin } from "../services/employeeSync";
 import { nextEmployeeCode } from "../services/employees";
 import { clearFace } from "../services/face";
+import { assertEmployeeHeadroom } from "../services/license";
 import {
   ASSIGNABLE_ROLES,
   createEmployeeLogin,
@@ -200,6 +201,10 @@ employeesRouter.post(
     const payload = parseBody(req, employeeWriteSchema);
     const id = ulid();
     const employees = tenant(auth.companyId, "employees");
+
+    // Before anything is created: the plan's headcount is the one limit a
+    // company can hit in the middle of an ordinary working day.
+    await assertEmployeeHeadroom(auth.companyId);
 
     // Create the login FIRST so a duplicate-email failure doesn't leave an
     // orphaned employee record behind.

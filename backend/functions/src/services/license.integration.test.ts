@@ -158,8 +158,17 @@ describe.skipIf(!EMULATOR)("device licensing", () => {
     ).rejects.toMatchObject({ status: 403, code: "LICENSE_INACTIVE" });
   });
 
-  it("refuses activation once the licence has expired", async () => {
+  it("keeps working the day after the licence runs out", async () => {
+    // A payment a day late is a customer paying, not a reason to have stopped
+    // a company's phones. The grace window is what makes that true.
     await license({ expiresAt: "2026-08-23" });
+
+    const result = await activateDevice(cid, "e1", device("device-aaa1"), TODAY);
+    expect(result.seatTaken).toBe(true);
+  });
+
+  it("refuses activation once the grace window is over too", async () => {
+    await license({ expiresAt: "2026-08-01" });
 
     await expect(
       activateDevice(cid, "e1", device("device-aaa1"), TODAY),

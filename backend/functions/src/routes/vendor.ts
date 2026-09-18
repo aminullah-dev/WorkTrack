@@ -5,6 +5,9 @@ import { audit, db, nowTimestamp } from "../lib/firestore";
 import { parseBody } from "../middleware/validate";
 import { requireVendor, vendorOf } from "../middleware/vendor";
 import { licenseWriteSchema, setLicense, getLicense } from "../services/license";
+import { clearPlanCache } from "../middleware/plan";
+import { planCatalog, planCatalogWriteSchema, setPlanCatalog } from "../services/plans";
+import { listOrders } from "../services/billing";
 import { getCompany, listCompanies } from "../services/vendor";
 import * as crm from "../services/crm";
 import {
@@ -96,6 +99,9 @@ vendorRouter.put(
 
     const before = await getLicense(companyId);
     const after = await setLicense(companyId, payload);
+    // The plan guard memoises entitlements for a minute; a vendor who has just
+    // granted a capability should see it granted, not wait out a cache.
+    clearPlanCache(companyId);
 
     // Both trails: the customer's, because it is their licence, and the
     // vendor's, because it outlives their tenant.
@@ -260,5 +266,49 @@ vendorRouter.get(
   "/crm/dashboard",
   asyncHandler(async (_req, res) => {
     res.json({ data: await crm.dashboard(today()) });
+  }),
+);
+
+/**
+ * The price list.
+ *
+ * Only prices and caps are editable — which capability belongs to which tier is
+ * code, and a feature set edited through a console is one nobody can review in
+ * a diff. Empty overrides mean the defaults shipped in the build.
+ */
+vendorRouter.get(
+  "/plans",
+  asyncHandler(async (_req, res) => {
+    res.json({ data: await planCatalog() });
+  }),
+);
+
+vendorRouter.put(
+  "/plans",
+  asyncHandler(async (req, res) => {
+    const vendor = vendorOf(req);
+    const payload = parseBody(req, planCatalogWriteSchema);
+    const before = await planCatalog();
+    const after = await setPlanCatalog(payload);
+    // Prices and caps changed for everyone; every company's cached entitlements
+    // are now stale.
+    clearPlanCache();
+    await vendorAudit({
+      actorUid: vendor.uid,
+      actorEmail: vendor.email,
+      action: "plans.update",
+      companyId: "(all)",
+      before,
+      after,
+    });
+    res.json({ data: after });
+  }),
+);
+
+/** What a company has paid, newest first. */
+vendorRouter.get(
+  "/companies/:companyId/orders",
+  asyncHandler(async (req, res) => {
+    res.json({ data: await listOrders(req.params.companyId, 100) });
   }),
 );

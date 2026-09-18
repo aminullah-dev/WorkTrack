@@ -1,11 +1,64 @@
 /** The vendor console's own types. Not shared with the tenant portal. */
 
+export type PlanId = "TRIAL" | "BRONZE" | "SILVER" | "GOLD";
+
+/** Every capability a plan can carry. Mirrors services/plans.ts. */
+export const CAPABILITIES = [
+  "attendance",
+  "leave",
+  "shifts",
+  "announcements",
+  "payroll",
+  "finance",
+  "documents",
+  "kiosk",
+  "projects",
+  "pieceWork",
+  "faceRecognition",
+] as const;
+
+export type Capability = (typeof CAPABILITIES)[number];
+
 export interface License {
-  plan: "FREE" | "STANDARD" | "ENTERPRISE";
+  plan: PlanId;
   deviceLimit: number;
   status: "ACTIVE" | "SUSPENDED" | "EXPIRED";
   expiresAt: string | null;
+  /** When false, seats are counted but no device is ever refused. */
   enforceDevices: boolean;
+  /** When false, the plan's capabilities and headcount are contractual only. */
+  enforcePlan: boolean;
+  /** A headcount negotiated for this company; null means the plan's own. */
+  employeeLimit: number | null;
+  /** Capabilities granted on top of the plan, for the customer who needs one. */
+  extraFeatures: Capability[];
+  /** Who wrote this licence last: the vendor, or the customer's own payment. */
+  source: "VENDOR" | "SELF_SERVE";
+}
+
+/** One tier as the price list defines it. */
+export interface PlanDef {
+  id: PlanId;
+  priceAfn: number;
+  employeeLimit: number;
+  deviceLimit: number;
+  features: Capability[];
+  purchasable: boolean;
+}
+
+/** A payment a customer started, whether or not it went through. */
+export interface BillingOrder {
+  id: string;
+  companyId: string;
+  plan: PlanId;
+  term: "MONTHLY" | "YEARLY";
+  months: number;
+  amountAfn: number;
+  status: "PENDING" | "PAID" | "FAILED";
+  createdAt: string | null;
+  paidAt: string | null;
+  transactionId: string | null;
+  checkoutUrl: string | null;
 }
 
 export interface CompanySummary {

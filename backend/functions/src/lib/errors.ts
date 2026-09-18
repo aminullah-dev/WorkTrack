@@ -19,6 +19,12 @@ export const ErrorCodes = {
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
   LICENSE_INACTIVE: "LICENSE_INACTIVE",
   LICENSE_LIMIT_REACHED: "LICENSE_LIMIT_REACHED",
+  /** The plan does not include the capability the request needs. */
+  FEATURE_NOT_IN_PLAN: "FEATURE_NOT_IN_PLAN",
+  /** The plan's cap on employees, devices or branches is full. */
+  PLAN_LIMIT_REACHED: "PLAN_LIMIT_REACHED",
+  /** The term ended and the grace window is over; reads still work. */
+  PLAN_EXPIRED: "PLAN_EXPIRED",
   DEVICE_REVOKED: "DEVICE_REVOKED",
   DEVICE_NOT_ACTIVATED: "DEVICE_NOT_ACTIVATED",
   INTERNAL: "INTERNAL",

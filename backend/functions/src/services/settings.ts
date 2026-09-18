@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { ApiError, ErrorCodes } from "../lib/errors";
 import { audit, db, nowTimestamp } from "../lib/firestore";
+import { entitlements, hasFeature } from "./license";
 
 /**
  * Per-company configuration: which modules are turned on ("امکانات قابل ویرایش")
@@ -166,6 +168,22 @@ export async function updateSettings(
     policies: { ...current.policies, ...(patch.policies ?? {}) },
     profile: { ...current.profile, ...(patch.profile ?? {}) },
   };
+
+  // Turning face recognition on is what makes the plan's face capability mean
+  // anything, so it is refused here rather than at the camera — a company that
+  // switched it on and then found check-ins failing would have every right to
+  // call that a bug.
+  if (next.features.faceRecognition && !current.features.faceRecognition) {
+    const ent = await entitlements(cid);
+    if (ent.enforced && !hasFeature(ent, "faceRecognition")) {
+      throw new ApiError(
+        403,
+        ErrorCodes.FEATURE_NOT_IN_PLAN,
+        "Face recognition is not part of this company's plan. Upgrade the plan to use it.",
+        { feature: "faceRecognition" },
+      );
+    }
+  }
 
   await db
     .collection("companies")

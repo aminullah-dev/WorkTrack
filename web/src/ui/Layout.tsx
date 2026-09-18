@@ -68,6 +68,14 @@ export function Layout() {
       label: t("nav_devices"),
       show: can("devices:read"),
     },
+    {
+      to: "/billing",
+      icon: <IconWallet />,
+      label: t("nav_billing"),
+      // Only whoever can actually buy one; everybody else sees the plan on the
+      // pages it affects, not as a bill they cannot pay.
+      show: can("billing:manage"),
+    },
     { to: "/settings", icon: <IconGear />, label: t("nav_settings"), show: can("settings:write") },
   ];
 

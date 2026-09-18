@@ -6,6 +6,9 @@ import type {
   Advance,
   AdvanceWrite,
   AppNotification,
+  BillingOrder,
+  BillingOverview,
+  CheckoutStarted,
   EmployeeDocument,
   PieceRecord,
   AttendanceOverviewRow,
@@ -704,9 +707,61 @@ export function useLicense(enabled: boolean) {
   });
 }
 
-// There is no useSaveLicence: the licence is what the customer buys, so the
-// server has no endpoint to write it. The vendor issues licences with
-// backend/functions/src/scripts/set-license.ts.
+// There is no useSaveLicence: a licence is granted, never self-assigned. The
+// vendor issues one from the console (or set-license.ts); a customer changes
+// theirs by paying for a plan, which is what the hooks below are for.
+
+/**
+ * The plan the company is on, what it covers, and what else is on offer.
+ *
+ * Readable by anyone signed in — an employee seeing which plan the company is
+ * on costs nothing, and the expiry warning has to reach whoever is looking.
+ */
+export function useBilling(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["billing"],
+    queryFn: () => api.get<BillingOverview>("/billing").then((e) => e.data),
+  });
+}
+
+/**
+ * Starts a payment and hands back the HesabPay checkout link.
+ *
+ * Nothing about the licence changes here. HesabPay tells the server the payment
+ * went through, over its own callback, and the plan extends then — so a
+ * customer who closes the tab mid-payment still gets what they paid for.
+ */
+export function useStartCheckout() {
+  return useMutation({
+    mutationFn: (body: { plan: string; term: "MONTHLY" | "YEARLY" }) =>
+      api.post<CheckoutStarted>("/billing/checkout", body).then((e) => e.data),
+  });
+}
+
+export function useBillingOrders(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["billing", "orders"],
+    queryFn: () => api.get<BillingOrder[]>("/billing/orders").then((e) => e.data),
+  });
+}
+
+/**
+ * One payment, polled while it is still in flight.
+ *
+ * This is what the page HesabPay returns the customer to watches: the callback
+ * usually lands within seconds, and the customer should see the plan extend
+ * rather than be told to refresh.
+ */
+export function useBillingOrder(orderId: string | null) {
+  return useQuery({
+    enabled: Boolean(orderId),
+    queryKey: ["billing", "orders", orderId],
+    queryFn: () => api.get<BillingOrder>(`/billing/orders/${orderId}`).then((e) => e.data),
+    refetchInterval: (query) => (query.state.data?.status === "PENDING" ? 3000 : false),
+  });
+}
 
 export function useDevices(enabled: boolean) {
   return useQuery({

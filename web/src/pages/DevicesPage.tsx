@@ -75,7 +75,7 @@ export function DevicesPage() {
             <dl className="license-facts">
               <div>
                 <dt>{t("dev_plan")}</dt>
-                <dd>{t(`dev_plan_${draft.plan.toLowerCase()}`)}</dd>
+                <dd>{t(`plan_${draft.plan.toLowerCase()}`)}</dd>
               </div>
               <div>
                 <dt>{t("dev_limit")}</dt>

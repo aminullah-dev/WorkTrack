@@ -1,7 +1,10 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
+import { addDays, daysBetween } from "../lib/dates";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { db, nowTimestamp, tenant, toIso } from "../lib/firestore";
+import { FEATURE_KEYS, GRACE_DAYS, normalizePlan, planDef, planIdSchema } from "./plans";
+import type { FeatureKey, PlanId } from "./plans";
 
 /**
  * Per-device licensing.
@@ -20,7 +23,7 @@ import { db, nowTimestamp, tenant, toIso } from "../lib/firestore";
 
 /** Seats granted when a company has no licence on file. */
 export const DEFAULT_LICENSE: License = {
-  plan: "FREE",
+  plan: "BRONZE",
   deviceLimit: 5,
   status: "ACTIVE",
   expiresAt: null,
@@ -28,10 +31,20 @@ export const DEFAULT_LICENSE: License = {
   // licence on file is a trial or a pre-sale tenant, and gets a working product
   // with a generous seat count rather than a locked one.
   enforceDevices: false,
+  // Same reasoning, and it is what keeps every company that predates the plans
+  // working exactly as it did: capabilities are only ever withheld from a
+  // company whose licence says to withhold them.
+  enforcePlan: false,
+  employeeLimit: null,
+  extraFeatures: [],
+  source: "VENDOR",
 };
 
-export type LicensePlan = "FREE" | "STANDARD" | "ENTERPRISE";
+export type LicensePlan = PlanId;
 export type LicenseStatus = "ACTIVE" | "SUSPENDED" | "EXPIRED";
+
+/** Who last wrote a licence. A payment must never quietly undo a vendor's grant. */
+export type LicenseSource = "VENDOR" | "SELF_SERVE";
 
 export interface License {
   plan: LicensePlan;
@@ -40,10 +53,27 @@ export interface License {
   /** YYYY-MM-DD, or null for a perpetual licence. */
   expiresAt: string | null;
   enforceDevices: boolean;
+  /** Whether the plan's capabilities and caps are enforced at all. */
+  enforcePlan: boolean;
+  /** A cap negotiated for this one company; null means the plan's own. */
+  employeeLimit: number | null;
+  /** Capabilities granted on top of the plan, for the customer who needs one. */
+  extraFeatures: FeatureKey[];
+  source: LicenseSource;
 }
 
+/**
+ * Accepts the tier names a licence may already carry. FREE/STANDARD/ENTERPRISE
+ * were issued by hand before the plans were sold, and both the console and the
+ * CLI can still send them; they are normalised on the way in rather than
+ * migrated, so no stored document has to be rewritten to be readable.
+ */
+const planInputSchema = z
+  .union([planIdSchema, z.enum(["FREE", "STANDARD", "ENTERPRISE"])])
+  .transform(normalizePlan);
+
 export const licenseWriteSchema = z.object({
-  plan: z.enum(["FREE", "STANDARD", "ENTERPRISE"]),
+  plan: planInputSchema,
   deviceLimit: z.number().int().min(1).max(100_000),
   status: z.enum(["ACTIVE", "SUSPENDED", "EXPIRED"]),
   expiresAt: z
@@ -51,6 +81,11 @@ export const licenseWriteSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
     .nullish(),
   enforceDevices: z.boolean(),
+  // Optional throughout: a caller that predates these fields (the CLI, an older
+  // console) keeps whatever the licence already says rather than resetting it.
+  enforcePlan: z.boolean().optional(),
+  employeeLimit: z.number().int().min(1).max(100_000).nullish(),
+  extraFeatures: z.array(z.enum(FEATURE_KEYS)).max(FEATURE_KEYS.length).optional(),
 });
 
 export const deviceActivateSchema = z.object({
@@ -118,25 +153,47 @@ function toDeviceDto(deviceId: string, doc: DeviceDoc): DeviceDto {
   };
 }
 
-export async function getLicense(cid: string): Promise<License> {
-  const snap = await db.collection("companies").doc(cid).get();
-  const stored = snap.data()?.license as Partial<License> | undefined;
+/** A stored licence, with every field this version knows about filled in. */
+export function normalizeLicense(stored: Partial<License> | undefined): License {
   return {
-    plan: stored?.plan ?? DEFAULT_LICENSE.plan,
+    plan: stored?.plan === undefined ? DEFAULT_LICENSE.plan : normalizePlan(stored.plan),
     deviceLimit: stored?.deviceLimit ?? DEFAULT_LICENSE.deviceLimit,
     status: stored?.status ?? DEFAULT_LICENSE.status,
     expiresAt: stored?.expiresAt ?? DEFAULT_LICENSE.expiresAt,
     enforceDevices: stored?.enforceDevices ?? DEFAULT_LICENSE.enforceDevices,
+    enforcePlan: stored?.enforcePlan ?? DEFAULT_LICENSE.enforcePlan,
+    employeeLimit: stored?.employeeLimit ?? DEFAULT_LICENSE.employeeLimit,
+    extraFeatures: stored?.extraFeatures ?? [],
+    source: stored?.source ?? DEFAULT_LICENSE.source,
   };
 }
 
-export async function setLicense(cid: string, input: z.infer<typeof licenseWriteSchema>): Promise<License> {
+export async function getLicense(cid: string): Promise<License> {
+  const snap = await db.collection("companies").doc(cid).get();
+  return normalizeLicense(snap.data()?.license as Partial<License> | undefined);
+}
+
+export async function setLicense(
+  cid: string,
+  input: z.infer<typeof licenseWriteSchema>,
+  source: LicenseSource = "VENDOR",
+): Promise<License> {
+  // Read first: the fields a caller omitted are the ones it does not know
+  // about, and defaulting them would let an older client silently revoke a
+  // capability the vendor granted through a newer one.
+  const current = await getLicense(cid);
   const license: License = {
-    plan: input.plan,
+    // Normalised again here rather than trusted: the CLI and the tests call
+    // this directly, without the schema that would have done it.
+    plan: normalizePlan(input.plan),
     deviceLimit: input.deviceLimit,
     status: input.status,
     expiresAt: input.expiresAt ?? null,
     enforceDevices: input.enforceDevices,
+    enforcePlan: input.enforcePlan ?? current.enforcePlan,
+    employeeLimit: input.employeeLimit === undefined ? current.employeeLimit : input.employeeLimit,
+    extraFeatures: input.extraFeatures ?? current.extraFeatures,
+    source,
   };
   await db.collection("companies").doc(cid).set(
     { license, updatedAt: nowTimestamp() },
@@ -145,11 +202,102 @@ export async function setLicense(cid: string, input: z.infer<typeof licenseWrite
   return license;
 }
 
-/** A licence is usable when it is ACTIVE and has not run out. */
+/**
+ * Where a licence stands today.
+ *
+ *   ACTIVE  in force.
+ *   GRACE   expired, inside the grace window — everything still works, loudly.
+ *   LAPSED  expired past the grace window, or suspended by the vendor.
+ */
+export type LicenseState = "ACTIVE" | "GRACE" | "LAPSED";
+
+export interface LicenseStanding {
+  state: LicenseState;
+  /** Days until the next transition; null for a perpetual licence. */
+  daysLeft: number | null;
+  /** The last day the grace window covers, or null when nothing expires. */
+  graceEndsAt: string | null;
+}
+
+export function licenseStanding(license: License, today: string): LicenseStanding {
+  if (license.status !== "ACTIVE") {
+    return { state: "LAPSED", daysLeft: 0, graceEndsAt: null };
+  }
+  if (license.expiresAt === null) {
+    return { state: "ACTIVE", daysLeft: null, graceEndsAt: null };
+  }
+  const graceEndsAt = addDays(license.expiresAt, GRACE_DAYS);
+  if (today <= license.expiresAt) {
+    return { state: "ACTIVE", daysLeft: daysBetween(today, license.expiresAt), graceEndsAt };
+  }
+  if (today <= graceEndsAt) {
+    return { state: "GRACE", daysLeft: daysBetween(today, graceEndsAt), graceEndsAt };
+  }
+  return { state: "LAPSED", daysLeft: 0, graceEndsAt };
+}
+
+/**
+ * A licence is usable while it is in force, and stays usable through the grace
+ * window. A payment that arrives three days late is a customer paying, not a
+ * reason to have stopped a factory's attendance on the day the term ended.
+ */
 export function licenseUsable(license: License, today: string): boolean {
-  if (license.status !== "ACTIVE") return false;
-  if (license.expiresAt !== null && license.expiresAt < today) return false;
-  return true;
+  return licenseStanding(license, today).state !== "LAPSED";
+}
+
+/** What a company may actually do: the plan, plus anything granted on top. */
+export interface Entitlements {
+  plan: PlanId;
+  features: FeatureKey[];
+  employeeLimit: number;
+  deviceLimit: number;
+  /** False when nothing here is enforced — the caps are contractual only. */
+  enforced: boolean;
+}
+
+export async function entitlementsOf(license: License): Promise<Entitlements> {
+  const plan = await planDef(license.plan);
+  return {
+    plan: plan.id,
+    features: [...new Set([...plan.features, ...license.extraFeatures])],
+    employeeLimit: license.employeeLimit ?? plan.employeeLimit,
+    // The seat count is whatever the licence says: the vendor sets it directly,
+    // and a purchase writes the plan's own number into it.
+    deviceLimit: license.deviceLimit,
+    enforced: license.enforcePlan,
+  };
+}
+
+export async function entitlements(cid: string): Promise<Entitlements> {
+  return entitlementsOf(await getLicense(cid));
+}
+
+export function hasFeature(ent: Entitlements, key: FeatureKey): boolean {
+  return ent.features.includes(key);
+}
+
+/** Active employees on the books. The cap counts people, not records. */
+export async function countActiveEmployees(cid: string): Promise<number> {
+  const snap = await tenant(cid, "employees").where("status", "==", "ACTIVE").count().get();
+  return snap.data().count;
+}
+
+/**
+ * Refuses to add one more employee when the plan is full.
+ *
+ * Checked before the login is created, because a refusal after that leaves an
+ * orphaned Firebase account nobody can see or clean up from the portal.
+ */
+export async function assertEmployeeHeadroom(cid: string): Promise<void> {
+  const ent = await entitlements(cid);
+  if (!ent.enforced) return;
+  const active = await countActiveEmployees(cid);
+  if (active < ent.employeeLimit) return;
+  throw new ApiError(
+    403,
+    ErrorCodes.PLAN_LIMIT_REACHED,
+    `This plan covers ${ent.employeeLimit} employees and all of them are in use. Upgrade the plan, or set someone who has left to EXITED.`,
+  );
 }
 
 export interface ActivationResult {

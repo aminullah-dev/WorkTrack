@@ -99,7 +99,9 @@ describe.skipIf(!EMULATOR)("raising an issue from the product", () => {
     expect(t.subject).toBe("The app will not install on old phones");
     expect(t.companyId).toBe(cidA);
     expect(t.companyName).toBe("Acme Kabul");
-    expect(t.plan).toBe("STANDARD"); // from the licence, not the request
+    // From the licence, not the request — and under the tier name it is read
+    // as today: this company was licensed before the plans were renamed.
+    expect(t.plan).toBe("SILVER");
     expect(t.seats).toBe(12);
     expect(t.raisedBy).toBe("emp_1");
     expect(t.source).toBe("PORTAL");

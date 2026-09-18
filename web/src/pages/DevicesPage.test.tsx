@@ -60,11 +60,15 @@ function renderPage() {
 beforeEach(() => {
   localStorage.setItem("worktrack.locale", "en");
   state.license = {
-    plan: "STANDARD",
+    plan: "SILVER",
     deviceLimit: 3,
     status: "ACTIVE",
     expiresAt: null,
     enforceDevices: false,
+    enforcePlan: false,
+    employeeLimit: null,
+    extraFeatures: [],
+    source: "VENDOR",
   };
   state.devices = [];
   state.permissions = new Set(["devices:read", "devices:manage"]);

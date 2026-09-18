@@ -6,6 +6,32 @@ import { ulid } from "../lib/ids";
 import { solarHolidaysFor } from "./calendar";
 import { currentShamsiMonth } from "../lib/shamsi";
 import { findBusinessType, settingsForBusinessType } from "./businessTypes";
+import { addDays } from "../lib/dates";
+import { localDateOf } from "./attendance";
+import { DEFAULT_PLANS, TRIAL_DAYS } from "./plans";
+import type { License } from "./license";
+
+/**
+ * What a new company starts on: the whole product, for a fortnight.
+ *
+ * The trial is metered from the first day rather than switched on later, so the
+ * caps a customer sees during the trial are the caps a paying customer lives
+ * with — and nothing about the product changes on the day they pay. Device
+ * seats stay unenforced; the vendor turns that on per company.
+ */
+function trialLicense(timezone: string): License {
+  return {
+    plan: "TRIAL",
+    deviceLimit: DEFAULT_PLANS.TRIAL.deviceLimit,
+    status: "ACTIVE",
+    expiresAt: addDays(localDateOf(new Date(), timezone), TRIAL_DAYS),
+    enforceDevices: false,
+    enforcePlan: true,
+    employeeLimit: null,
+    extraFeatures: [],
+    source: "VENDOR",
+  };
+}
 
 export const companySignupSchema = z.object({
   companyName: z.string().min(2).max(120),
@@ -103,7 +129,7 @@ export async function provisionCompany(input: CompanySignup): Promise<SignupResu
       timezone: input.timezone,
       currency: input.currency,
       status: "ACTIVE",
-      plan: "FREE",
+      license: trialLicense(input.timezone),
       settings: {
         ...settingsForBusinessType(input.businessType),
         profile: {

@@ -14,6 +14,7 @@ import { FinancePage } from "./pages/FinancePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KioskPage } from "./pages/KioskPage";
 import { DevicesPage } from "./pages/DevicesPage";
+import { BillingPage } from "./pages/BillingPage";
 import { VendorConsole } from "./pages/VendorConsole";
 
 export function App() {
@@ -60,6 +61,8 @@ export function App() {
         <Route path="payroll" element={<PayrollPage />} />
         <Route path="finance" element={<FinancePage />} />
         <Route path="devices" element={<DevicesPage />} />
+        {/* Where HesabPay returns the customer, with ?order=… on the query. */}
+        <Route path="billing" element={<BillingPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

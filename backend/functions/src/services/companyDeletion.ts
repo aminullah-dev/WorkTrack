@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ApiError, ErrorCodes } from "../lib/errors";
 import { audit, db, nowTimestamp, tenant } from "../lib/firestore";
 import type { TenantCollection } from "../lib/firestore";
+import { addDays } from "../lib/dates";
 
 /**
  * Closing a company account.
@@ -50,11 +51,7 @@ export const deletionRequestSchema = z.object({
   reason: z.string().max(500).nullish(),
 });
 
-/** Date `days` after `fromIso`, as YYYY-MM-DD. */
-export function addDays(fromIso: string, days: number): string {
-  const t = new Date(`${fromIso}T00:00:00Z`).getTime() + days * 86_400_000;
-  return new Date(t).toISOString().slice(0, 10);
-}
+export { addDays };
 
 /**
  * Whether a purge may run. Deliberately strict: anything other than a scheduled

@@ -1506,6 +1506,58 @@ table.data tbody tr:hover {
   font-weight: 600;
 }
 
+/* The price list: one card per tier, side by side where there is room. */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 4px;
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line, #e3e7ee);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+/* The tier the company is already on, so the choice reads against something. */
+.plan-card.current {
+  border-color: var(--brand, #0a6a94);
+  box-shadow: 0 0 0 1px var(--brand, #0a6a94) inset;
+}
+.plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.plan-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.plan-price {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted, #667);
+}
+.plan-price strong {
+  font-size: 24px;
+  color: var(--text, #14202c);
+}
+.plan-caps,
+.plan-features {
+  margin: 0;
+  padding-inline-start: 18px;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.plan-caps { font-weight: 600; }
+.plan-features { color: var(--muted, #667); }
+/* The button sits on the bottom edge so every card's action lines up. */
+.plan-card .btn { margin-top: auto; }
+
 /* Something the operator must act on before trusting the result. */
 .notice-warning {
   margin: 0 0 16px;

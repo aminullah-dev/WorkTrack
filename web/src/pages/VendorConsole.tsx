@@ -3,8 +3,16 @@ import { useAuth } from "../auth/AuthProvider";
 import { Chip, EmptyState, ErrorState, LoadingState, Toast } from "../ui/components";
 import { vendorApi } from "./vendor/api";
 import { AccountDetail } from "./vendor/AccountDetail";
-import { afn, STAGES, todayIso } from "./vendor/types";
-import type { Account, CompanySummary, Dashboard, License } from "./vendor/types";
+import { afn, CAPABILITIES, STAGES, todayIso } from "./vendor/types";
+import type {
+  Account,
+  BillingOrder,
+  CompanySummary,
+  Dashboard,
+  License,
+  PlanDef,
+  PlanId,
+} from "./vendor/types";
 
 /**
  * Linumic's own console.
@@ -15,7 +23,7 @@ import type { Account, CompanySummary, Dashboard, License } from "./vendor/types
  * being sold to, who may not be tenants at all yet.
  */
 
-type Tab = "today" | "pipeline" | "customers" | "money" | "support";
+type Tab = "today" | "pipeline" | "customers" | "money" | "support" | "plans";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "today", label: "Today" },
@@ -23,6 +31,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "customers", label: "Customers" },
   { id: "money", label: "Money" },
   { id: "support", label: "Support" },
+  { id: "plans", label: "Plans" },
 ];
 
 export function VendorConsole() {
@@ -124,6 +133,7 @@ export function VendorConsole() {
           )}
           {tab === "money" && <Money board={board} accounts={accounts} onOpen={setOpenAccount} />}
           {tab === "support" && <Support board={board} accounts={accounts} onOpen={setOpenAccount} />}
+          {tab === "plans" && <Plans onSaved={flash} />}
         </>
       )}
 
@@ -565,7 +575,7 @@ function Support({
 
 /* ------------------------------------------------------------------ licence */
 
-const PLANS: License["plan"][] = ["FREE", "STANDARD", "ENTERPRISE"];
+const PLANS: PlanId[] = ["TRIAL", "BRONZE", "SILVER", "GOLD"];
 const STATUSES: License["status"][] = ["ACTIVE", "SUSPENDED", "EXPIRED"];
 
 function LicenceEditor({
@@ -585,6 +595,9 @@ function LicenceEditor({
     setError(null);
     if (!Number.isInteger(form.deviceLimit) || form.deviceLimit < 1) {
       return setError("Seats must be a whole number of 1 or more.");
+    }
+    if (form.employeeLimit !== null && (!Number.isInteger(form.employeeLimit) || form.employeeLimit < 1)) {
+      return setError("The employee cap must be a whole number of 1 or more, or empty.");
     }
     setBusy(true);
     try {
@@ -658,6 +671,26 @@ function LicenceEditor({
           </label>
         </div>
 
+        <div className="form-row">
+          <label className="field" style={{ minWidth: 160 }}>
+            <span className="label">Employee cap</span>
+            <input
+              className="input"
+              type="number"
+              min={1}
+              placeholder="the plan's own"
+              value={form.employeeLimit ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  employeeLimit: e.target.value === "" ? null : Number(e.target.value),
+                })
+              }
+            />
+            <span className="hint">{company.employeeCount} on the books · empty = the plan's</span>
+          </label>
+        </div>
+
         <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
           <input
             type="checkbox"
@@ -671,6 +704,54 @@ function LicenceEditor({
             </span>
           </span>
         </label>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+          <input
+            type="checkbox"
+            checked={form.enforcePlan}
+            onChange={(e) => setForm({ ...form, enforcePlan: e.target.checked })}
+          />
+          <span>
+            Meter the plan
+            <span className="hint" style={{ display: "block" }}>
+              Withhold what the plan does not include, and stop new records once it
+              ends. Off for every company licensed before the plans existed — turning
+              it on is what starts charging them.
+            </span>
+          </span>
+        </label>
+
+        <div style={{ marginTop: 14 }}>
+          <span className="label">Capabilities granted on top of the plan</span>
+          <p className="hint" style={{ marginTop: 2 }}>
+            For the one customer who needs a single module the tier does not carry.
+            Anything the plan already includes is granted anyway.
+          </p>
+          <div className="chip-set" style={{ marginTop: 6 }}>
+            {CAPABILITIES.map((c) => {
+              const on = form.extraFeatures.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  className={`chip-toggle${on ? " on" : ""}`}
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      extraFeatures: on
+                        ? form.extraFeatures.filter((f) => f !== c)
+                        : [...form.extraFeatures, c],
+                    })
+                  }
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <CompanyPayments companyId={company.companyId} />
 
         {shrinking && (
           <p className="notice-warning" style={{ marginTop: 12 }}>
@@ -691,5 +772,202 @@ function LicenceEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+/* ----------------------------------------------------------------- payments */
+
+/**
+ * What this company has paid, read straight from the orders the callback
+ * settles. Loaded when the licence is opened rather than with the company list:
+ * it is one customer's history, and the list is every customer.
+ */
+function CompanyPayments({ companyId }: { companyId: string }) {
+  const [orders, setOrders] = useState<BillingOrder[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    vendorApi
+      .orders(companyId)
+      .then((rows) => live && setOrders(rows))
+      .catch(() => live && setFailed(true));
+    return () => {
+      live = false;
+    };
+  }, [companyId]);
+
+  if (failed) return <p className="hint" style={{ marginTop: 14 }}>Could not load payments.</p>;
+  if (!orders) return <p className="hint" style={{ marginTop: 14 }}>Loading payments…</p>;
+  if (orders.length === 0) {
+    return (
+      <p className="hint" style={{ marginTop: 14 }}>
+        No self-serve payments. This licence was issued by hand.
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <span className="label">Payments</span>
+      <ul className="vendor-list" style={{ marginTop: 6 }}>
+        {orders.map((o) => (
+          <Row key={o.id}>
+            <strong>
+              {o.plan} · {o.term === "YEARLY" ? "12 months" : "1 month"} · {afn(o.amountAfn)}
+            </strong>
+            <span className="muted">
+              {o.status}
+              {o.paidAt ? ` · ${o.paidAt.slice(0, 10)}` : ""}
+              {o.transactionId ? ` · ${o.transactionId}` : ""}
+            </span>
+          </Row>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- price list */
+
+/**
+ * The price list every customer is shown.
+ *
+ * Prices and caps only: which capability belongs to which tier stays in code,
+ * because a feature set edited through a console is one nobody can review in a
+ * diff. Leaving a field at the shipped default writes no override at all.
+ */
+function Plans({ onSaved }: { onSaved: (message: string) => void }) {
+  const [plans, setPlans] = useState<Record<PlanId, PlanDef> | null>(null);
+  const [draft, setDraft] = useState<Record<string, Partial<PlanDef>>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    vendorApi
+      .plans()
+      .then(setPlans)
+      .catch(() => setError("Could not load the price list."));
+  }, []);
+
+  if (error && !plans) return <ErrorState message={error} />;
+  if (!plans) return <LoadingState />;
+
+  const value = (id: PlanId, field: "priceAfn" | "employeeLimit" | "deviceLimit"): number =>
+    (draft[id]?.[field] as number | undefined) ?? plans[id][field];
+
+  function edit(id: PlanId, field: "priceAfn" | "employeeLimit" | "deviceLimit", raw: string) {
+    setDraft({ ...draft, [id]: { ...draft[id], [field]: Number(raw) } });
+  }
+
+  async function save() {
+    setError(null);
+    const body: Record<string, { priceAfn: number; employeeLimit: number; deviceLimit: number }> = {};
+    for (const id of Object.keys(plans!) as PlanId[]) {
+      const entry = {
+        priceAfn: value(id, "priceAfn"),
+        employeeLimit: value(id, "employeeLimit"),
+        deviceLimit: value(id, "deviceLimit"),
+      };
+      if (
+        !Number.isInteger(entry.priceAfn) ||
+        entry.priceAfn < 0 ||
+        !Number.isInteger(entry.employeeLimit) ||
+        entry.employeeLimit < 1 ||
+        !Number.isInteger(entry.deviceLimit) ||
+        entry.deviceLimit < 1
+      ) {
+        return setError(`${id}: prices must be whole Afghani, and caps whole numbers of 1 or more.`);
+      }
+      body[id] = entry;
+    }
+    setBusy(true);
+    try {
+      setPlans(await vendorApi.setPlans(body));
+      setDraft({});
+      onSaved("Price list saved");
+    } catch {
+      setError("Could not save. Nothing was changed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card vendor-card">
+      <h2 style={{ marginTop: 0 }}>Price list</h2>
+      <p className="muted" style={{ marginTop: -6 }}>
+        Monthly price in Afghani. A year is sold at ten months. Changes reach every
+        customer within a minute — the tiers themselves are in the build.
+      </p>
+
+      <div className="table-wrap">
+      <table className="data">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Monthly (AFN)</th>
+            <th>Employees</th>
+            <th>Device seats</th>
+            <th>Included</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(Object.keys(plans) as PlanId[]).map((id) => (
+            <tr key={id}>
+              <td>
+                <strong>{id}</strong>
+                {!plans[id].purchasable && <span className="muted"> · not sold</span>}
+              </td>
+              <td>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  style={{ width: 110 }}
+                  value={value(id, "priceAfn")}
+                  onChange={(e) => edit(id, "priceAfn", e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  style={{ width: 90 }}
+                  value={value(id, "employeeLimit")}
+                  onChange={(e) => edit(id, "employeeLimit", e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  style={{ width: 90 }}
+                  value={value(id, "deviceLimit")}
+                  onChange={(e) => edit(id, "deviceLimit", e.target.value)}
+                />
+              </td>
+              <td className="muted" style={{ fontSize: 12 }}>
+                {plans[id].features.join(", ")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+
+      {error && <p className="form-error">{error}</p>}
+
+      <button
+        className="btn btn-primary"
+        style={{ marginTop: 14 }}
+        disabled={busy}
+        onClick={() => void save()}
+      >
+        {busy ? "Saving…" : "Save price list"}
+      </button>
+    </section>
   );
 }

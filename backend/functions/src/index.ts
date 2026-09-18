@@ -2,9 +2,10 @@ import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { companiesDueForPurge, purgeCompany } from "./services/companyDeletion";
 import { createApp } from "./app";
-import { kioskSecret } from "./config";
+import { hesabApiKey, kioskSecret } from "./config";
 import { runAttendanceAudit } from "./services/integrity";
 import { runDocumentWatch } from "./services/documentWatch";
+import { runPlanWatch } from "./services/planWatch";
 import { resetDemoTenant, DemoResetRefused } from "./services/demo-reset";
 
 // Deploy marker: v1.1 (finance + face recognition endpoints).
@@ -17,7 +18,7 @@ import { resetDemoTenant, DemoResetRefused } from "./services/demo-reset";
 export const api = onRequest(
   {
     region: "us-central1",
-    secrets: [kioskSecret],
+    secrets: [kioskSecret, hesabApiKey],
     minInstances: 0,
     maxInstances: 100,
     concurrency: 80,
@@ -54,6 +55,26 @@ export const documentExpiryWatch = onSchedule(
   async () => {
     const result = await runDocumentWatch();
     console.info("DOCUMENT_WATCH", JSON.stringify(result));
+  },
+);
+
+/**
+ * Nightly notice that a plan is running out.
+ *
+ * The day a company cannot record anything new should be a day its
+ * administrator already knew about, and had one payment's chance to prevent.
+ */
+export const planExpiryWatch = onSchedule(
+  {
+    region: "us-central1",
+    schedule: "every day 04:00",
+    timeZone: "Asia/Kabul",
+    memory: "256MiB",
+    timeoutSeconds: 300,
+  },
+  async () => {
+    const result = await runPlanWatch();
+    console.info("PLAN_WATCH", JSON.stringify(result));
   },
 );
 

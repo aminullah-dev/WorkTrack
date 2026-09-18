@@ -58,6 +58,7 @@ To try it locally with sample data, see **[docs/11-local-demo-setup.md](docs/11-
 16. [اپلیکیشن iOS — امکان‌سنجی و برنامه](docs/15-ios-app.md)
 17. [Business types and feature gaps](docs/16-business-types-and-gaps.md)
 18. [Google Play submission](docs/17-google-play.md)
+19. [Plans and payments (HesabPay)](docs/18-plans-and-payments.md)
 
 ## Android app
 

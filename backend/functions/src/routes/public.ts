@@ -7,6 +7,11 @@ import {
 } from "../middleware/rateLimit";
 import { parseBody } from "../middleware/validate";
 import { companySignupSchema, provisionCompany } from "../services/signup";
+import { hesabApiKey, hesabBaseUrl, hesabForwardUrl } from "../config";
+import { forwardCallback } from "../lib/hesab";
+import { settleWebhook } from "../services/billing";
+import { clearPlanCache } from "../middleware/plan";
+import { localDateOf } from "../services/attendance";
 
 /**
  * Unauthenticated routes (mounted before the auth middleware). Keep this
@@ -56,5 +61,61 @@ publicRouter.post(
 
     const result = await provisionCompany(input);
     res.status(201).json({ data: result });
+  }),
+);
+
+/**
+ * HesabPay's payment callback.
+ *
+ * Unauthenticated because HesabPay has no WorkTrack credential to present, and
+ * safe for the same reason a bank statement is: nothing in the callback is
+ * believed until HesabPay confirms its signature, its transaction id has never
+ * settled an order before, and the amount matches the order it claims to pay.
+ * See services/billing.ts.
+ *
+ * Always answers 200 once a callback has been dealt with — including a replay,
+ * which is a no-op — so HesabPay stops retrying something already handled.
+ */
+const WEBHOOK: RateLimitRule = { bucket: "hesab_webhook", limit: 1000, windowMs: HOUR };
+
+publicRouter.post(
+  "/billing/hesab-webhook",
+  asyncHandler(async (req, res) => {
+    await enforceRateLimit(WEBHOOK, "all", "Too many payment callbacks.");
+
+    const outcome = await settleWebhook({
+      payload: req.body ?? {},
+      apiKey: hesabApiKey.value(),
+      baseUrl: hesabBaseUrl.value(),
+      // The vendor's own date. A licence bought at 23:50 in Kabul gets the day
+      // it was bought on, wherever the function happened to run.
+      today: localDateOf(new Date(), "Asia/Kabul"),
+    });
+
+    if (outcome.result === "PAID") {
+      // The guard caches entitlements for a minute; a company that has just
+      // paid should not wait that long to be let back in.
+      clearPlanCache(outcome.companyId);
+      console.info("BILLING_PAID", {
+        orderId: outcome.orderId,
+        companyId: outcome.companyId,
+        plan: outcome.license.plan,
+        expiresAt: outcome.license.expiresAt,
+      });
+      res.json({ data: { result: outcome.result } });
+      return;
+    }
+
+    if (outcome.result === "IGNORED") {
+      // Not one of ours. It may belong to the other product sharing this
+      // HesabPay account, which verifies the callback itself before believing
+      // any of it.
+      const forwarded = await forwardCallback(hesabForwardUrl.value(), req.body ?? {});
+      console.warn("BILLING_CALLBACK_IGNORED", { reason: outcome.reason, forwarded });
+      res.json({ data: { result: forwarded ? "FORWARDED" : "IGNORED" } });
+      return;
+    }
+
+    res.json({ data: { result: outcome.result } });
   }),
 );

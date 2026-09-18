@@ -28,6 +28,8 @@ import { shiftsRouter } from "./routes/shifts";
 import { workRouter } from "./routes/work";
 import { kioskRouter } from "./routes/kiosk";
 import { syncRouter } from "./routes/sync";
+import { billingRouter } from "./routes/billing";
+import { enforcePlanState, requireFeature } from "./middleware/plan";
 
 /**
  * WorkTrack REST API v1. Middleware chain per request:
@@ -74,26 +76,34 @@ export function createApp(): express.Express {
   // support channel they cannot reach when the product refuses them is not a
   // support channel.
   v1.use("/support", supportRouter);
+  // And before it as well, for the plainest reason of all: the page where a
+  // company renews the plan it has just been locked out of cannot itself be
+  // behind that lock.
+  v1.use("/billing", billingRouter);
   v1.use(enforceDeviceLicense);
+  // Marking a notification read is not a new record, and the notifications a
+  // locked-out company most needs to read are the ones telling it why.
+  v1.use("/notifications", notificationsRouter);
+  // A lapsed plan stops new records here, once, rather than in forty handlers.
+  v1.use(enforcePlanState);
   v1.use("/me", meRouter);
   v1.use("/employees", employeesRouter);
   v1.use("/attendance", attendanceRouter);
   v1.use("/leave", leaveRouter);
   v1.use("/payslips", payslipsRouter);
-  v1.use("/payroll", payrollRouter);
-  v1.use("/advances", advancesRouter);
-  v1.use("/piece-work", pieceWorkRouter);
-  v1.use("/notifications", notificationsRouter);
-  v1.use("/documents", documentsRouter);
-  v1.use("/finance", financeRouter);
+  v1.use("/payroll", requireFeature("payroll"), payrollRouter);
+  v1.use("/advances", requireFeature("finance"), advancesRouter);
+  v1.use("/piece-work", requireFeature("pieceWork"), pieceWorkRouter);
+  v1.use("/documents", requireFeature("documents"), documentsRouter);
+  v1.use("/finance", requireFeature("finance"), financeRouter);
   v1.use("/announcements", announcementsRouter);
   v1.use("/analytics", analyticsRouter);
   v1.use("/shifts", shiftsRouter);
-  v1.use("/work", workRouter);
+  v1.use("/work", requireFeature("projects"), workRouter);
   v1.use("/calendar", calendarRouter);
   v1.use("/company", companyRouter);
   v1.use("/settings", settingsRouter);
-  v1.use("/kiosk", kioskRouter);
+  v1.use("/kiosk", requireFeature("kiosk"), kioskRouter);
   v1.use("/sync", syncRouter);
   app.use("/v1", v1);
 

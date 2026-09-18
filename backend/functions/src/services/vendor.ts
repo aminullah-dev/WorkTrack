@@ -1,5 +1,5 @@
 import { db, tenant, toIso } from "../lib/firestore";
-import { DEFAULT_LICENSE, isDeviceActive } from "./license";
+import { isDeviceActive, normalizeLicense } from "./license";
 import type { DeviceDoc, License } from "./license";
 
 /**
@@ -38,7 +38,7 @@ async function summarise(
   todayIso: string,
 ): Promise<CompanySummary> {
   const d = doc.data();
-  const license: License = { ...DEFAULT_LICENSE, ...(d.license ?? {}) };
+  const license: License = normalizeLicense(d.license ?? undefined);
 
   // count() aggregations rather than reading the documents: the vendor needs
   // the number, not the people.

@@ -315,13 +315,77 @@ export interface ComponentAssignment {
 }
 
 /** A company's device licence: how many devices may run the app at once. */
+export type PlanId = "TRIAL" | "BRONZE" | "SILVER" | "GOLD";
+
 export interface License {
-  plan: "FREE" | "STANDARD" | "ENTERPRISE";
+  plan: PlanId;
   deviceLimit: number;
   status: "ACTIVE" | "SUSPENDED" | "EXPIRED";
   expiresAt: string | null;
   /** When false, devices are tracked but never refused — the rollout switch. */
   enforceDevices: boolean;
+  /** When false, the plan's caps and capabilities are contractual only. */
+  enforcePlan: boolean;
+  /** A cap negotiated for this company; null means the plan's own. */
+  employeeLimit: number | null;
+  extraFeatures: string[];
+  source: "VENDOR" | "SELF_SERVE";
+}
+
+/** How a plan stands today: in force, past expiry but inside grace, or over. */
+export type LicenseState = "ACTIVE" | "GRACE" | "LAPSED";
+
+/** One tier as the portal offers it. Prices are whole Afghani. */
+export interface BillingPlan {
+  id: PlanId;
+  priceAfn: number;
+  yearlyAfn: number;
+  employeeLimit: number;
+  deviceLimit: number;
+  features: string[];
+  purchasable: boolean;
+  /** Set when the company is already bigger than this plan allows. */
+  blockedReason: "EMPLOYEES" | "DEVICES" | null;
+}
+
+export interface BillingOverview {
+  plans: BillingPlan[];
+  current: {
+    plan: PlanId;
+    status: License["status"];
+    state: LicenseState;
+    expiresAt: string | null;
+    graceEndsAt: string | null;
+    daysLeft: number | null;
+    enforced: boolean;
+    features: string[];
+    employeeLimit: number;
+    deviceLimit: number;
+    employeesInUse: number;
+    devicesInUse: number;
+  };
+}
+
+/** A payment the company started, whether or not it went through. */
+export interface BillingOrder {
+  id: string;
+  companyId: string;
+  plan: PlanId;
+  term: "MONTHLY" | "YEARLY";
+  months: number;
+  amountAfn: number;
+  status: "PENDING" | "PAID" | "FAILED";
+  createdAt: string | null;
+  paidAt: string | null;
+  transactionId: string | null;
+  /** Only while the payment can still be finished. */
+  checkoutUrl: string | null;
+}
+
+export interface CheckoutStarted {
+  orderId: string;
+  checkoutUrl: string;
+  amountAfn: number;
 }
 
 /** One phone or kiosk occupying a licence seat. */

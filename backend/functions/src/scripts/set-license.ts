@@ -2,19 +2,22 @@
  * Issues a licence to a company. This is the vendor's tool — the thing that
  * turns a paid invoice into a working, limited installation.
  *
- * Why it is a script and not an endpoint: the licence is what the customer
- * buys, so it must not be something they can grant themselves. There is
- * deliberately no PUT /v1/devices/license (see routes/devices.ts) — inside a
- * tenant, COMPANY_ADMIN holds "*", so any such endpoint would have let a
- * customer set their own seat count and clear their own expiry. Writing a
- * licence requires credentials for the Firebase project itself, which only the
- * vendor has.
+ * Why it is a script and not an endpoint: a licence is granted, never
+ * self-assigned. There is deliberately no PUT /v1/devices/license (see
+ * routes/devices.ts) — inside a tenant, COMPANY_ADMIN holds "*", so any such
+ * endpoint would have let a customer set their own seat count and clear their
+ * own expiry. Writing one requires credentials for the Firebase project
+ * itself, which only the vendor has.
+ *
+ * A customer CAN change their own plan by paying for it (services/billing.ts),
+ * and that path is narrow on purpose: it may only move the plan and the expiry,
+ * and it never lowers a seat count or a cap granted here.
  *
  * Usage (from backend/functions, after `npm run build`):
  *
  *   # Always start here — prints what would change and writes nothing.
  *   GOOGLE_CLOUD_PROJECT=worktrack-prod node lib/scripts/set-license.js \
- *     --company COMPANY_ID --plan STANDARD --seats 25 --expires 2027-03-20
+ *     --company COMPANY_ID --plan SILVER --seats 25 --expires 2027-03-20
  *
  *   # Apply it
  *   ... --apply
@@ -31,13 +34,22 @@
  * Options:
  *   --company <id>      Required. The company id (visible in the portal's
  *                       Devices page, and printed by --list).
- *   --plan <p>          FREE | STANDARD | ENTERPRISE. Default: keep current.
+ *   --plan <p>          TRIAL | BRONZE | SILVER | GOLD. Default: keep current.
+ *                       (FREE/STANDARD/ENTERPRISE still work; they map to
+ *                       BRONZE/SILVER/GOLD.)
  *   --seats <n>         Device seats granted. Default: keep current.
  *   --expires <date>    YYYY-MM-DD (Gregorian), or "never". Default: keep.
  *   --status <s>        ACTIVE | SUSPENDED | EXPIRED. Default: ACTIVE.
  *   --enforce / --no-enforce
  *                       Whether the seat limit actually refuses devices.
  *                       Default on a new licence: --enforce.
+ *   --meter / --no-meter
+ *                       Whether the PLAN is enforced: the capabilities it
+ *                       includes and the headcount it covers. Off on every
+ *                       company licensed before the plans existed, which is
+ *                       what keeps them working unchanged.
+ *   --employees <n>     A headcount cap for this one company, overriding the
+ *                       plan's own. "plan" restores the plan's number.
  *   --list              List every company with its licence, then exit.
  *   --show              Print this company's licence, then exit.
  *   --apply             Actually write. Without it, nothing is written.
@@ -52,17 +64,27 @@ interface License {
   status: string;
   expiresAt: string | null;
   enforceDevices: boolean;
+  /** Whether the plan's capabilities and headcount are enforced. */
+  enforcePlan?: boolean;
+  /** A headcount negotiated for this company; null means the plan's own. */
+  employeeLimit?: number | null;
 }
 
 const DEFAULTS: License = {
-  plan: "FREE",
+  plan: "BRONZE",
   deviceLimit: 5,
   status: "ACTIVE",
   expiresAt: null,
   enforceDevices: false,
 };
 
-const PLANS = ["FREE", "STANDARD", "ENTERPRISE"];
+const PLANS = ["TRIAL", "BRONZE", "SILVER", "GOLD"];
+/** What a licence issued before the plans were sold is read as. */
+const LEGACY_PLANS: Record<string, string> = {
+  FREE: "BRONZE",
+  STANDARD: "SILVER",
+  ENTERPRISE: "GOLD",
+};
 const STATUSES = ["ACTIVE", "SUSPENDED", "EXPIRED"];
 
 function arg(name: string): string | undefined {
@@ -85,7 +107,9 @@ function describe(l: License): string {
     `seats=${l.deviceLimit}`,
     `status=${l.status}`,
     `expires=${l.expiresAt ?? "never"}`,
-    `enforced=${l.enforceDevices ? "yes" : "no"}`,
+    `seatsEnforced=${l.enforceDevices ? "yes" : "no"}`,
+    `planEnforced=${l.enforcePlan ? "yes" : "no"}`,
+    `employees=${l.employeeLimit ?? "plan"}`,
   ].join("  ");
 }
 
@@ -142,8 +166,9 @@ async function main(): Promise<void> {
 
   const plan = arg("plan");
   if (plan) {
-    if (!PLANS.includes(plan)) fail(`--plan must be one of ${PLANS.join(", ")}`);
-    next.plan = plan;
+    const named = LEGACY_PLANS[plan.toUpperCase()] ?? plan.toUpperCase();
+    if (!PLANS.includes(named)) fail(`--plan must be one of ${PLANS.join(", ")}`);
+    next.plan = named;
   }
 
   const seats = arg("seats");
@@ -183,6 +208,25 @@ async function main(): Promise<void> {
   }
   if (flag("enforce")) next.enforceDevices = true;
   if (flag("no-enforce")) next.enforceDevices = false;
+
+  if (flag("meter") && flag("no-meter")) {
+    fail("Pass either --meter or --no-meter, not both");
+  }
+  if (flag("meter")) next.enforcePlan = true;
+  if (flag("no-meter")) next.enforcePlan = false;
+
+  const employees = arg("employees");
+  if (employees) {
+    if (employees === "plan") {
+      next.employeeLimit = null;
+    } else {
+      const n = Number(employees);
+      if (!Number.isInteger(n) || n < 1 || n > 100_000) {
+        fail('--employees must be a whole number from 1 to 100000, or "plan"');
+      }
+      next.employeeLimit = n;
+    }
+  }
 
   console.log(`  next:    ${describe(next)}`);
 

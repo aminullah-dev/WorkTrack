@@ -2,11 +2,14 @@ import { api } from "../../api/client";
 import type {
   Account,
   Activity,
+  BillingOrder,
   CompanySummary,
   Contact,
   Dashboard,
   Deal,
   Invoice,
+  PlanDef,
+  PlanId,
   Ticket,
 } from "./types";
 
@@ -35,6 +38,13 @@ export const vendorApi = {
   companies: () => api.get<CompanySummary[]>("/vendor/companies").then((e) => e.data),
   setLicense: (companyId: string, body: unknown) =>
     api.put(`/vendor/companies/${companyId}/license`, body).then((e) => e.data),
+  /** What a company has paid, newest first. */
+  orders: (companyId: string) =>
+    api.get<BillingOrder[]>(`/vendor/companies/${companyId}/orders`).then((e) => e.data),
+  /** The price list every customer sees. Prices and caps only. */
+  plans: () => api.get<Record<PlanId, PlanDef>>("/vendor/plans").then((e) => e.data),
+  setPlans: (plans: Record<string, { priceAfn?: number; employeeLimit?: number; deviceLimit?: number }>) =>
+    api.put<Record<PlanId, PlanDef>>("/vendor/plans", { plans }).then((e) => e.data),
   dashboard: () => api.get<Dashboard>("/vendor/crm/dashboard").then((e) => e.data),
   audit: () =>
     api

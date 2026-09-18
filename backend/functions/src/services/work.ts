@@ -5,6 +5,7 @@ import { ulid } from "../lib/ids";
 import { classifyDay, eachDate, holidaySet } from "./calendar";
 import { getSettings } from "./settings";
 import type { Timestamp } from "firebase-admin/firestore";
+import { addDays } from "../lib/dates";
 
 /**
  * Who is doing which part of the company's work, on which day.
@@ -97,10 +98,7 @@ export function nextWorkingDay(
   return null;
 }
 
-export function addDays(dateIso: string, days: number): string {
-  const t = new Date(`${dateIso}T00:00:00Z`).getTime() + days * 86_400_000;
-  return new Date(t).toISOString().slice(0, 10);
-}
+export { addDays };
 
 /**
  * Validates a span. Kept separate from the zod schema because zod cannot
