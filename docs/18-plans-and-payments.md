@@ -66,8 +66,11 @@ firebase functions:secrets:set HESAB_API_KEY --project worktrack-prod
 ۳. آدرس وب‌هوک را در داشبورد حساب‌پی ثبت کنید (به‌جای آدرس فعلی سیف‌بیوتی):
 
 ```
-https://us-central1-worktrack-prod.cloudfunctions.net/api/v1/public/billing/hesab-webhook
+https://worktrack-prod.web.app/v1/public/billing/hesab-webhook
 ```
+
+(آدرس مستقیم فانکشن هم کار می‌کند:
+`https://us-central1-worktrack-prod.cloudfunctions.net/api/v1/public/billing/hesab-webhook`)
 
 آدرس وب‌هوک سیف‌بیوتی در `backend/functions/.env` قابل تغییر است:
 
