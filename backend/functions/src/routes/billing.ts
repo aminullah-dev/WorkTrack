@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { hesabApiKey, hesabBaseUrl, portalBaseUrl } from "../config";
+import { hesabApiKey, hesabBase, portalBaseUrl } from "../config";
 import { ApiError, asyncHandler } from "../lib/errors";
 import { audit } from "../lib/firestore";
 import { authOf } from "../middleware/auth";
@@ -53,7 +53,7 @@ billingRouter.post(
       actorId: auth.employeeId,
       input,
       apiKey: hesabApiKey.value(),
-      baseUrl: hesabBaseUrl.value(),
+      baseUrl: hesabBase(),
       portalBaseUrl: portalBaseUrl.value(),
     });
     await audit(auth.companyId, {

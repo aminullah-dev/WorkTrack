@@ -1,5 +1,8 @@
 import { defineSecret, defineString } from "firebase-functions/params";
 
+/** Where HesabPay's API lives, and the fallback when configuration says nothing. */
+const HESAB_API_ROOT = "https://api.hesab.com/api/v1";
+
 /**
  * HMAC secret for kiosk TOTP QR tokens. Managed via Secret Manager:
  *   firebase functions:secrets:set KIOSK_HMAC_SECRET
@@ -20,8 +23,21 @@ export const hesabApiKey = defineSecret("HESAB_API_KEY");
 
 /** HesabPay's API root. A parameter so a sandbox can be pointed at instead. */
 export const hesabBaseUrl = defineString("HESAB_BASE_URL", {
-  default: "https://api.hesab.com/api/v1",
+  default: HESAB_API_ROOT,
 });
+
+/**
+ * The API root to actually call.
+ *
+ * A parameter's default only applies when nothing is set; an empty value in a
+ * .env counts as a value, and the deploy prompt is one stray Return away from
+ * writing one. An empty root would send every checkout and every signature
+ * check to a relative URL — that is, refuse every payment — so it falls back
+ * here rather than trusting the file.
+ */
+export function hesabBase(): string {
+  return hesabBaseUrl.value().trim() || HESAB_API_ROOT;
+}
 
 /**
  * Another product that shares this HesabPay merchant account.

@@ -7,7 +7,7 @@ import {
 } from "../middleware/rateLimit";
 import { parseBody } from "../middleware/validate";
 import { companySignupSchema, provisionCompany } from "../services/signup";
-import { hesabApiKey, hesabBaseUrl, hesabForwardUrl } from "../config";
+import { hesabApiKey, hesabBase, hesabForwardUrl } from "../config";
 import { forwardCallback } from "../lib/hesab";
 import { settleWebhook } from "../services/billing";
 import { clearPlanCache } from "../middleware/plan";
@@ -86,7 +86,7 @@ publicRouter.post(
     const outcome = await settleWebhook({
       payload: req.body ?? {},
       apiKey: hesabApiKey.value(),
-      baseUrl: hesabBaseUrl.value(),
+      baseUrl: hesabBase(),
       // The vendor's own date. A licence bought at 23:50 in Kabul gets the day
       // it was bought on, wherever the function happened to run.
       today: localDateOf(new Date(), "Asia/Kabul"),
