@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "worktrack-prod",
+    "prod": "worktrack-prod",
+    "demo": "worktrack-demo-af"
+  }
+}

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="att_punch_title">Attendance punch</string>
+    <string name="att_location_permission_needed">Location permission is required for GPS punch</string>
+    <string name="att_getting_location">Getting your location…</string>
+    <string name="att_no_geofence">No work area configured — you can punch from anywhere</string>
+    <string name="att_inside_fence">Inside %1$s</string>
+    <string name="att_outside_fence">Outside the work area (%1$s m away)</string>
+    <string name="att_accuracy">Accuracy ±%1$s m</string>
+    <string name="att_scan_qr">Scan kiosk QR</string>
+    <string name="att_clock_in">Clock in</string>
+    <string name="att_clock_out">Clock out</string>
+    <string name="att_punch_in_recorded">Clocked in — will sync automatically</string>
+    <string name="att_punch_out_recorded">Clocked out — will sync automatically</string>
+    <string name="att_loc_unavailable_permission">GPS punch needs location permission. Use the kiosk QR instead.</string>
+    <string name="att_loc_unavailable_no_fix">Couldn\'t get a GPS fix. Move somewhere more open and retry.</string>
+
+    <string name="att_qr_title">Scan kiosk QR</string>
+    <string name="att_qr_camera_permission_title">Camera permission needed</string>
+    <string name="att_qr_camera_permission_msg">Allow camera access to scan the kiosk QR code.</string>
+    <string name="att_qr_hint">Point the camera at the kiosk screen</string>
+
+    <string name="att_selfie_title">Photo verification</string>
+    <string name="att_selfie_hint">Position your face inside the frame</string>
+    <string name="att_selfie_ready">Face detected — you can take the photo</string>
+    <string name="att_selfie_capture">Capture and check in</string>
+
+    <string name="att_history_title">Attendance history</string>
+    <string name="att_history_empty_title">No records</string>
+    <string name="att_history_empty_msg">Attendance for this month appears here after your first sync.</string>
+    <string name="att_prev_month">Previous month</string>
+    <string name="att_next_month">Next month</string>
+    <string name="att_worked_short">Worked %1$sh %2$sm</string>
+    <string name="att_overtime_short">Overtime %1$sm</string>
+    <string name="att_late_by">Late by %1$sm</string>
+
+    <string name="att_status_present">Present</string>
+    <string name="att_status_absent">Absent</string>
+    <string name="att_status_half_day">Half day</string>
+    <string name="att_status_leave">Leave</string>
+    <string name="att_status_holiday">Public holiday</string>
+    <string name="att_status_week_off">Week off</string>
+    <string name="att_status_pending">Pending</string>
+
+    <string name="reg_request">Request correction</string>
+    <string name="reg_dialog_title">Attendance correction</string>
+    <string name="reg_in_time">Corrected clock-in</string>
+    <string name="reg_out_time">Corrected clock-out</string>
+    <string name="reg_set_time">Set time</string>
+    <string name="reg_reason">Reason</string>
+    <string name="reg_reason_hint">e.g. Forgot to clock out</string>
+    <string name="reg_submit">Send request</string>
+    <string name="reg_cancel">Cancel</string>
+    <string name="reg_submitted">Correction filed — applies once your manager approves</string>
+    <string name="reg_err_times">Pick at least a clock-in or clock-out time</string>
+    <string name="reg_err_reason">Enter a reason</string>
+    <string name="att_face_enroll_title">Enroll face</string>
+    <string name="att_face_enroll_hint">Position your face inside the circle</string>
+    <string name="att_face_enroll_ready">Face detected — tap to enroll</string>
+    <string name="att_face_enroll_capture">Enroll my face</string>
+    <string name="att_face_enroll_saving">Saving…</string>
+    <string name="att_face_enroll_done">Your face was enrolled successfully</string>
+    <string name="att_face_enroll_error">Something went wrong, please try again</string>
+    <string name="att_face_enroll_no_model">The face model is not installed on this device</string>
+    <string name="att_face_enroll_already">A face is already enrolled. Ask an administrator to reset it.</string>
+    <string name="att_face_verify_title">Face check-in</string>
+    <string name="att_face_verify_capture">Verify &amp; check in</string>
+    <string name="att_face_verify_done">Face verified</string>
+    <string name="att_face_verify_no_match">This face does not match your enrolled face</string>
+    <string name="att_face_verify_not_enrolled">No face enrolled yet — enroll your face first</string>
+    <string name="att_punch_location_lost">Location is no longer available — check-in was not recorded</string>
+</resources>

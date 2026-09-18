@@ -1,0 +1,38 @@
+# TensorFlow Lite for iOS is still CocoaPods-first (LiteRT's SPM support covers
+# other components, not this one), so this one dependency comes through a
+# Podfile while everything else stays XcodeGen.
+#
+#   cd ios && xcodegen generate && pod install && open WorkTrack.xcworkspace
+#
+# The WORKSPACE is what you open from here on; the bare .xcodeproj no longer
+# links the pod.
+platform :ios, '16.0'
+use_frameworks!
+
+target 'WorkTrack' do
+  # The same interpreter the Android app uses, so the same model file produces
+  # the same vector. Anything else — Vision's own face descriptors, a converted
+  # Core ML model — lands in a different space, and an employee enrolled on
+  # Android simply stops being recognised.
+  pod 'TensorFlowLiteSwift', '~> 2.17.0'
+
+  target 'WorkTrackTests' do
+    inherit! :search_paths
+  end
+end
+
+# TensorFlowLiteSwift ships a podspec targeting iOS 12, which current Xcode
+# refuses outright: "the range of supported deployment target versions is 15.0
+# to 27.0". It only ever built because DerivedData had the result cached — a
+# clean checkout, or CI, fails on the first build with an error that looks like
+# it comes from our code and does not.
+#
+# Raising every pod to the app's own minimum fixes it and changes nothing else:
+# 16.0 is already the floor the app itself is built against.
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
+  end
+end

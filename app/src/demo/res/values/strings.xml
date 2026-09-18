@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The demo installs alongside the real app, so it has to be tellable apart on
+  the home screen. Without this both icons read "WorkTrack" and somebody
+  testing the demo ends up punching into it thinking it is the real one.
+-->
+<resources>
+    <string name="app_name">دموی WorkTrack</string>
+</resources>

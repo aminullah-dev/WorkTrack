@@ -1,0 +1,235 @@
+<!doctype html>
+<!--
+  The support page.
+
+  Apple requires a Support URL, and linumic.com is a product page rather than a
+  place to get help — a reviewer can reasonably object to that. But the real
+  reason this exists is the shape of the product: the person holding the app did
+  not buy it and cannot fix most of what goes wrong with it. Their employer
+  created the account, drew the work site, and runs the payroll.
+
+  So the page's job is to route, fast: say plainly which problems the employer
+  settles and which are ours, and answer the handful of questions that actually
+  get asked before anybody needs to write to anyone at all.
+
+  Same structure and styling as /privacy/ on purpose — one voice, and one file
+  to copy the next time a page like this is needed.
+-->
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پشتیبانی — ورک‌ترک</title>
+<style>
+  :root { --ink:#0A2735; --ink-2:#4a5c68; --line:#e2e6e9; --bg:#F9F9F9; --accent:#004E72; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.85 -apple-system, BlinkMacSystemFont, "Segoe UI", Vazirmatn, Tahoma, sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:32px 20px 72px; }
+  header { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:28px; }
+  h1 { font-size:1.7rem; margin:0 0 6px; }
+  .sub { color:var(--ink-2); font-size:.92rem; }
+  h2 { font-size:1.12rem; margin:34px 0 10px; color:var(--accent); }
+  h3 { font-size:1rem; margin:22px 0 4px; }
+  ul { padding-inline-start:22px; }
+  li { margin-bottom:7px; }
+  .callout { background:#fff; border:1px solid var(--line); border-inline-start:3px solid var(--accent);
+             padding:14px 16px; margin:18px 0; border-radius:6px; }
+  .langs { display:flex; gap:6px; margin-bottom:22px; flex-wrap:wrap; }
+  .langs button { font:inherit; font-size:.9rem; cursor:pointer; padding:6px 16px; border-radius:999px;
+                  border:1px solid var(--line); background:#fff; color:var(--ink-2); }
+  .langs button[aria-selected="true"] { background:var(--accent); color:#fff; border-color:var(--accent); }
+  section[hidden] { display:none; }
+  section[lang="en"] { direction:ltr; text-align:left; }
+  footer { margin-top:44px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink-2); font-size:.87rem; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="langs" role="tablist">
+    <button role="tab" data-lang="fa" aria-selected="true">دری</button>
+    <button role="tab" data-lang="ps" aria-selected="false">پښتو</button>
+    <button role="tab" data-lang="en" aria-selected="false">English</button>
+  </div>
+
+  <section lang="fa" dir="rtl">
+    <header>
+      <h1>پشتیبانی ورک‌ترک</h1>
+      <div class="sub">کمک برای کارمندان و برای شرکت‌ها</div>
+    </header>
+
+    <div class="callout">
+      <strong>اول این را بخوانید:</strong> ورک‌ترک را کارفرمای شما خریده و اداره می‌کند. حساب شما،
+      ساحهٔ کاری، ساعت کار و معاش — همه را <strong>او</strong> تنظیم می‌کند، نه ما. برای بیشتر
+      مشکل‌ها، سریع‌ترین راه گفتن به سرپرست یا مدیر منابع بشری‌تان است.
+    </div>
+
+    <h2>پرسش‌های رایج کارمندان</h2>
+
+    <h3>وارد اپ نمی‌شوم</h3>
+    <p>در ورک‌ترک <strong>ثبت‌نام خودکار وجود ندارد</strong>. حساب شما را کارفرمای‌تان می‌سازد و
+      ایمیل و رمز اول را به شما می‌دهد. اگر حسابی ندارید، از مدیرتان بخواهید بسازد.</p>
+
+    <h3>رمزم را فراموش کرده‌ام</h3>
+    <p>مدیرتان می‌تواند در پورتال رمز تازه بدهد: بخش کارمندان ← ویرایش ← حساب ورود.
+      ما رمز کسی را نمی‌بینیم و نمی‌توانیم بازنشانی کنیم.</p>
+
+    <h3>می‌گوید «بیرون از ساحهٔ کاری»</h3>
+    <p>یعنی موقعیت گوشی شما هنگام ثبت حاضری، بیرون از محدوده‌ای بوده که کارفرما تعیین کرده.
+      حاضری <strong>ثبت می‌شود</strong> ولی علامت می‌خورد و سرپرست می‌بیندش. اگر در ساحه بودید و باز
+      هم این را گفت، معمولاً GPS ضعیف بوده — به سرپرست بگویید و درخواست اصلاح بدهید.</p>
+
+    <h3>می‌گوید حاضری‌ام حساب نشد</h3>
+    <p>حاضری‌ای که بیرون از ساحه ثبت شود، تا سرپرست تأییدش نکند در محاسبهٔ وقت کاری نمی‌آید.
+      در همان صفحهٔ حاضری روی روز مورد نظر <strong>«درخواست اصلاح»</strong> را بزنید و ساعت درست را
+      بنویسید. حاضری اصلی پاک نمی‌شود؛ سرپرست هر دو را می‌بیند.</p>
+
+    <h3>فیش معاشم اشتباه است</h3>
+    <p>فیش را حسابداری شرکت شما می‌سازد، نه ما. تفکیک کامل — عواید، کسرات، مالیه — در همان صفحهٔ
+      معاش نشان داده می‌شود. اگر رقمی درست نیست، آن صفحه را به حسابدارتان نشان بدهید.</p>
+
+    <h3>اینترنت ندارم</h3>
+    <p>حاضری روی گوشی ذخیره می‌شود و وقتی شبکه آمد خودش فرستاده می‌شود. <strong>ساعت ثبت‌شده،
+      ساعتی است که دکمه را زدید</strong>، نه ساعتی که به سرور رسید — پس شبکهٔ ضعیف بخشی از روزتان را
+      نمی‌خورد.</p>
+
+    <h2>برای شرکت‌ها</h2>
+    <p>برای گرفتن ورک‌ترک، تمدید لایسنس، افزودن دستگاه، یا مشکل فنی در پورتال، به ما بنویسید.
+      در پیام‌تان <strong>نام شرکت</strong> را بنویسید تا زودتر پیدایش کنیم.</p>
+
+    <h2>تماس با ما</h2>
+    <p><a href="mailto:contact@linumic.com">contact@linumic.com</a></p>
+    <p class="sub">معمولاً ظرف یک روز کاری جواب می‌دهیم.
+      <strong>رمز عبورتان را هرگز برای ما نفرستید</strong> — ما هیچ‌وقت آن را نمی‌خواهیم.</p>
+
+    <footer>سیاست حریم خصوصی: <a href="/privacy/">worktrack-prod.web.app/privacy</a></footer>
+  </section>
+
+  <section lang="ps" dir="rtl" hidden>
+    <header>
+      <h1>د ورک‌ټرک ملاتړ</h1>
+      <div class="sub">د کارمندانو او شرکتونو لپاره مرسته</div>
+    </header>
+
+    <div class="callout">
+      <strong>لومړی دا ولولئ:</strong> ورک‌ټرک ستاسو کارفرما اخیستی او چلوي یې. ستاسو حساب، کاري
+      ساحه، د کار ساعتونه او معاش — ټول <strong>هغه</strong> ټاکي، موږ نه. د ډېرو ستونزو لپاره، تر
+      ټولو چټکه لاره دا ده چې خپل سرپرست یا د بشري منابعو مدیر ته ووایاست.
+    </div>
+
+    <h2>د کارمندانو ډېرې پوښتنې</h2>
+
+    <h3>اپ ته نه شم ننوتلی</h3>
+    <p>په ورک‌ټرک کې <strong>ځان‌ثبتونه نشته</strong>. ستاسو حساب کارفرما جوړوي او لومړی بریښنالیک
+      او پټنوم درکوي. که حساب نه لرئ، له مدیر څخه یې وغواړئ.</p>
+
+    <h3>پټنوم مې هېر شوی</h3>
+    <p>ستاسو مدیر کولی شي په پورټال کې نوی پټنوم درکړي: د کارمندانو برخه ← سمون ← د ننوتلو حساب.
+      موږ د چا پټنوم نه ګورو او بیا یې نه شو ټاکلی.</p>
+
+    <h3>وايي «د کاري ساحې څخه بهر»</h3>
+    <p>یعنې د حاضرۍ پر مهال ستاسو موبایل هغه سیمه کې نه و چې کارفرما ټاکلې. حاضري
+      <strong>ثبتېږي</strong> خو نښه کېږي او سرپرست یې ویني. که په ساحه کې وئ او بیا یې هم دا وویل،
+      معمولاً GPS کمزوری و — سرپرست ته ووایاست او د سمون غوښتنه وکړئ.</p>
+
+    <h3>وايي زما حاضري ونه شمېرل شوه</h3>
+    <p>هغه حاضري چې له ساحې بهر ثبت شي، د کاري وخت په حساب کې نه راځي تر څو سرپرست یې تصدیق کړي.
+      په همدې پاڼه کې پر اړوندې ورځې <strong>«د سمون غوښتنه»</strong> کېکاږئ او سم وخت ولیکئ. اصلي
+      حاضري نه پاکېږي؛ سرپرست دواړه ګوري.</p>
+
+    <h3>زما د معاش فیش غلط دی</h3>
+    <p>فیش ستاسو د شرکت حسابداري جوړوي، موږ نه. بشپړ توپیر — عواید، کمښتونه، مالیه — په همدې پاڼه
+      کې ښکاري. که کوم رقم سم نه وي، هغه پاڼه خپل حسابدار ته وښیئ.</p>
+
+    <h3>انټرنېټ نه لرم</h3>
+    <p>حاضري په موبایل کې ساتل کېږي او کله چې شبکه راشي پخپله لېږل کېږي. <strong>ثبت شوی وخت هغه دی
+      چې تڼۍ مو کېکاږله</strong>، نه هغه چې سرور ته ورسېد.</p>
+
+    <h2>د شرکتونو لپاره</h2>
+    <p>د ورک‌ټرک اخیستلو، د جواز نوي کولو، د وسیلې زیاتولو، یا په پورټال کې د تخنیکي ستونزې لپاره
+      موږ ته ولیکئ. په پیغام کې <strong>د شرکت نوم</strong> ولیکئ.</p>
+
+    <h2>اړیکه</h2>
+    <p><a href="mailto:contact@linumic.com">contact@linumic.com</a></p>
+    <p class="sub">معمولاً د یوې کاري ورځې په اوږدو کې ځواب ورکوو.
+      <strong>خپل پټنوم هېڅکله موږ ته مه لېږئ</strong> — موږ یې هېڅکله نه غواړو.</p>
+
+    <footer>د محرمیت تګلاره: <a href="/privacy/">worktrack-prod.web.app/privacy</a></footer>
+  </section>
+
+  <section lang="en" dir="ltr" hidden>
+    <header>
+      <h1>WorkTrack Support</h1>
+      <div class="sub">Help for employees, and for companies</div>
+    </header>
+
+    <div class="callout">
+      <strong>Read this first:</strong> WorkTrack is bought and run by your employer. Your account,
+      your work site, your hours and your pay are all set by <strong>them</strong>, not by us. For
+      most problems the fastest route is your supervisor or HR manager.
+    </div>
+
+    <h2>Common questions from employees</h2>
+
+    <h3>I cannot sign in</h3>
+    <p>WorkTrack has <strong>no self-registration</strong>. Your employer creates your account and
+      gives you the email address and first password. If you have no account, ask your manager to
+      create one.</p>
+
+    <h3>I forgot my password</h3>
+    <p>Your manager can set a new one in the portal: Employees → Edit → Login account. We never see
+      anyone's password and cannot reset it.</p>
+
+    <h3>It says "outside the work site"</h3>
+    <p>Your phone's location when you checked in was outside the area your employer defined. The
+      check-in <strong>is recorded</strong>, but it is flagged and your supervisor sees it. If you
+      were on site and still saw this, GPS was usually weak — tell your supervisor and file a
+      correction request.</p>
+
+    <h3>It says my attendance did not count</h3>
+    <p>A check-in recorded outside the work site is not counted toward worked time until your
+      supervisor approves it. On the Attendance screen, tap <strong>"Request a correction"</strong>
+      on that day and give the right time. The original record is not erased; your supervisor sees
+      both.</p>
+
+    <h3>My payslip is wrong</h3>
+    <p>Payslips are produced by your company's accountant, not by us. The full breakdown — earnings,
+      deductions, tax — is on the Pay screen. If a figure is wrong, show that screen to your
+      accountant.</p>
+
+    <h3>I have no internet</h3>
+    <p>A check-in is saved on your phone and sent when there is signal again. <strong>The time
+      recorded is the time you pressed the button</strong>, not the time it reached the server, so a
+      weak connection never costs you part of a day.</p>
+
+    <h2>For companies</h2>
+    <p>To get WorkTrack, renew a licence, add devices, or report a problem in the portal, write to
+      us. Include your <strong>company name</strong> so we can find you quickly.</p>
+
+    <h2>Contact</h2>
+    <p><a href="mailto:contact@linumic.com">contact@linumic.com</a></p>
+    <p class="sub">We normally reply within one working day.
+      <strong>Never send us your password</strong> — we will never ask for it.</p>
+
+    <footer>Privacy policy: <a href="/privacy/">worktrack-prod.web.app/privacy</a></footer>
+  </section>
+
+</div>
+
+<script>
+  const sections = document.querySelectorAll("section[lang]");
+  const buttons = document.querySelectorAll(".langs button");
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const lang = button.dataset.lang;
+      sections.forEach((s) => { s.hidden = s.getAttribute("lang") !== lang; });
+      buttons.forEach((b) => b.setAttribute("aria-selected", String(b === button)));
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">Retry</string>
+    <string name="ds_back">Back</string>
+    <string name="ds_ok">OK</string>
+    <string name="ds_cancel">Cancel</string>
+
+    <string name="ds_err_network">You\'re offline. Changes are saved and will sync automatically.</string>
+    <string name="ds_err_unauthenticated">Your session has expired. Please sign in again.</string>
+    <string name="ds_err_permission">You don\'t have permission to do that.</string>
+    <string name="ds_err_not_found">That item could not be found.</string>
+    <string name="ds_err_unexpected">Something went wrong. Please try again.</string>
+    <string name="ds_err_server">A server error occurred (%1$s).</string>
+    <string name="ds_err_validation">The entered information is not valid.</string>
+
+    <string name="ds_err_invalid_credentials">Email or password is incorrect.</string>
+    <string name="ds_err_mock_location">Mock locations are not allowed for attendance.</string>
+    <string name="ds_err_geofence">You are outside the allowed work area.</string>
+    <string name="ds_err_leave_balance">Your leave balance is not sufficient.</string>
+    <string name="ds_err_not_synced">Wait for this request to finish syncing first.</string>
+    <string name="ds_err_kiosk_token">The kiosk QR code is invalid; scan it again.</string>
+    <string name="ds_err_invalid_state">This request has already been finalized.</string>
+
+    <!-- Afghan Solar Hijri month names (transliterated) -->
+    <string-array name="ds_shamsi_months">
+        <item>Hamal</item>
+        <item>Sawr</item>
+        <item>Jawza</item>
+        <item>Saratan</item>
+        <item>Asad</item>
+        <item>Sunbula</item>
+        <item>Mizan</item>
+        <item>Aqrab</item>
+        <item>Qaws</item>
+        <item>Jadi</item>
+        <item>Dalw</item>
+        <item>Hut</item>
+    </string-array>
+
+    <string-array name="ds_weekdays">
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+        <item>Sun</item>
+    </string-array>
+</resources>
