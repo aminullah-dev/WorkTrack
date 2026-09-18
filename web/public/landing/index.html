@@ -211,11 +211,79 @@ footer a:hover { text-decoration: underline; }
 /* --- LANG TOGGLE --- */
 [hidden] { display: none !important; }
 
+/* --- PRICING --- */
+.pricing {
+  padding: 64px 20px;
+  background: linear-gradient(180deg, var(--white) 0%, var(--bg) 100%);
+  border-top: 1px solid var(--line);
+}
+.pricing-inner { max-width: 960px; margin: 0 auto; text-align: center; }
+.pricing h2 { font-size: 1.4rem; color: var(--dark); margin-bottom: 10px; line-height: 1.5; }
+.pricing-sub {
+  color: var(--ink-2); font-size: .95rem; line-height: 1.8;
+  max-width: 560px; margin: 0 auto 34px;
+}
+.plan-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  text-align: start;
+}
+.plan {
+  position: relative;
+  display: flex; flex-direction: column; gap: 13px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px 22px;
+  transition: transform .15s, box-shadow .15s;
+}
+.plan:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(10,39,53,.08); }
+/* The middle tier is the one most companies land on, so it is the one the eye
+   lands on too — a border and a tag, not a bigger card that breaks the row. */
+.plan.featured { border-color: var(--navy); box-shadow: 0 10px 30px rgba(0,78,114,.10); }
+.plan-tag {
+  position: absolute; top: -11px; inset-inline-start: 22px;
+  background: var(--navy); color: var(--white);
+  font-size: .72rem; font-weight: 600;
+  padding: 3px 12px; border-radius: 999px;
+}
+.plan-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: rgba(0,78,114,.07); color: var(--navy);
+}
+.plan-icon svg { width: 22px; height: 22px; }
+.tier-bronze .plan-icon { background: rgba(160,92,46,.10); color: #A05C2E; }
+.tier-silver .plan-icon { background: rgba(94,112,128,.12); color: #5E7080; }
+.tier-gold   .plan-icon { background: rgba(176,127,30,.12); color: #B07F1E; }
+.plan h3 { font-size: 1.05rem; color: var(--dark); }
+.plan-price { display: flex; align-items: baseline; gap: 6px; color: var(--dark); margin-top: -4px; }
+.plan-price b { font-size: 1.7rem; font-weight: 700; }
+.plan-price span { font-size: .85rem; color: var(--ink-2); font-weight: 500; }
+.plan-for { font-size: .86rem; color: var(--ink-2); margin-top: -8px; }
+.plan-list { list-style: none; display: grid; gap: 9px; margin-top: 2px; }
+.plan-list li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: .88rem; line-height: 1.6; color: var(--ink);
+}
+.plan-list svg { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 3px; color: var(--navy); }
+.plan-list .muted { color: var(--ink-2); }
+.pricing-notes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 30px; }
+.note {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 999px;
+  background: var(--white); border: 1px solid var(--line);
+  font-size: .85rem; color: var(--ink-2);
+}
+.note svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--navy); }
+.pricing-cta { display: flex; justify-content: center; margin-top: 26px; }
+
 /* --- RESPONSIVE --- */
 @media (max-width: 640px) {
   .hero { padding: 48px 16px 32px; }
   .phone-frame { width: 150px; }
   .story-pair { grid-template-columns: 1fr; }
+  .plan-grid { grid-template-columns: 1fr; }
+  .pricing { padding: 48px 16px; }
 }
 </style>
 </head>
@@ -335,6 +403,65 @@ footer a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<div class="pricing">
+  <div class="pricing-inner">
+    <h2>یک قیمت روشن، بدون قرارداد</h2>
+    <p class="pricing-sub">همهٔ پلن‌ها اپ موبایل و پورتال وب را دارند. هر وقت خواستید پلن را بالا ببرید یا نگه دارید — قرارداد درازمدت نیست.</p>
+
+    <div class="plan-grid">
+    <div class="plan tier-bronze">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.5c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
+      <h3>برنزی</h3>
+      <p class="plan-price"><b>۱٬۵۰۰</b><span>افغانی / ماه</span></p>
+      <p class="plan-for">تا ۲۰ کارمند</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>حاضری با موبایل</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>رخصتی و بیلانس</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>شیفت‌ها و تقویم شمسی</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>اطلاعیه به کارمندان</li>
+      </ul>
+    </div>
+    <div class="plan tier-silver featured">
+      <span class="plan-tag">بیشترین انتخاب</span>
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M2.8 19c0-3 2.8-5 6.2-5s6.2 2 6.2 5"/><path d="M16.2 5.6a3 3 0 0 1 0 5.7"/><path d="M17.6 14.2c2 .7 3.4 2.4 3.4 4.8"/></svg></span>
+      <h3>نقره‌ای</h3>
+      <p class="plan-price"><b>۳٬۵۰۰</b><span>افغانی / ماه</span></p>
+      <p class="plan-for">تا ۷۵ کارمند</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>هر چه در برنزی هست</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>معاش و فیش معاش</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>پیش‌پرداخت و مصارف</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>اسناد کارمندان</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>کیوسک حاضری با QR</li>
+      </ul>
+    </div>
+    <div class="plan tier-gold">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><path d="M5.5 20V6.4a1 1 0 0 1 .72-.96l6.5-1.9a1 1 0 0 1 1.28.96V20"/><path d="M14 20v-9h4a1 1 0 0 1 1 1v8"/><path d="M8.4 9h2.4M8.4 12.4h2.4M8.4 15.8h2.4"/></svg></span>
+      <h3>طلایی</h3>
+      <p class="plan-price"><b>۷٬۰۰۰</b><span>افغانی / ماه</span></p>
+      <p class="plan-for">تا ۵۰۰ کارمند</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>هر چه در نقره‌ای هست</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>پروژه‌ها و وظایف روزانه</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>کار کارمزدی (به قطعه)</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>تشخیص چهره در حاضری</li>
+      </ul>
+    </div>
+    </div>
+
+    <div class="pricing-notes">
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.3V12l3.1 2"/></svg>۱۴ روز اول رایگان — بدون کارت</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15" rx="2.4"/><path d="M3.4 10h17.2"/><path d="M8.2 3.4v3.4M15.8 3.4v3.4"/></svg>پرداخت سالانه: ۱۲ ماه به قیمت ۱۰ ماه</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.6" y="5.4" width="18.8" height="13.2" rx="2.6"/><path d="M2.6 10.1h18.8"/><path d="M6.4 14.8h3.4"/></svg>پرداخت با حساب‌پی، از داخل پورتال</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l7 2.6v5.5c0 4.2-2.8 7.6-7 9.5-4.2-1.9-7-5.3-7-9.5V5.8z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>اطلاعات هر شرکت جدا و فقط مال خودش</span>
+    </div>
+
+    <div class="pricing-cta">
+      <a href="/" class="badge">ثبت‌نام شرکت — ۱۴ روز رایگان</a>
+    </div>
+  </div>
+</div>
+
 <div class="cta">
   <div class="cta-inner">
     <h2>اپ را بگیرید. کارفرمای‌تان حساب‌تان را فعال می‌کنه.</h2>
@@ -441,6 +568,65 @@ footer a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<div class="pricing">
+  <div class="pricing-inner">
+    <h2>یوه څرګنده بیه، پرته له تړونه</h2>
+    <p class="pricing-sub">ټول پلانونه موبایل اپ او ویب پورټال لري. هر وخت کولای شئ پلان لوړ کړئ یا همداسې یې وساتئ — اوږدمهاله تړون نشته.</p>
+
+    <div class="plan-grid">
+    <div class="plan tier-bronze">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.5c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
+      <h3>برونزي</h3>
+      <p class="plan-price"><b>۱٬۵۰۰</b><span>افغانۍ / میاشت</span></p>
+      <p class="plan-for">تر ۲۰ کارکوونکو پورې</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>حاضري د موبایل له لارې</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>رخصتي او بیلانس</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>شیفټونه او لمریز کلیز</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>کارکوونکو ته اعلانونه</li>
+      </ul>
+    </div>
+    <div class="plan tier-silver featured">
+      <span class="plan-tag">ډېر غوره شوی</span>
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M2.8 19c0-3 2.8-5 6.2-5s6.2 2 6.2 5"/><path d="M16.2 5.6a3 3 0 0 1 0 5.7"/><path d="M17.6 14.2c2 .7 3.4 2.4 3.4 4.8"/></svg></span>
+      <h3>نقرهیي</h3>
+      <p class="plan-price"><b>۳٬۵۰۰</b><span>افغانۍ / میاشت</span></p>
+      <p class="plan-for">تر ۷۵ کارکوونکو پورې</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>هر څه چې په برونزي کې دي</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>معاش او د معاش پرچه</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>وړاندې تادیه او لګښتونه</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>د کارکوونکو اسناد</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>د QR حاضرۍ کیوسک</li>
+      </ul>
+    </div>
+    <div class="plan tier-gold">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><path d="M5.5 20V6.4a1 1 0 0 1 .72-.96l6.5-1.9a1 1 0 0 1 1.28.96V20"/><path d="M14 20v-9h4a1 1 0 0 1 1 1v8"/><path d="M8.4 9h2.4M8.4 12.4h2.4M8.4 15.8h2.4"/></svg></span>
+      <h3>طلایي</h3>
+      <p class="plan-price"><b>۷٬۰۰۰</b><span>افغانۍ / میاشت</span></p>
+      <p class="plan-for">تر ۵۰۰ کارکوونکو پورې</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>هر څه چې په نقرهیي کې دي</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>پروژې او ورځنۍ دندې</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>د ټوټې کار</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>په حاضرۍ کې د مخ پېژندنه</li>
+      </ul>
+    </div>
+    </div>
+
+    <div class="pricing-notes">
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.3V12l3.1 2"/></svg>لومړۍ ۱۴ ورځې وړیا — پرته له کارته</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15" rx="2.4"/><path d="M3.4 10h17.2"/><path d="M8.2 3.4v3.4M15.8 3.4v3.4"/></svg>کلنۍ تادیه: ۱۲ میاشتې د ۱۰ میاشتو په بیه</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.6" y="5.4" width="18.8" height="13.2" rx="2.6"/><path d="M2.6 10.1h18.8"/><path d="M6.4 14.8h3.4"/></svg>تادیه د حساب‌پی له لارې، له پورټاله</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l7 2.6v5.5c0 4.2-2.8 7.6-7 9.5-4.2-1.9-7-5.3-7-9.5V5.8z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>د هر شرکت معلومات جلا او یوازې د هغه دي</span>
+    </div>
+
+    <div class="pricing-cta">
+      <a href="/" class="badge">د شرکت ثبت — ۱۴ ورځې وړیا</a>
+    </div>
+  </div>
+</div>
+
 <div class="cta">
   <div class="cta-inner">
     <h2>اپ واخلئ. ستاسو کارګمارونکی ستاسو حساب فعالوي.</h2>
@@ -543,6 +729,65 @@ footer a:hover { text-decoration: underline; }
         <h3>Your data stays yours</h3>
         <p>Attendance, payroll, employee documents — all secure and only accessible to you.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="pricing">
+  <div class="pricing-inner">
+    <h2>One clear price, no contract</h2>
+    <p class="pricing-sub">Every plan includes the mobile app and the web portal. Move up a plan whenever you need to — nothing is locked in for a year.</p>
+
+    <div class="plan-grid">
+    <div class="plan tier-bronze">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.5c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
+      <h3>Bronze</h3>
+      <p class="plan-price"><b>1,500</b><span>AFN / month</span></p>
+      <p class="plan-for">Up to 20 employees</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Attendance from a phone</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Leave and balances</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Shifts on the Solar Hijri calendar</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Announcements to staff</li>
+      </ul>
+    </div>
+    <div class="plan tier-silver featured">
+      <span class="plan-tag">Most chosen</span>
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M2.8 19c0-3 2.8-5 6.2-5s6.2 2 6.2 5"/><path d="M16.2 5.6a3 3 0 0 1 0 5.7"/><path d="M17.6 14.2c2 .7 3.4 2.4 3.4 4.8"/></svg></span>
+      <h3>Silver</h3>
+      <p class="plan-price"><b>3,500</b><span>AFN / month</span></p>
+      <p class="plan-for">Up to 75 employees</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Everything in Bronze</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Payroll and payslips</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Advances and expenses</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Employee documents</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>QR attendance kiosk</li>
+      </ul>
+    </div>
+    <div class="plan tier-gold">
+      <span class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><path d="M5.5 20V6.4a1 1 0 0 1 .72-.96l6.5-1.9a1 1 0 0 1 1.28.96V20"/><path d="M14 20v-9h4a1 1 0 0 1 1 1v8"/><path d="M8.4 9h2.4M8.4 12.4h2.4M8.4 15.8h2.4"/></svg></span>
+      <h3>Gold</h3>
+      <p class="plan-price"><b>7,000</b><span>AFN / month</span></p>
+      <p class="plan-for">Up to 500 employees</p>
+      <ul class="plan-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Everything in Silver</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Projects and daily tasks</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Piece work</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg>Face check on attendance</li>
+      </ul>
+    </div>
+    </div>
+
+    <div class="pricing-notes">
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.3V12l3.1 2"/></svg>First 14 days free — no card</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15" rx="2.4"/><path d="M3.4 10h17.2"/><path d="M8.2 3.4v3.4M15.8 3.4v3.4"/></svg>Pay yearly: 12 months for the price of 10</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.6" y="5.4" width="18.8" height="13.2" rx="2.6"/><path d="M2.6 10.1h18.8"/><path d="M6.4 14.8h3.4"/></svg>Paid with HesabPay, from the portal</span>
+      <span class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l7 2.6v5.5c0 4.2-2.8 7.6-7 9.5-4.2-1.9-7-5.3-7-9.5V5.8z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>Each company's data is its own</span>
+    </div>
+
+    <div class="pricing-cta">
+      <a href="/" class="badge">Create a company — 14 days free</a>
     </div>
   </div>
 </div>
